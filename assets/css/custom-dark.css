@@ -1,0 +1,506 @@
+/* =========================
+   GLOBAL DARK MODE
+========================= */
+
+body {
+    background: #06152d !important;
+    color: #ffffff !important;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+    background: #071a35 !important;
+    border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-nav .nav-link {
+    background: #102544 !important;
+    color: #dce6ff !important;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: linear-gradient(90deg,#4f46e5,#6366f1) !important;
+    color: #fff !important;
+}
+
+.sidebar-nav .nav-link.active {
+    background: linear-gradient(90deg,#4f46e5,#6366f1) !important;
+    color: white !important;
+}
+
+.sidebar-nav .nav-link i {
+    color: #b8c7ff !important;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.header {
+    background: #071a35 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header .search-form input {
+    background: #102544 !important;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff !important;
+}
+
+.header .search-form input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.card {
+    background: #0b1f3a !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.card-title,
+.card-title span,
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card p {
+    color: #ffffff !important;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.table {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+.table thead {
+    background: #102544 !important;
+}
+
+.table thead th {
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.table tbody tr {
+    background: transparent !important;
+}
+
+.table tbody td {
+    color: #e5e7eb !important;
+    border-color: rgba(255,255,255,0.05) !important;
+}
+
+.table tbody tr:hover {
+    background: rgba(255,255,255,0.03) !important;
+}
+
+/* =========================
+   DATATABLES FIX
+========================= */
+
+.dataTables_wrapper {
+    color: #ffffff !important;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #ffffff !important;
+}
+
+.dataTables_wrapper input,
+.dataTables_wrapper select {
+    background: #102544 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #ffffff !important;
+}
+
+.dataTables_wrapper input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* =========================
+   LINKS
+========================= */
+
+a {
+    color: #7ea6ff !important;
+}
+
+a:hover {
+    color: #a5c4ff !important;
+}
+
+/* =========================
+   DROPDOWN
+========================= */
+
+.dropdown-menu {
+    background: #102544 !important;
+    border: none !important;
+}
+
+.dropdown-item {
+    color: #ffffff !important;
+}
+
+.dropdown-item:hover {
+    background: #1b3358 !important;
+}
+
+/* =========================
+   CHARTS
+========================= */
+
+.apexcharts-text,
+.apexcharts-legend-text {
+    fill: #ffffff !important;
+}
+
+/* =========================
+   TEXT FIX
+========================= */
+
+.text-muted {
+    color: #b6c2d9 !important;
+}
+
+small,
+span,
+label {
+    color: #d6e0f5 !important;
+}
+
+/* =========================
+   FIX OVERRIDE WARNA
+========================= */
+
+/* Jangan ubah icon */
+.card i {
+    color: inherit !important;
+}
+
+/* Jangan ubah chart */
+.apexcharts-text,
+.apexcharts-legend-text,
+.apexcharts-xaxis-label,
+.apexcharts-yaxis-label {
+    fill: #dbe4ff !important;
+    color: #dbe4ff !important;
+}
+
+/* Activity */
+.activity .activity-content {
+    color: #ffffff !important;
+}
+
+.activity .activite-label {
+    color: #dbe4ff !important;
+}
+
+/* Card title */
+.card-title {
+    color: #ffffff !important;
+}
+
+/* Subtitle */
+.card-title span {
+    color: #b8c7ff !important;
+}
+
+/* Dashboard number */
+.card h6 {
+    color: #ffffff !important;
+}
+
+/* Sales icon */
+.sales-card .card-icon {
+    background: #eef2ff !important;
+}
+
+.sales-card .card-icon i {
+    color: #4f46e5 !important;
+}
+
+/* Revenue icon */
+.revenue-card .card-icon {
+    background: #dcfce7 !important;
+}
+
+.revenue-card .card-icon i {
+    color: #22c55e !important;
+}
+
+/* Customer icon */
+.customers-card .card-icon {
+    background: #ffedd5 !important;
+}
+
+.customers-card .card-icon i {
+    color: #f97316 !important;
+}
+
+/* Table */
+.table td,
+.table th {
+    color: #dbe4ff !important;
+}
+
+/* News */
+.news .post-item h4 a {
+    color: #ffffff !important;
+}
+
+.news .post-item p {
+    color: #cbd5e1 !important;
+}
+
+/* =========================
+   ICON GLOW MODERN
+========================= */
+
+/* Semua lingkaran icon */
+.card-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Icon size */
+.card-icon i {
+    font-size: 32px !important;
+    font-weight: bold;
+}
+
+/* SALES */
+.sales-card .card-icon {
+    background: rgba(79, 70, 229, 0.18) !important;
+    box-shadow:
+        0 0 15px rgba(79,70,229,0.4),
+        0 0 35px rgba(79,70,229,0.2);
+}
+
+.sales-card .card-icon i {
+    color: #6366f1 !important;
+}
+
+/* REVENUE */
+.revenue-card .card-icon {
+    background: rgba(34, 197, 94, 0.18) !important;
+    box-shadow:
+        0 0 15px rgba(34,197,94,0.4),
+        0 0 35px rgba(34,197,94,0.2);
+}
+
+.revenue-card .card-icon i {
+    color: #22c55e !important;
+}
+
+/* CUSTOMERS */
+.customers-card .card-icon {
+    background: rgba(249, 115, 22, 0.18) !important;
+    box-shadow:
+        0 0 15px rgba(249,115,22,0.4),
+        0 0 35px rgba(249,115,22,0.2);
+}
+
+.customers-card .card-icon i {
+    color: #f97316 !important;
+}
+
+/* =========================
+   NOTIFICATION DARK MODE
+========================= */
+
+.notif-card{
+    background:#0b1f3a !important;
+    border-radius:18px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.05);
+    border-left:5px solid transparent;
+    transition:.3s;
+}
+
+.notif-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
+/* =========================
+   DANGER
+========================= */
+
+.notif-danger{
+    border-left-color:#ef4444;
+}
+
+.notif-danger .notif-icon{
+    background:rgba(239,68,68,.12);
+    color:#ef4444;
+    box-shadow:
+        0 0 15px rgba(239,68,68,.25),
+        0 0 30px rgba(239,68,68,.15);
+}
+
+/* =========================
+   WARNING
+========================= */
+
+.notif-warning{
+    border-left-color:#facc15;
+}
+
+.notif-warning .notif-icon{
+    background:rgba(250,204,21,.12);
+    color:#facc15;
+    box-shadow:
+        0 0 15px rgba(250,204,21,.20),
+        0 0 30px rgba(250,204,21,.10);
+}
+
+/* =========================
+   ICON
+========================= */
+
+.notif-icon{
+    width:58px;
+    height:58px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    flex-shrink:0;
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+.notif-content{
+    flex:1;
+}
+
+.notif-title{
+    font-size:17px;
+    font-weight:700;
+    color:#ffffff !important;
+    margin-bottom:6px;
+}
+
+.notif-desc{
+    color:#cbd5e1 !important;
+    font-size:14px;
+    line-height:1.6;
+    margin-bottom:10px;
+}
+
+.notif-info{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    font-size:13px;
+    color:#93c5fd !important;
+}
+
+.notif-info span{
+    background:rgba(255,255,255,.04);
+    padding:6px 10px;
+    border-radius:10px;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+.notif-action .btn{
+    border-radius:12px;
+    padding:8px 18px;
+    font-weight:600;
+    border:none;
+}
+
+.notif-action .btn-danger{
+    background:linear-gradient(135deg,#dc2626,#ef4444);
+}
+
+.notif-action .btn-warning{
+    background:linear-gradient(135deg,#eab308,#facc15);
+    color:#111827 !important;
+}
+
+/* =========================
+   EMPTY NOTIF
+========================= */
+
+.notif-empty{
+    background:#0b1f3a;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.05);
+    padding:60px 20px;
+    text-align:center;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+
+.notif-empty i{
+    font-size:65px;
+    color:#22c55e;
+    margin-bottom:15px;
+}
+
+.notif-empty h4{
+    color:#fff;
+    margin-bottom:10px;
+}
+
+.notif-empty p{
+    color:#b6c2d9;
+    margin-bottom:0;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:768px){
+
+    .notif-card{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .notif-action{
+        width:100%;
+    }
+
+    .notif-action .btn{
+        width:100%;
+    }
+
+}
