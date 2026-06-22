@@ -383,6 +383,27 @@
     border: 1px solid rgba(255, 255, 255, .05);
   }
 
+  .stat-card-link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+  }
+
+  .stat-card-link:hover {
+    color: inherit;
+  }
+
+  .stat-card-link .info-card {
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .stat-card-link:hover .info-card {
+    border-color: rgba(59, 130, 246, .45);
+    box-shadow: 0 16px 30px rgba(2, 8, 23, .22);
+    transform: translateY(-2px);
+  }
+
   .info-card .card-title {
     color: #fff;
     font-size: 15px;
@@ -697,179 +718,189 @@
 
       <!-- TOTAL DEACTIVED -->
       <div class="col-xxl-3 col-md-6">
+        <a href="<?= base_url('admin/deactived') ?>" class="stat-card-link">
 
-        <div class="card info-card customers-card">
+          <div class="card info-card customers-card">
 
-          <div class="card-body">
+            <div class="card-body">
 
-            <h5 class="card-title">
-              Deactived <span>| Total</span>
-            </h5>
+              <h5 class="card-title">
+                Deactived <span>| Total</span>
+              </h5>
 
-            <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center">
 
-              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
 
-                <i class="bi bi-x-circle"></i>
+                  <i class="bi bi-x-circle"></i>
 
-              </div>
+                </div>
 
-              <div class="ps-3">
+                <div class="ps-3">
 
-                <h6><?= $total_deactived ?></h6>
+                  <h6><?= $total_deactived ?></h6>
 
-                <span class="text-danger small pt-1 fw-bold">
-                  <?= $persen_deactived ?>%
-                </span>
+                  <span class="text-danger small pt-1 fw-bold">
+                    <?= $persen_deactived ?>%
+                  </span>
+
+                </div>
 
               </div>
 
             </div>
 
           </div>
-
-        </div>
+        </a>
 
       </div><!-- TOTAL BELUM TERJUAL -->
       <div class="col-xxl-3 col-md-6">
+        <a href="<?= base_url('admin/deactived') ?>" class="stat-card-link">
 
-        <div class="card info-card customers-card">
+          <div class="card info-card customers-card">
 
-          <div class="card-body">
+            <div class="card-body">
 
-            <h5 class="card-title">
-              Disable X <span>| Total</span>
-            </h5>
+              <h5 class="card-title">
+                Disable X <span>| Total</span>
+              </h5>
 
-            <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center">
 
-              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
 
-                <i class="bi bi-x-octagon"></i>
+                  <i class="bi bi-x-octagon"></i>
 
-              </div>
+                </div>
 
-              <div class="ps-3">
+                <div class="ps-3">
 
-                <h6><?= $total_disable_x ?></h6>
+                  <h6><?= $total_disable_x ?></h6>
 
-                <span class="text-danger small pt-1 fw-bold">
-                  <?= $persen_disable_x ?>%
-                </span>
+                  <span class="text-danger small pt-1 fw-bold">
+                    <?= $persen_disable_x ?>%
+                  </span>
+
+                </div>
 
               </div>
 
             </div>
 
           </div>
-
-        </div>
+        </a>
 
       </div>
       <div class="col-xxl-3 col-md-6">
+        <a href="<?= base_url('admin/deactived') ?>" class="stat-card-link">
 
-        <div class="card info-card customers-card">
+          <div class="card info-card customers-card">
 
-          <div class="card-body">
+            <div class="card-body">
 
-            <h5 class="card-title">
-              Disable Email <span>| Total</span>
-            </h5>
+              <h5 class="card-title">
+                Disable Email <span>| Total</span>
+              </h5>
 
-            <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center">
 
-              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
 
-                <i class="bi bi-envelope-x"></i>
+                  <i class="bi bi-envelope-x"></i>
 
-              </div>
+                </div>
 
-              <div class="ps-3">
+                <div class="ps-3">
 
-                <h6><?= $total_disable_email ?></h6>
+                  <h6><?= $total_disable_email ?></h6>
 
-                <span class="text-danger small pt-1 fw-bold">
-                  <?= $persen_disable_email ?>%
-                </span>
+                  <span class="text-danger small pt-1 fw-bold">
+                    <?= $persen_disable_email ?>%
+                  </span>
+
+                </div>
 
               </div>
 
             </div>
 
           </div>
-
-        </div>
+        </a>
 
       </div>
       <div class="col-xxl-3 col-md-6">
+        <a href="<?= base_url('admin/deactived') ?>" class="stat-card-link">
 
-        <div class="card info-card customers-card">
+          <div class="card info-card customers-card">
 
-          <div class="card-body">
+            <div class="card-body">
 
-            <h5 class="card-title">
-              Ban <span>| Total</span>
-            </h5>
+              <h5 class="card-title">
+                Ban <span>| Total</span>
+              </h5>
 
-            <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center">
 
-              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
 
-                <i class="bi bi-slash-circle"></i>
+                  <i class="bi bi-slash-circle"></i>
 
-              </div>
+                </div>
 
-              <div class="ps-3">
+                <div class="ps-3">
 
-                <h6><?= $total_ban ?></h6>
+                  <h6><?= $total_ban ?></h6>
 
-                <span class="text-danger small pt-1 fw-bold">
-                  <?= $persen_ban ?>%
-                </span>
+                  <span class="text-danger small pt-1 fw-bold">
+                    <?= $persen_ban ?>%
+                  </span>
+
+                </div>
 
               </div>
 
             </div>
 
           </div>
-
-        </div>
+        </a>
 
       </div>
       <!-- TOTAL BELUM TERJUAL -->
       <div class="col-xxl-3 col-md-6">
+        <a href="<?= base_url('admin') ?>" class="stat-card-link">
 
-        <div class="card info-card customers-card">
+          <div class="card info-card revenue-card">
 
-          <div class="card-body">
+            <div class="card-body">
 
-            <h5 class="card-title">
-              Belum Terjual <span>| Total</span>
-            </h5>
+              <h5 class="card-title">
+                Belum Terjual <span>| Total</span>
+              </h5>
 
-            <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center">
 
-              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
 
-                <i class="bi bi-bag-x"></i>
+                  <i class="bi bi-check-circle"></i>
 
-              </div>
+                </div>
 
-              <div class="ps-3">
+                <div class="ps-3">
 
-                <h6><?= $total_belum_terjual ?></h6>
+                  <h6><?= $total_belum_terjual ?></h6>
 
-                <span class="text-warning small pt-1 fw-bold">
-                  <?= $persen_belum_terjual ?>%
-                </span>
+                  <span class="text-success small pt-1 fw-bold">
+                    <?= $persen_belum_terjual ?>%
+                  </span>
+
+                </div>
 
               </div>
 
             </div>
 
           </div>
-
-        </div>
+        </a>
 
       </div>
       <div class="col-12">
