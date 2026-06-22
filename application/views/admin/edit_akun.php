@@ -7,6 +7,7 @@
 </style>
 
 <main id="main" class="main">
+  <?php $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($akun->status ?? '')))); ?>
   <div class="pagetitle">
     <h1>Edit Akun</h1>
   </div>
@@ -31,13 +32,13 @@
             <div class="col-md-6 mb-3">
               <label>Status</label>
               <select name="status" class="form-select">
-                <option value="aktif" <?= ($akun->status ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
-                <option value="verif" <?= ($akun->status ?? '') === 'verif' ? 'selected' : '' ?>>Verif</option>
-                <option value="deactived" <?= ($akun->status ?? '') === 'deactived' ? 'selected' : '' ?>>Deactived</option>
-                <option value="ban" <?= ($akun->status ?? '') === 'ban' ? 'selected' : '' ?>>Ban</option>
-                <option value="disable_x" <?= ($akun->status ?? '') === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
-                <option value="disable_email" <?= ($akun->status ?? '') === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
-                <option value="terjual" <?= ($akun->status ?? '') === 'terjual' ? 'selected' : '' ?>>Terjual</option>
+                <option value="aktif" <?= $status_akun === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                <option value="verif" <?= $status_akun === 'verif' ? 'selected' : '' ?>>Verif</option>
+                <option value="deactived" <?= $status_akun === 'deactived' ? 'selected' : '' ?>>Deactived</option>
+                <option value="ban" <?= $status_akun === 'ban' ? 'selected' : '' ?>>Ban</option>
+                <option value="disable_x" <?= $status_akun === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
+                <option value="disable_email" <?= $status_akun === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
+                <option value="terjual" <?= $status_akun === 'terjual' ? 'selected' : '' ?>>Terjual</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">

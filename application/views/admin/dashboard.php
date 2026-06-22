@@ -482,17 +482,25 @@
 
       <?php
       $deactived = 0;
+      $disable_x = 0;
+      $disable_email = 0;
+      $ban = 0;
       $verif = 0;
       $aktif = 0;
       $belum_terjual = 0;
-      $inactive_statuses = ['deactived', 'ban', 'disable_x', 'disable_email'];
 
       if (!empty($akun)) {
         foreach ($akun as $a) {
           $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
 
-          if (in_array($status_akun, $inactive_statuses, true)) {
+          if ($status_akun == 'deactived') {
             $deactived++;
+          } elseif ($status_akun == 'disable_x') {
+            $disable_x++;
+          } elseif ($status_akun == 'disable_email') {
+            $disable_email++;
+          } elseif ($status_akun == 'ban') {
+            $ban++;
           } elseif ($status_akun == 'verif') {
             $verif++;
           } elseif ($status_akun == 'aktif') {
@@ -511,6 +519,9 @@
       $persen_verif = $total_akun > 0 ? round(($verif / $total_akun) * 100) : 0;
       $persen_aktif = $total_akun > 0 ? round(($aktif / $total_akun) * 100) : 0;
       $persen_deactived = $total_akun > 0 ? round(($deactived / $total_akun) * 100) : 0;
+      $persen_disable_x = $total_akun > 0 ? round(($disable_x / $total_akun) * 100) : 0;
+      $persen_disable_email = $total_akun > 0 ? round(($disable_email / $total_akun) * 100) : 0;
+      $persen_ban = $total_akun > 0 ? round(($ban / $total_akun) * 100) : 0;
       $persen_belum_terjual = $total_akun > 0 ? round(($belum_terjual / $total_akun) * 100) : 0;
       $expired_total = count($expired_accounts ?? []) + count($almost_expired ?? []);
       $persen_expired = $total_akun > 0 ? round(($expired_total / $total_akun) * 100) : 0;
@@ -615,6 +626,117 @@
 
                     <span class="text-danger small pt-1 fw-bold">
                       <?= $persen_deactived ?>%
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+            </a>
+
+          </div>
+
+          <!-- DISABLE X -->
+          <div class="col-xxl-4 col-md-6">
+            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
+
+            <div class="card info-card customers-card">
+
+              <div class="card-body">
+
+                <h5 class="card-title">
+                  Disable X <span>| Total</span>
+                </h5>
+
+                <div class="d-flex align-items-center">
+
+                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="bi bi-x-octagon"></i>
+                  </div>
+
+                  <div class="ps-3">
+
+                    <h6><?= $disable_x ?></h6>
+
+                    <span class="text-danger small pt-1 fw-bold">
+                      <?= $persen_disable_x ?>%
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+            </a>
+
+          </div>
+
+          <!-- DISABLE EMAIL -->
+          <div class="col-xxl-4 col-md-6">
+            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
+
+            <div class="card info-card customers-card">
+
+              <div class="card-body">
+
+                <h5 class="card-title">
+                  Disable Email <span>| Total</span>
+                </h5>
+
+                <div class="d-flex align-items-center">
+
+                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="bi bi-envelope-x"></i>
+                  </div>
+
+                  <div class="ps-3">
+
+                    <h6><?= $disable_email ?></h6>
+
+                    <span class="text-danger small pt-1 fw-bold">
+                      <?= $persen_disable_email ?>%
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+            </a>
+
+          </div>
+
+          <!-- BAN -->
+          <div class="col-xxl-4 col-md-6">
+            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
+
+            <div class="card info-card customers-card">
+
+              <div class="card-body">
+
+                <h5 class="card-title">
+                  Ban <span>| Total</span>
+                </h5>
+
+                <div class="d-flex align-items-center">
+
+                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="bi bi-slash-circle"></i>
+                  </div>
+
+                  <div class="ps-3">
+
+                    <h6><?= $ban ?></h6>
+
+                    <span class="text-danger small pt-1 fw-bold">
+                      <?= $persen_ban ?>%
                     </span>
 
                   </div>
@@ -1215,6 +1337,13 @@ $limit = ($a->kategori == 'private') ? 1 : 5;
 </style>
 
 <script>
+  function normalizeStatusValue(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+  }
+
   // SEARCH
 const searchAkun = document.getElementById('searchAkun');
 
@@ -1262,7 +1391,7 @@ if (searchAkun) {
           document.getElementById('edit_id').value = d.id_akun;
           document.getElementById('edit_nama_akun').value = d.nama_akun;
           document.getElementById('edit_kategori').value = d.kategori;
-          document.getElementById('edit_status').value = d.status;
+          document.getElementById('edit_status').value = normalizeStatusValue(d.status) || 'aktif';
           document.getElementById('edit_username').value = d.username;
           document.getElementById('edit_password').value = d.password;
           document.getElementById('edit_website').value = d.website;

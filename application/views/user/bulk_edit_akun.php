@@ -18,6 +18,7 @@
       <div class="card-body p-4">
         <form action="<?= base_url('user/bulk_edit_akun') ?>" method="POST">
           <?php foreach ($akun as $a): ?>
+            <?php $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? '')))); ?>
             <div class="bulk-row">
               <div class="bulk-row-title"><?= htmlspecialchars($a->nama_akun ?? 'Akun', ENT_QUOTES, 'UTF-8') ?> #<?= $a->id_akun ?></div>
               <div class="row">
@@ -36,13 +37,13 @@
                 <div class="col-md-6 mb-3">
                   <label>Status</label>
                   <select name="akun[<?= $a->id_akun ?>][status]" class="form-select">
-                    <option value="aktif" <?= ($a->status ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
-                    <option value="verif" <?= ($a->status ?? '') === 'verif' ? 'selected' : '' ?>>Verif</option>
-                    <option value="deactived" <?= ($a->status ?? '') === 'deactived' ? 'selected' : '' ?>>Deactived</option>
-                    <option value="ban" <?= ($a->status ?? '') === 'ban' ? 'selected' : '' ?>>Ban</option>
-                    <option value="disable_x" <?= ($a->status ?? '') === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
-                    <option value="disable_email" <?= ($a->status ?? '') === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
-                    <option value="terjual" <?= ($a->status ?? '') === 'terjual' ? 'selected' : '' ?>>Terjual</option>
+                    <option value="aktif" <?= $status_akun === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="verif" <?= $status_akun === 'verif' ? 'selected' : '' ?>>Verif</option>
+                    <option value="deactived" <?= $status_akun === 'deactived' ? 'selected' : '' ?>>Deactived</option>
+                    <option value="ban" <?= $status_akun === 'ban' ? 'selected' : '' ?>>Ban</option>
+                    <option value="disable_x" <?= $status_akun === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
+                    <option value="disable_email" <?= $status_akun === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
+                    <option value="terjual" <?= $status_akun === 'terjual' ? 'selected' : '' ?>>Terjual</option>
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">

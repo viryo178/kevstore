@@ -519,8 +519,10 @@
       $total_verif = 0;
       $total_aktif = 0;
       $total_deactived = 0;
+      $total_disable_x = 0;
+      $total_disable_email = 0;
+      $total_ban = 0;
       $total_belum_terjual = 0;
-      $inactive_statuses = ['deactived', 'ban', 'disable_x', 'disable_email'];
 
       foreach ($akun as $a) {
         $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
@@ -533,8 +535,17 @@
           $total_aktif++;
         }
 
-        if (in_array($status_akun, $inactive_statuses, true)) {
+        if ($status_akun == 'deactived') {
           $total_deactived++;
+        }
+        if ($status_akun == 'disable_x') {
+          $total_disable_x++;
+        }
+        if ($status_akun == 'disable_email') {
+          $total_disable_email++;
+        }
+        if ($status_akun == 'ban') {
+          $total_ban++;
         }
         if ($a->kategori == 'belum_terjual') {
           $total_belum_terjual++;
@@ -544,6 +555,9 @@
       $persen_verif = $total_akun > 0 ? round(($total_verif / $total_akun) * 100) : 0;
       $persen_aktif = $total_akun > 0 ? round(($total_aktif / $total_akun) * 100) : 0;
       $persen_deactived = $total_akun > 0 ? round(($total_deactived / $total_akun) * 100) : 0;
+      $persen_disable_x = $total_akun > 0 ? round(($total_disable_x / $total_akun) * 100) : 0;
+      $persen_disable_email = $total_akun > 0 ? round(($total_disable_email / $total_akun) * 100) : 0;
+      $persen_ban = $total_akun > 0 ? round(($total_ban / $total_akun) * 100) : 0;
       $persen_belum_terjual = $total_akun > 0 ? round(($total_belum_terjual / $total_akun) * 100) : 0;
       ?>
 
@@ -694,6 +708,112 @@
         </div>
 
       </div><!-- TOTAL BELUM TERJUAL -->
+      <div class="col-xxl-3 col-md-6">
+
+        <div class="card info-card customers-card">
+
+          <div class="card-body">
+
+            <h5 class="card-title">
+              Disable X <span>| Total</span>
+            </h5>
+
+            <div class="d-flex align-items-center">
+
+              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+
+                <i class="bi bi-x-octagon"></i>
+
+              </div>
+
+              <div class="ps-3">
+
+                <h6><?= $total_disable_x ?></h6>
+
+                <span class="text-danger small pt-1 fw-bold">
+                  <?= $persen_disable_x ?>%
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+      <div class="col-xxl-3 col-md-6">
+
+        <div class="card info-card customers-card">
+
+          <div class="card-body">
+
+            <h5 class="card-title">
+              Disable Email <span>| Total</span>
+            </h5>
+
+            <div class="d-flex align-items-center">
+
+              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+
+                <i class="bi bi-envelope-x"></i>
+
+              </div>
+
+              <div class="ps-3">
+
+                <h6><?= $total_disable_email ?></h6>
+
+                <span class="text-danger small pt-1 fw-bold">
+                  <?= $persen_disable_email ?>%
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+      <div class="col-xxl-3 col-md-6">
+
+        <div class="card info-card customers-card">
+
+          <div class="card-body">
+
+            <h5 class="card-title">
+              Ban <span>| Total</span>
+            </h5>
+
+            <div class="d-flex align-items-center">
+
+              <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+
+                <i class="bi bi-slash-circle"></i>
+
+              </div>
+
+              <div class="ps-3">
+
+                <h6><?= $total_ban ?></h6>
+
+                <span class="text-danger small pt-1 fw-bold">
+                  <?= $persen_ban ?>%
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+      <!-- TOTAL BELUM TERJUAL -->
       <div class="col-xxl-3 col-md-6">
 
         <div class="card info-card customers-card">
@@ -1154,8 +1274,15 @@
       .replace(/'/g, '&#039;');
   }
 
+  function normalizeStatusValue(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+  }
+
   function selectedOption(value, expected) {
-    return value === expected ? 'selected' : '';
+    return normalizeStatusValue(value) === expected ? 'selected' : '';
   }
 
   function getVisibleBulkChecks() {
