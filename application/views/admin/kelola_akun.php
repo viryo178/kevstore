@@ -547,6 +547,8 @@
       return $status;
     }
   }
+
+  $is_password_exp_page = (($page_title ?? '') === 'Ganti Password Exp');
   ?>
   <!-- kelola-akun-table-fix-v3-manual-controls -->
 
@@ -1128,13 +1130,24 @@
 
                         </a>
 
-                        <a
-                          href="<?= base_url('admin/edit_akun/' . $a->id_akun) ?>"
-                          class="btn-edit">
+                        <?php if ($is_password_exp_page): ?>
+                          <button
+                            type="button"
+                            class="btn-edit"
+                            data-edit-akun="<?= $a->id_akun ?>">
 
-                          <i class="bi bi-pencil-square"></i>
+                            <i class="bi bi-pencil-square"></i>
 
-                        </a>
+                          </button>
+                        <?php else: ?>
+                          <a
+                            href="<?= base_url('admin/edit_akun/' . $a->id_akun) ?>"
+                            class="btn-edit">
+
+                            <i class="bi bi-pencil-square"></i>
+
+                          </a>
+                        <?php endif; ?>
 
                         <a href="<?= base_url('admin/hapus_akun/' . $a->id_akun) ?>"
                           class="btn-hapus"
@@ -1170,12 +1183,72 @@
 
   </section>
 
-</main><script type="application/json" id="bulkAkunData">
+</main>
+
+<?php if ($is_password_exp_page): ?>
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form id="formEditAkun" class="form-edit-akun" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title">Update Akun</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="nama_akun">
+            <input type="hidden" name="kategori">
+            <input type="hidden" name="status">
+            <input type="hidden" name="website">
+            <input type="hidden" name="max_user">
+            <input type="hidden" name="expired_password" value="">
+
+            <label class="form-label mb-1">Username</label>
+            <input class="form-control mb-2" name="username">
+
+            <label class="form-label mb-1">Password</label>
+            <input class="form-control mb-2" name="password">
+
+            <label class="form-label mb-1">Note</label>
+            <textarea class="form-control mb-2" name="note" rows="3" placeholder="Catatan"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
+<div class="modal fade" id="bulkEditModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <form id="formBulkEditAkun" action="<?= base_url('admin/bulk_edit_akun') ?>" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Bulk Edit Akun</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="bulkEditContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="bulkAkunData">
   <?= json_encode($akun, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 </script>
 
 <script>
   const kelolaTableState = { page: 1 };
+  const isPasswordExpPage = <?= $is_password_exp_page ? 'true' : 'false' ?>;
+  const editAkunActionBase = '<?= base_url('admin/edit_akun/') ?>';
 
   function getKelolaTableRows() {
     return Array.from(document.querySelectorAll('#tableAkun tbody tr'));
@@ -1341,6 +1414,36 @@
     return normalizeStatusValue(value) === expected ? 'selected' : '';
   }
 
+  function fieldValue(value) {
+    return value === null || value === undefined ? '' : value;
+  }
+
+  function fillEditAkunModal(id) {
+    const account = akunBulkData.find(function(item) {
+      return String(item.id_akun) === String(id);
+    });
+    const modalEl = document.getElementById('editModal');
+    const form = document.getElementById('formEditAkun');
+
+    if (!account || !modalEl || !form) {
+      showCrudMessage('Data akun tidak ditemukan');
+      return;
+    }
+
+    form.action = editAkunActionBase + encodeURIComponent(account.id_akun);
+    form.elements.nama_akun.value = fieldValue(account.nama_akun);
+    form.elements.kategori.value = fieldValue(account.kategori);
+    form.elements.status.value = normalizeStatusValue(account.status) || 'aktif';
+    form.elements.website.value = fieldValue(account.website);
+    form.elements.max_user.value = fieldValue(account.max_user);
+    form.elements.expired_password.value = '';
+    form.elements.username.value = fieldValue(account.username);
+    form.elements.password.value = fieldValue(account.password);
+    form.elements.note.value = fieldValue(account.note);
+
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
+
   function getVisibleBulkChecks() {
     return Array.from(document.querySelectorAll('.bulk-akun-check')).filter(function(check) {
       const row = check.closest('tr');
@@ -1379,6 +1482,34 @@
 
   function buildBulkEditRow(account) {
     const id = account.id_akun;
+
+    if (isPasswordExpPage) {
+      return `
+        <div class="bulk-edit-row">
+          <div class="bulk-edit-row-title">${escapeHtml(account.nama_akun || 'Akun')} #${escapeHtml(id)}</div>
+          <input type="hidden" name="akun[${id}][nama_akun]" value="${escapeHtml(account.nama_akun)}">
+          <input type="hidden" name="akun[${id}][kategori]" value="${escapeHtml(account.kategori)}">
+          <input type="hidden" name="akun[${id}][status]" value="${escapeHtml(account.status || 'aktif')}">
+          <input type="hidden" name="akun[${id}][website]" value="${escapeHtml(account.website)}">
+          <input type="hidden" name="akun[${id}][max_user]" value="${escapeHtml(account.max_user)}">
+          <input type="hidden" name="akun[${id}][expired_password]" value="">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>Username</label>
+              <input type="text" name="akun[${id}][username]" class="form-control" value="${escapeHtml(account.username)}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Password</label>
+              <input type="text" name="akun[${id}][password]" class="form-control" value="${escapeHtml(account.password)}">
+            </div>
+            <div class="col-md-12 mb-3">
+              <label>Note</label>
+              <textarea name="akun[${id}][note]" rows="3" class="form-control">${escapeHtml(account.note)}</textarea>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="bulk-edit-row">
@@ -1476,13 +1607,6 @@
       });
       updateBulkSelectionUi();
     }
-  });
-  document.addEventListener('click', function(e) {
-    const deleteButton = e.target.closest('[data-delete-akun]');
-
-    if (!deleteButton) return;
-
-    e.preventDefault();
   });
 
   function parseJsonResponse(response) {
@@ -1587,11 +1711,16 @@
     const form = e.target;
 
     if (
+      form.matches('#bulkEditSelectForm') ||
       form.matches('#formTambahAkun') ||
       form.matches('#formBulkEditAkun') ||
       form.matches('.form-edit-akun')
     ) {
       e.preventDefault();
+      if (form.matches('#bulkEditSelectForm')) {
+        openBulkEditModal();
+        return;
+      }
       submitAjaxForm(form);
     }
   });
