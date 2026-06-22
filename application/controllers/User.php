@@ -59,6 +59,26 @@ class User extends CI_Controller
         return 'aktif';
     }
 
+    private function resolve_status_from_note($status, $note)
+    {
+        $note = strtolower((string) $note);
+        $note = str_replace(['-', '_'], ' ', $note);
+
+        if (preg_match('/\bdisable\s*x\b/', $note)) {
+            return 'disable_x';
+        }
+
+        if (preg_match('/\bdisable\s*email\b/', $note)) {
+            return 'disable_email';
+        }
+
+        if (preg_match('/\bban(ned)?\b/', $note)) {
+            return 'ban';
+        }
+
+        return $status;
+    }
+
     private function is_ajax_request()
     {
         return $this->input->is_ajax_request()
@@ -307,9 +327,13 @@ private function get_notification_data()
     public function deactived()
     {
         $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+        $note_filter = "LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%disable x%' OR LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%disable email%' OR LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%ban%'";
 
         $data['akun'] = $this->db
-            ->where($status_filter, null, false)
+            ->group_start()
+                ->where($status_filter, null, false)
+                ->or_where($note_filter, null, false)
+            ->group_end()
             ->order_by('id_akun', 'DESC')
             ->get('akun')
             ->result();
@@ -332,13 +356,17 @@ private function get_notification_data()
             $kategori = $this->input->post('kategori');
             $max_user = $this->input->post('max_user');
             $username = trim((string) $this->input->post('username'));
+            $note = $this->input->post('note');
 
             if ($this->username_exists($username)) {
                 $this->respond_akun_error('Username sudah ada, gunakan username lain.');
                 return;
             }
 
-            $status = $this->resolve_akun_status($kategori, $max_user, $this->input->post('status'));
+            $status = $this->resolve_status_from_note(
+                $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
+                $note
+            );
 
             $data = [
                 'nama_akun'        => $this->input->post('nama_akun'),
@@ -347,7 +375,7 @@ private function get_notification_data()
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
-                'note'             => $this->input->post('note'),
+                'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),
                 'created_by'       => $this->session->userdata('nama_user'),
@@ -450,7 +478,7 @@ private function get_notification_data()
             $data = [
                 'nama_akun'        => 'Grok',
                 'kategori'         => 'belum_terjual',
-                'status'           => 'aktif',
+                'status'           => $this->resolve_status_from_note('aktif', $row_note),
                 'username'         => $row_username,
                 'password'         => $row_password,
                 'website'          => '',
@@ -570,7 +598,11 @@ private function get_notification_data()
             $kategori = $row['kategori'] ?? '';
             $max_user = $row['max_user'] ?? 0;
             $row_username = trim((string) ($row['username'] ?? ''));
-            $status = $this->resolve_akun_status($kategori, $max_user, $row['status'] ?? '');
+            $row_note = $row['note'] ?? '';
+            $status = $this->resolve_status_from_note(
+                $this->resolve_akun_status($kategori, $max_user, $row['status'] ?? ''),
+                $row_note
+            );
 
             $username_key = strtolower($row_username);
 
@@ -593,7 +625,7 @@ private function get_notification_data()
                 'username'         => $row_username,
                 'password'         => $row['password'] ?? '',
                 'website'          => $row['website'] ?? '',
-                'note'             => $row['note'] ?? '',
+                'note'             => $row_note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($row['expired_password'] ?? ''),
                 'last_edited_by'   => $changed_by,
@@ -1094,7 +1126,11 @@ private function get_notification_data()
 
         $kategori = $this->input->post('kategori');
         $max_user = $this->input->post('max_user');
-        $status = $this->resolve_akun_status($kategori, $max_user, $this->input->post('status'));
+        $note = $this->input->post('note');
+        $status = $this->resolve_status_from_note(
+            $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
+            $note
+        );
 
         $data = [
             'nama_akun'        => $this->input->post('nama_akun'),
@@ -1103,7 +1139,7 @@ private function get_notification_data()
             'username'         => $this->input->post('username'),
             'password'         => $this->input->post('password'),
             'website'          => $this->input->post('website'),
-            'note'             => $this->input->post('note'),
+            'note'             => $note,
             'max_user'         => $max_user,
             'expired_password' => $this->normalize_date($this->input->post('expired_password')),
             'last_edited_by'   => $this->session->userdata('nama_user'),
@@ -1166,7 +1202,11 @@ private function get_notification_data()
 
             $kategori = $this->input->post('kategori');
             $max_user = $this->input->post('max_user');
-            $status = $this->resolve_akun_status($kategori, $max_user, $this->input->post('status'));
+            $note = $this->input->post('note');
+            $status = $this->resolve_status_from_note(
+                $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
+                $note
+            );
 
             // data update
             $update = [
@@ -1177,7 +1217,7 @@ private function get_notification_data()
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
-                'note'             => $this->input->post('note'),
+                'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),
                 'last_edited_by'   => $this->session->userdata('nama_user'),

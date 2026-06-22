@@ -481,26 +481,40 @@
     <div class="row">
 
       <?php
+      if (!function_exists('kevstore_effective_akun_status')) {
+        function kevstore_effective_akun_status($status, $note = '')
+        {
+          $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
+          $note = strtolower(str_replace(['-', '_'], ' ', (string) $note));
+
+          if (preg_match('/\bdisable\s*x\b/', $note)) {
+            return 'disable_x';
+          }
+
+          if (preg_match('/\bdisable\s*email\b/', $note)) {
+            return 'disable_email';
+          }
+
+          if (preg_match('/\bban(ned)?\b/', $note)) {
+            return 'ban';
+          }
+
+          return $status;
+        }
+      }
+
       $deactived = 0;
-      $disable_x = 0;
-      $disable_email = 0;
-      $ban = 0;
       $verif = 0;
       $aktif = 0;
       $belum_terjual = 0;
+      $inactive_statuses = ['deactived', 'disable_x', 'disable_email', 'ban'];
 
       if (!empty($akun)) {
         foreach ($akun as $a) {
-          $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
+          $status_akun = kevstore_effective_akun_status($a->status ?? '', $a->note ?? '');
 
-          if ($status_akun == 'deactived') {
+          if (in_array($status_akun, $inactive_statuses, true)) {
             $deactived++;
-          } elseif ($status_akun == 'disable_x') {
-            $disable_x++;
-          } elseif ($status_akun == 'disable_email') {
-            $disable_email++;
-          } elseif ($status_akun == 'ban') {
-            $ban++;
           } elseif ($status_akun == 'verif') {
             $verif++;
           } elseif ($status_akun == 'aktif') {
@@ -519,9 +533,6 @@
       $persen_verif = $total_akun > 0 ? round(($verif / $total_akun) * 100) : 0;
       $persen_aktif = $total_akun > 0 ? round(($aktif / $total_akun) * 100) : 0;
       $persen_deactived = $total_akun > 0 ? round(($deactived / $total_akun) * 100) : 0;
-      $persen_disable_x = $total_akun > 0 ? round(($disable_x / $total_akun) * 100) : 0;
-      $persen_disable_email = $total_akun > 0 ? round(($disable_email / $total_akun) * 100) : 0;
-      $persen_ban = $total_akun > 0 ? round(($ban / $total_akun) * 100) : 0;
       $persen_belum_terjual = $total_akun > 0 ? round(($belum_terjual / $total_akun) * 100) : 0;
       $expired_total = count($expired_accounts ?? []) + count($almost_expired ?? []);
       $persen_expired = $total_akun > 0 ? round(($expired_total / $total_akun) * 100) : 0;
@@ -626,117 +637,6 @@
 
                     <span class="text-danger small pt-1 fw-bold">
                       <?= $persen_deactived ?>%
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-            </a>
-
-          </div>
-
-          <!-- DISABLE X -->
-          <div class="col-xxl-4 col-md-6">
-            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
-
-            <div class="card info-card customers-card">
-
-              <div class="card-body">
-
-                <h5 class="card-title">
-                  Disable X <span>| Total</span>
-                </h5>
-
-                <div class="d-flex align-items-center">
-
-                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-x-octagon"></i>
-                  </div>
-
-                  <div class="ps-3">
-
-                    <h6><?= $disable_x ?></h6>
-
-                    <span class="text-danger small pt-1 fw-bold">
-                      <?= $persen_disable_x ?>%
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-            </a>
-
-          </div>
-
-          <!-- DISABLE EMAIL -->
-          <div class="col-xxl-4 col-md-6">
-            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
-
-            <div class="card info-card customers-card">
-
-              <div class="card-body">
-
-                <h5 class="card-title">
-                  Disable Email <span>| Total</span>
-                </h5>
-
-                <div class="d-flex align-items-center">
-
-                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-envelope-x"></i>
-                  </div>
-
-                  <div class="ps-3">
-
-                    <h6><?= $disable_email ?></h6>
-
-                    <span class="text-danger small pt-1 fw-bold">
-                      <?= $persen_disable_email ?>%
-                    </span>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-            </a>
-
-          </div>
-
-          <!-- BAN -->
-          <div class="col-xxl-4 col-md-6">
-            <a href="<?= base_url('admin/deactived') ?>" class="text-decoration-none">
-
-            <div class="card info-card customers-card">
-
-              <div class="card-body">
-
-                <h5 class="card-title">
-                  Ban <span>| Total</span>
-                </h5>
-
-                <div class="d-flex align-items-center">
-
-                  <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-slash-circle"></i>
-                  </div>
-
-                  <div class="ps-3">
-
-                    <h6><?= $ban ?></h6>
-
-                    <span class="text-danger small pt-1 fw-bold">
-                      <?= $persen_ban ?>%
                     </span>
 
                   </div>

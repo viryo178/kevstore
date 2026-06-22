@@ -504,6 +504,29 @@
 
 
 <main id="main" class="main">
+  <?php
+  if (!function_exists('kevstore_effective_akun_status')) {
+    function kevstore_effective_akun_status($status, $note = '')
+    {
+      $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
+      $note = strtolower(str_replace(['-', '_'], ' ', (string) $note));
+
+      if (preg_match('/\bdisable\s*x\b/', $note)) {
+        return 'disable_x';
+      }
+
+      if (preg_match('/\bdisable\s*email\b/', $note)) {
+        return 'disable_email';
+      }
+
+      if (preg_match('/\bban(ned)?\b/', $note)) {
+        return 'ban';
+      }
+
+      return $status;
+    }
+  }
+  ?>
   <!-- kelola-akun-table-fix-v3-manual-controls -->
 
   <div class="pagetitle">
@@ -525,7 +548,7 @@
       $total_belum_terjual = 0;
 
       foreach ($akun as $a) {
-        $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
+        $status_akun = kevstore_effective_akun_status($a->status ?? '', $a->note ?? '');
 
         if ($status_akun == 'verif') {
           $total_verif++;
@@ -1009,7 +1032,7 @@
                       </td>
 
                       <td>
-                        <?php $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? '')))); ?>
+                        <?php $status_akun = kevstore_effective_akun_status($a->status ?? '', $a->note ?? ''); ?>
 
                         <?php if ($status_akun == 'aktif'): ?>
 
