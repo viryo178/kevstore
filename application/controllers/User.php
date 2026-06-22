@@ -350,6 +350,30 @@ private function get_notification_data()
         $this->load->view('templates/footer');
     }
 
+    public function ganti_password_exp()
+    {
+        $today = date('Y-m-d');
+        $expired_date = "CASE WHEN expired_password REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN expired_password ELSE NULL END";
+
+        $data['akun'] = $this->db
+            ->where($expired_date . ' IS NOT NULL', null, false)
+            ->where($expired_date . ' <= ' . $this->db->escape($today), null, false)
+            ->order_by($expired_date, 'ASC', false)
+            ->get('akun')
+            ->result();
+
+        $data['page_title'] = 'Ganti Password Exp';
+        $data['table_title'] = 'Data Akun Harus Ganti Password';
+
+        $data = array_merge($data, $this->get_notification_data());
+
+        $this->load->view('templates/header');
+        $this->load->view('templates/topbar', $data);
+        $this->load->view('templates/sidebar');
+        $this->load->view('user/kelola_akun', $data);
+        $this->load->view('templates/footer');
+    }
+
     public function tambah_akun()
     {
         if ($this->input->post()) {
@@ -1317,7 +1341,7 @@ private function get_notification_data()
     public function aktivitas()
     {
         $data['activity'] = $this->db
-            ->select('activity_log.*, akun.nama_akun')
+            ->select('activity_log.*, akun.nama_akun, akun.username AS akun_username')
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->order_by('activity_log.created_at', 'DESC')

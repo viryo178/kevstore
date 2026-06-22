@@ -15,17 +15,22 @@
   <?php
   $class  = $this->router->fetch_class();
   $method = $this->router->fetch_method();
+  $role_prefix = ($class === 'user') ? 'user' : 'admin';
 
   // DASHBOARD ACTIVE
-  $is_dashboard = ($class == 'admin' && $method == 'index');
+  $is_dashboard = (($class == 'admin' || $class == 'user') && $method == 'index');
 
   // KELOLA AKUN ACTIVE
   $is_kelola = in_array($method, [
     'kelola_akun',
+    'deactived',
     'tambah_akun',
     'edit_akun',
     'detail_akun'
   ]);
+
+  // GANTI PASSWORD EXP ACTIVE
+  $is_ganti_password_exp = ($method == 'ganti_password_exp');
 
   // PROFILE ACTIVE
   $is_profile = ($method == 'profile');
@@ -46,7 +51,7 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_dashboard ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin') ?>">
+        href="<?= base_url($role_prefix) ?>">
 
         <i class="bi bi-grid"></i>
         <span>Dashboard</span>
@@ -59,10 +64,23 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_kelola ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin/kelola_akun') ?>">
+        href="<?= base_url($role_prefix . '/kelola_akun') ?>">
 
         <i class="bi bi-menu-button-wide"></i>
         <span>Kelola Akun</span>
+
+      </a>
+
+    </li>
+
+    <!-- Ganti Password Exp -->
+    <li class="nav-item">
+
+      <a class="nav-link <?= $is_ganti_password_exp ? '' : 'collapsed' ?>"
+        href="<?= base_url($role_prefix . '/ganti_password_exp') ?>">
+
+        <i class="bi bi-key"></i>
+        <span>Ganti Password Exp</span>
 
       </a>
 
@@ -72,7 +90,7 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_profile ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin/profile') ?>">
+        href="<?= base_url($role_prefix . '/profile') ?>">
 
         <i class="bi bi-person"></i>
         <span>Profile</span>
@@ -85,7 +103,7 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_notif ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin/notifications') ?>">
+        href="<?= base_url($role_prefix . '/notifications') ?>">
 
         <i class="bi bi-bell"></i>
         <span>Notifikasi</span>
@@ -98,7 +116,7 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_aktivitas ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin/aktivitas') ?>">
+        href="<?= base_url($role_prefix . '/aktivitas') ?>">
 
         <i class="bi bi-clock"></i>
         <span>Aktivitas</span>
@@ -111,7 +129,7 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_kepegawaian ? '' : 'collapsed' ?>"
-        href="<?= base_url('admin/kepegawaian') ?>">
+        href="<?= base_url($role_prefix . '/kepegawaian') ?>">
 
         <i class="bi bi-people"></i>
         <span>Kepegawaian</span>
