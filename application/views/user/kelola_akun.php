@@ -1397,12 +1397,12 @@
 
     form.action = editAkunActionBase + encodeURIComponent(account.id_akun);
     form.elements.nama_akun.value = fieldValue(account.nama_akun);
-    form.elements.kategori.value = account.kategori || 'private';
-    form.elements.status.value = normalizeStatusValue(account.status) || 'aktif';
+    form.elements.kategori.value = isPasswordExpPage ? 'belum_terjual' : (account.kategori || 'private');
+    form.elements.status.value = isPasswordExpPage ? 'aktif' : (normalizeStatusValue(account.status) || 'aktif');
     form.elements.username.value = fieldValue(account.username);
     form.elements.password.value = fieldValue(account.password);
     form.elements.website.value = fieldValue(account.website);
-    form.elements.max_user.value = fieldValue(account.max_user);
+    form.elements.max_user.value = isPasswordExpPage ? '0' : fieldValue(account.max_user);
     form.elements.expired_password.value = isPasswordExpPage ? '' : fieldValue(account.expired_password);
     form.elements.note.value = fieldValue(account.note);
 
@@ -1487,10 +1487,10 @@
         <div class="bulk-edit-row">
           <div class="bulk-edit-row-title">${escapeHtml(account.nama_akun || 'Akun')} #${escapeHtml(id)}</div>
           <input type="hidden" name="akun[${id}][nama_akun]" value="${escapeHtml(account.nama_akun)}">
-          <input type="hidden" name="akun[${id}][kategori]" value="${escapeHtml(account.kategori)}">
-          <input type="hidden" name="akun[${id}][status]" value="${escapeHtml(account.status || 'aktif')}">
+          <input type="hidden" name="akun[${id}][kategori]" value="belum_terjual">
+          <input type="hidden" name="akun[${id}][status]" value="aktif">
           <input type="hidden" name="akun[${id}][website]" value="${escapeHtml(account.website)}">
-          <input type="hidden" name="akun[${id}][max_user]" value="${escapeHtml(account.max_user)}">
+          <input type="hidden" name="akun[${id}][max_user]" value="0">
           <input type="hidden" name="akun[${id}][expired_password]" value="">
           <div class="row">
             <div class="col-md-6 mb-3">
