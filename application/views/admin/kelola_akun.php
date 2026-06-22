@@ -507,7 +507,7 @@
   <!-- kelola-akun-table-fix-v3-manual-controls -->
 
   <div class="pagetitle">
-    <h1>Kelola Akun</h1>
+    <h1><?= htmlspecialchars($page_title ?? 'Kelola Akun', ENT_QUOTES, 'UTF-8') ?></h1>
   </div>
 
   <section class="section dashboard">
@@ -523,16 +523,17 @@
       $inactive_statuses = ['deactived', 'ban', 'disable_x', 'disable_email'];
 
       foreach ($akun as $a) {
+        $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
 
-        if ($a->status == 'verif') {
+        if ($status_akun == 'verif') {
           $total_verif++;
         }
 
-        if ($a->status == 'aktif') {
+        if ($status_akun == 'aktif') {
           $total_aktif++;
         }
 
-        if (in_array($a->status, $inactive_statuses, true)) {
+        if (in_array($status_akun, $inactive_statuses, true)) {
           $total_deactived++;
         }
         if ($a->kategori == 'belum_terjual') {
@@ -665,7 +666,7 @@
           <div class="card-body">
 
             <h5 class="card-title">
-              Nonaktif <span>| Total</span>
+              Deactived <span>| Total</span>
             </h5>
 
             <div class="d-flex align-items-center">
@@ -737,7 +738,7 @@
             <div class="kelola-akun-card-head">
 
               <h5 class="card-title mb-0">
-                Data Seluruh Akun
+                <?= htmlspecialchars($table_title ?? 'Data Seluruh Akun', ENT_QUOTES, 'UTF-8') ?>
               </h5>
 
               <div class="kelola-akun-card-actions">
@@ -889,45 +890,46 @@
                       </td>
 
                       <td>
+                        <?php $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? '')))); ?>
 
-                        <?php if ($a->status == 'aktif'): ?>
+                        <?php if ($status_akun == 'aktif'): ?>
 
                           <span class="bg-border-success">
                             Aktif
                           </span>
 
-                        <?php elseif ($a->status == 'verif'): ?>
+                        <?php elseif ($status_akun == 'verif'): ?>
 
                           <span class="bg-border-danger">
                             Verif
                           </span>
 
-                        <?php elseif ($a->status == 'deactived'): ?>
+                        <?php elseif ($status_akun == 'deactived'): ?>
 
                           <span class="bg-border-danger">
                             Deactived
                           </span>
 
-                        <?php elseif ($a->status == 'terjual'): ?>
+                        <?php elseif ($status_akun == 'terjual'): ?>
 
                           <span class="bg-border-success"
                             style="background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid #6366f1;">
                             Terjual
                           </span>
 
-                        <?php elseif ($a->status == 'ban'): ?>
+                        <?php elseif ($status_akun == 'ban'): ?>
 
                           <span class="bg-border-danger">
                             Ban
                           </span>
 
-                        <?php elseif ($a->status == 'disable_x'): ?>
+                        <?php elseif ($status_akun == 'disable_x'): ?>
 
                           <span class="bg-border-danger">
                             Disable X
                           </span>
 
-                        <?php elseif ($a->status == 'disable_email'): ?>
+                        <?php elseif ($status_akun == 'disable_email'): ?>
 
                           <span class="bg-border-danger">
                             Disable Email

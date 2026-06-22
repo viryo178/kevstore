@@ -543,6 +543,7 @@ class Api extends CI_Controller
     private function resolve_akun_status($kategori, $max_user, $status)
     {
         $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+        $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
 
         if (in_array($status, $manual_statuses, true)) {
             return $status;

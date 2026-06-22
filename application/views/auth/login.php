@@ -29,6 +29,7 @@
       --ks-primary-strong: #4f46e5;
       --ks-teal: #39c2b7;
       --ks-danger: #ffb4b4;
+      --ks-card: rgba(6, 18, 38, 0.78);
     }
 
     * {
@@ -41,7 +42,7 @@
       color: var(--ks-text);
       font-family: "Poppins", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        linear-gradient(140deg, rgba(3, 16, 33, 0.96) 0%, rgba(6, 21, 45, 0.98) 48%, rgba(8, 42, 58, 0.96) 100%),
+        linear-gradient(135deg, rgba(3, 16, 33, 0.98) 0%, rgba(6, 21, 45, 0.98) 54%, rgba(7, 37, 54, 0.96) 100%),
         #06152d;
     }
 
@@ -54,7 +55,8 @@
         linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
       background-size: 52px 52px;
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.74), transparent 82%);
+      opacity: 0.45;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.62), transparent 78%);
     }
 
     .login-shell {
@@ -68,13 +70,11 @@
       width: 100%;
       min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(380px, 480px);
+      grid-template-columns: minmax(0, 1fr) minmax(400px, 520px);
       overflow: hidden;
       border: 0;
       border-radius: 0;
-      background: rgba(4, 15, 31, 0.72);
-      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
-      backdrop-filter: blur(18px);
+      background: rgba(4, 15, 31, 0.7);
     }
 
     .brand-side {
@@ -86,7 +86,7 @@
       justify-content: space-between;
       overflow: hidden;
       background:
-        linear-gradient(150deg, rgba(16, 37, 68, 0.9), rgba(7, 26, 53, 0.92)),
+        linear-gradient(150deg, rgba(16, 37, 68, 0.72), rgba(7, 26, 53, 0.9)),
         url("<?= base_url() ?>assets/img/card.jpg") center/cover;
       isolation: isolate;
     }
@@ -97,8 +97,8 @@
       inset: 0;
       z-index: -1;
       background:
-        linear-gradient(90deg, rgba(3, 16, 33, 0.88), rgba(3, 16, 33, 0.46)),
-        linear-gradient(180deg, rgba(79, 70, 229, 0.18), rgba(57, 194, 183, 0.12));
+        linear-gradient(90deg, rgba(3, 16, 33, 0.92), rgba(3, 16, 33, 0.54)),
+        linear-gradient(180deg, rgba(79, 70, 229, 0.13), rgba(57, 194, 183, 0.1));
     }
 
     .brand-top {
@@ -123,6 +123,7 @@
       place-items: center;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
     }
 
     .brand-logo img {
@@ -168,7 +169,7 @@
 
     .brand-copy {
       max-width: 560px;
-      padding: 80px 0 22px;
+      padding: 72px 0 18px;
     }
 
     .eyebrow {
@@ -182,30 +183,30 @@
 
     .brand-copy h1 {
       margin: 0;
-      font-size: clamp(40px, 5vw, 62px);
-      line-height: 1.02;
+      font-size: clamp(38px, 4.6vw, 58px);
+      line-height: 1.05;
       font-weight: 850;
       letter-spacing: 0;
     }
 
     .brand-copy p {
       max-width: 500px;
-      margin: 22px 0 0;
+      margin: 20px 0 0;
       color: #d7e4fb;
-      font-size: 16px;
-      line-height: 1.72;
+      font-size: 15px;
+      line-height: 1.68;
     }
 
     .brand-metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
-      margin-top: 34px;
+      margin-top: 30px;
     }
 
     .metric {
-      min-height: 82px;
-      padding: 15px;
+      min-height: 78px;
+      padding: 14px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
       background: rgba(3, 16, 33, 0.44);
@@ -229,15 +230,23 @@
     .form-side {
       display: flex;
       align-items: center;
+      justify-content: center;
       padding: clamp(30px, 4vw, 58px);
       background:
-        linear-gradient(180deg, rgba(16, 37, 68, 0.82), rgba(7, 26, 53, 0.92)),
+        linear-gradient(180deg, rgba(10, 26, 52, 0.92), rgba(5, 18, 38, 0.96)),
         var(--ks-surface);
       border-left: 1px solid var(--ks-border-soft);
     }
 
     .login-panel {
       width: 100%;
+      max-width: 390px;
+      padding: 30px;
+      border: 1px solid rgba(157, 184, 255, 0.16);
+      border-radius: 8px;
+      background: var(--ks-card);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(14px);
     }
 
     .mobile-brand {
@@ -248,7 +257,7 @@
     }
 
     .login-heading {
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
     .login-heading .caption {
@@ -266,7 +275,7 @@
     .login-heading h2 {
       margin: 0;
       color: var(--ks-text);
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 820;
       letter-spacing: 0;
     }
@@ -300,10 +309,10 @@
 
     .input-group {
       min-height: 52px;
-      border: 1px solid rgba(157, 184, 255, 0.2);
+      border: 1px solid rgba(157, 184, 255, 0.18);
       border-radius: 8px;
       overflow: hidden;
-      background: rgba(3, 16, 33, 0.46);
+      background: rgba(3, 16, 33, 0.58);
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
@@ -350,7 +359,7 @@
 
     .btn-login {
       min-height: 52px;
-      margin-top: 6px;
+      margin-top: 4px;
       border: 0;
       border-radius: 8px;
       color: #fff;
@@ -384,7 +393,7 @@
 
     .security-note {
       margin-top: 26px;
-      padding-top: 18px;
+      padding-top: 16px;
       border-top: 1px solid var(--ks-border-soft);
       display: flex;
       align-items: center;
@@ -412,10 +421,18 @@
 
       .form-side {
         border-left: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(10, 26, 52, 0.9), rgba(5, 18, 38, 0.96)),
+          url("<?= base_url() ?>assets/img/card.jpg") center/cover;
       }
 
       .mobile-brand {
         display: flex;
+      }
+
+      .login-panel {
+        max-width: 460px;
       }
     }
 
@@ -431,11 +448,16 @@
       }
 
       .form-side {
-        padding: 28px 22px;
+        padding: 22px 16px;
+        align-items: center;
+      }
+
+      .login-panel {
+        padding: 24px 20px;
       }
 
       .login-heading h2 {
-        font-size: 26px;
+        font-size: 25px;
       }
     }
   </style>

@@ -40,6 +40,7 @@ class Admin extends CI_Controller
     private function resolve_akun_status($kategori, $max_user, $status)
     {
         $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+        $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
 
         if (in_array($status, $manual_statuses, true)) {
             return $status;
@@ -303,6 +304,28 @@ $data['akun_belum_penuh'] = $this->db
             ->order_by('id_akun', 'DESC')
             ->get()
             ->result();
+
+        $data = array_merge($data, $this->get_notification_data());
+
+        $this->load->view('templates/header');
+        $this->load->view('templates/topbar', $data);
+        $this->load->view('templates/sidebar');
+        $this->load->view('admin/kelola_akun', $data);
+        $this->load->view('templates/footer');
+    }
+
+    public function deactived()
+    {
+        $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+
+        $data['akun'] = $this->db
+            ->where($status_filter, null, false)
+            ->order_by('id_akun', 'DESC')
+            ->get('akun')
+            ->result();
+
+        $data['page_title'] = 'Deactived';
+        $data['table_title'] = 'Data Akun Deactived';
 
         $data = array_merge($data, $this->get_notification_data());
 

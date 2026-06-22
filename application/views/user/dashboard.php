@@ -488,12 +488,13 @@
 
       if (!empty($akun)) {
         foreach ($akun as $a) {
+          $status_akun = strtolower(str_replace([' ', '-'], '_', trim((string) ($a->status ?? ''))));
 
-          if (in_array($a->status, $inactive_statuses, true)) {
+          if (in_array($status_akun, $inactive_statuses, true)) {
             $deactived++;
-          } elseif ($a->status == 'verif') {
+          } elseif ($status_akun == 'verif') {
             $verif++;
-          } elseif ($a->status == 'aktif') {
+          } elseif ($status_akun == 'aktif') {
             $aktif++;
           }
         }
@@ -586,13 +587,14 @@
 
           <!-- DEACTIVED -->
           <div class="col-xxl-4 col-xl-12">
+            <a href="<?= base_url('user/deactived') ?>" class="text-decoration-none">
 
             <div class="card info-card customers-card">
 
               <div class="card-body">
 
                 <h5 class="card-title">
-                  Nonaktif <span>| Total</span>
+                  Deactived <span>| Total</span>
                 </h5>
 
                 <div class="d-flex align-items-center">
@@ -616,6 +618,7 @@
               </div>
 
             </div>
+            </a>
 
           </div>
 
