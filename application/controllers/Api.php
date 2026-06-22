@@ -542,8 +542,10 @@ class Api extends CI_Controller
 
     private function resolve_akun_status($kategori, $max_user, $status)
     {
-        if ($status === 'deactived') {
-            return 'deactived';
+        $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+
+        if (in_array($status, $manual_statuses, true)) {
+            return $status;
         }
 
         $max_user = max(0, (int) $max_user);
@@ -576,7 +578,7 @@ class Api extends CI_Controller
             ->result();
 
         $status_problem = $this->db
-            ->where_in('status', ['deactived', 'verif', 'umur'])
+            ->where_in('status', ['deactived', 'verif', 'ban', 'disable_x', 'disable_email'])
             ->order_by('id_akun', 'DESC')
             ->get('akun')
             ->result();

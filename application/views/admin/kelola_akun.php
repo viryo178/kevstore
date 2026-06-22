@@ -520,6 +520,7 @@
       $total_aktif = 0;
       $total_deactived = 0;
       $total_belum_terjual = 0;
+      $inactive_statuses = ['deactived', 'ban', 'disable_x', 'disable_email'];
 
       foreach ($akun as $a) {
 
@@ -531,7 +532,7 @@
           $total_aktif++;
         }
 
-        if ($a->status == 'deactived') {
+        if (in_array($a->status, $inactive_statuses, true)) {
           $total_deactived++;
         }
         if ($a->kategori == 'belum_terjual') {
@@ -664,7 +665,7 @@
           <div class="card-body">
 
             <h5 class="card-title">
-              Deactived <span>| Total</span>
+              Nonaktif <span>| Total</span>
             </h5>
 
             <div class="d-flex align-items-center">
@@ -914,10 +915,22 @@
                             Terjual
                           </span>
 
-                        <?php elseif ($a->status == 'umur'): ?>
+                        <?php elseif ($a->status == 'ban'): ?>
 
                           <span class="bg-border-danger">
-                            Umur
+                            Ban
+                          </span>
+
+                        <?php elseif ($a->status == 'disable_x'): ?>
+
+                          <span class="bg-border-danger">
+                            Disable X
+                          </span>
+
+                        <?php elseif ($a->status == 'disable_email'): ?>
+
+                          <span class="bg-border-danger">
+                            Disable Email
                           </span>
 
                         <?php endif; ?>
@@ -1204,7 +1217,9 @@
               <option value="aktif" ${selectedOption(account.status, 'aktif')}>Aktif</option>
               <option value="verif" ${selectedOption(account.status, 'verif')}>Verif</option>
               <option value="deactived" ${selectedOption(account.status, 'deactived')}>Deactived</option>
-              <option value="umur" ${selectedOption(account.status, 'umur')}>Umur</option>
+              <option value="ban" ${selectedOption(account.status, 'ban')}>Ban</option>
+              <option value="disable_x" ${selectedOption(account.status, 'disable_x')}>Disable X</option>
+              <option value="disable_email" ${selectedOption(account.status, 'disable_email')}>Disable Email</option>
               <option value="terjual" ${selectedOption(account.status, 'terjual')}>Terjual</option>
             </select>
           </div>

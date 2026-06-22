@@ -47,7 +47,7 @@
     ->result();
 
   $status_problem = $this->db
-    ->where_in('status', ['deactived', 'verif', 'umur'])
+    ->where_in('status', ['deactived', 'verif', 'ban', 'disable_x', 'disable_email'])
     ->get('akun')
     ->result();
 
@@ -160,7 +160,7 @@
 
                   <div>
                     <h4>Status Bermasalah</h4>
-                    <p><?= $sp->nama_akun ?> (<?= $sp->status ?>)</p>
+                    <p><?= $sp->nama_akun ?> (<?= ucwords(str_replace('_', ' ', (string) $sp->status)) ?>)</p>
                   </div>
 
                 </a>
@@ -249,7 +249,9 @@
                   <option value="aktif">Aktif</option>
                   <option value="verif">Verif</option>
                   <option value="deactived">Deactived</option>
-                  <option value="umur">Umur</option>
+                  <option value="ban">Ban</option>
+                  <option value="disable_x">Disable X</option>
+                  <option value="disable_email">Disable Email</option>
                   <option value="terjual">Terjual</option>
                 </select>
               </div>

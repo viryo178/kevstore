@@ -482,17 +482,15 @@
 
       <?php
       $deactived = 0;
-      $umur = 0;
       $verif = 0;
       $aktif = 0;
+      $inactive_statuses = ['deactived', 'ban', 'disable_x', 'disable_email'];
 
       if (!empty($akun)) {
         foreach ($akun as $a) {
 
-          if ($a->status == 'deactived') {
+          if (in_array($a->status, $inactive_statuses, true)) {
             $deactived++;
-          } elseif ($a->status == 'umur') {
-            $umur++;
           } elseif ($a->status == 'verif') {
             $verif++;
           } elseif ($a->status == 'aktif') {
@@ -594,7 +592,7 @@
               <div class="card-body">
 
                 <h5 class="card-title">
-                  Deactived <span>| Total</span>
+                  Nonaktif <span>| Total</span>
                 </h5>
 
                 <div class="d-flex align-items-center">
@@ -1001,7 +999,9 @@ $limit = ($a->kategori == 'private') ? 1 : 5;
                 <option value="aktif">Aktif</option>
                 <option value="verif">Verif</option>
                 <option value="deactived">Deactived</option>
-                <option value="umur">Umur</option>
+                <option value="ban">Ban</option>
+                <option value="disable_x">Disable X</option>
+                <option value="disable_email">Disable Email</option>
                 <option value="terjual">Terjual</option>
 
               </select>

@@ -222,7 +222,7 @@ foreach (array_merge($expired_accounts, $almost_expired, $status_problem) as $ac
 
                                 <div class="notif-info">
                                     <span><?= $a->username ?></span>
-                                    <span><?= ucfirst($a->status) ?></span>
+                                    <span><?= ucwords(str_replace('_', ' ', (string) $a->status)) ?></span>
                                 </div>
                             </div>
 

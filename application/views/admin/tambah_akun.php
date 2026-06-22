@@ -34,7 +34,9 @@
                 <option value="aktif">Aktif</option>
                 <option value="verif">Verif</option>
                 <option value="deactived">Deactived</option>
-                <option value="umur">Umur</option>
+                <option value="ban">Ban</option>
+                <option value="disable_x">Disable X</option>
+                <option value="disable_email">Disable Email</option>
                 <option value="terjual">Terjual</option>
               </select>
             </div>

@@ -39,8 +39,10 @@ class Admin extends CI_Controller
 
     private function resolve_akun_status($kategori, $max_user, $status)
     {
-        if ($status === 'deactived') {
-            return 'deactived';
+        $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+
+        if (in_array($status, $manual_statuses, true)) {
+            return $status;
         }
 
         $max_user = max(0, (int) $max_user);
@@ -123,7 +125,9 @@ private function get_notification_data()
         ->where_in('status', [
             'deactived',
             'verif',
-            'umur'
+            'ban',
+            'disable_x',
+            'disable_email'
         ])
 
         ->order_by('id_akun', 'DESC')
@@ -181,13 +185,14 @@ private function get_notification_data()
 
     foreach ($status_problem as $account) {
         $notification_date = !empty($account->last_edited_at) ? $account->last_edited_at : date('Y-m-d H:i:s');
+        $status_label = ucwords(str_replace('_', ' ', (string) $account->status));
 
         $recent_notifications[] = [
             'date' => $notification_date,
             'sort_time' => strtotime($notification_date),
             'title' => 'Status Bermasalah',
-            'description' => 'Akun ' . $account->nama_akun . ' status ' . ucfirst($account->status),
-            'info' => [$account->username, ucfirst($account->status)],
+            'description' => 'Akun ' . $account->nama_akun . ' status ' . $status_label,
+            'info' => [$account->username, $status_label],
             'icon' => 'bi-shield-exclamation',
             'color' => 'text-danger',
             'severity' => 'notif-danger',

@@ -61,16 +61,17 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 42px 18px;
+      padding: 0;
     }
 
     .login-layout {
-      width: min(1060px, 100%);
+      width: 100%;
+      min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(0, 1.02fr) minmax(330px, 0.78fr);
+      grid-template-columns: minmax(0, 1fr) minmax(380px, 480px);
       overflow: hidden;
-      border: 1px solid var(--ks-border);
-      border-radius: 8px;
+      border: 0;
+      border-radius: 0;
       background: rgba(4, 15, 31, 0.72);
       box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
       backdrop-filter: blur(18px);
@@ -78,8 +79,8 @@
 
     .brand-side {
       position: relative;
-      min-height: 650px;
-      padding: 38px;
+      min-height: 100vh;
+      padding: clamp(30px, 4vw, 58px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -228,7 +229,7 @@
     .form-side {
       display: flex;
       align-items: center;
-      padding: 38px;
+      padding: clamp(30px, 4vw, 58px);
       background:
         linear-gradient(180deg, rgba(16, 37, 68, 0.82), rgba(7, 26, 53, 0.92)),
         var(--ks-surface);
@@ -401,7 +402,8 @@
     @media (max-width: 991.98px) {
       .login-layout {
         grid-template-columns: 1fr;
-        max-width: 560px;
+        max-width: none;
+        min-height: 100vh;
       }
 
       .brand-side {
@@ -419,12 +421,13 @@
 
     @media (max-width: 575.98px) {
       .login-shell {
-        padding: 16px;
+        padding: 0;
         align-items: stretch;
       }
 
       .login-layout {
-        min-height: calc(100vh - 32px);
+        max-width: none;
+        min-height: 100vh;
       }
 
       .form-side {

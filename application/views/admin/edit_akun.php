@@ -34,7 +34,9 @@
                 <option value="aktif" <?= ($akun->status ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
                 <option value="verif" <?= ($akun->status ?? '') === 'verif' ? 'selected' : '' ?>>Verif</option>
                 <option value="deactived" <?= ($akun->status ?? '') === 'deactived' ? 'selected' : '' ?>>Deactived</option>
-                <option value="umur" <?= ($akun->status ?? '') === 'umur' ? 'selected' : '' ?>>Umur</option>
+                <option value="ban" <?= ($akun->status ?? '') === 'ban' ? 'selected' : '' ?>>Ban</option>
+                <option value="disable_x" <?= ($akun->status ?? '') === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
+                <option value="disable_email" <?= ($akun->status ?? '') === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
                 <option value="terjual" <?= ($akun->status ?? '') === 'terjual' ? 'selected' : '' ?>>Terjual</option>
               </select>
             </div>
