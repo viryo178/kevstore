@@ -73,19 +73,6 @@
 
     </li>
 
-    <!-- Ganti Password Exp -->
-    <li class="nav-item">
-
-      <a class="nav-link <?= $is_ganti_password_exp ? '' : 'collapsed' ?>"
-        href="<?= base_url($role_prefix . '/ganti_password_exp') ?>">
-
-        <i class="bi bi-key"></i>
-        <span>Ganti Password Exp</span>
-
-      </a>
-
-    </li>
-
     <!-- Profile -->
     <li class="nav-item">
 
@@ -133,6 +120,19 @@
 
         <i class="bi bi-people"></i>
         <span>Kepegawaian</span>
+
+      </a>
+
+    </li>
+
+        <!-- Ganti Password Exp -->
+    <li class="nav-item">
+
+      <a class="nav-link <?= $is_ganti_password_exp ? '' : 'collapsed' ?>"
+        href="<?= base_url($role_prefix . '/ganti_password_exp') ?>">
+
+        <i class="bi bi-key"></i>
+        <span>Ganti Password Exp</span>
 
       </a>
 
