@@ -69,7 +69,6 @@ class Api extends CI_Controller
 
     public function akun($id = null)
     {
-        $this->require_login();
         $method = $this->input->method(TRUE);
 
         if ($id === null && $method === 'GET') {
@@ -79,6 +78,8 @@ class Api extends CI_Controller
         if ($id !== null && $method === 'GET') {
             return $this->show_akun((int) $id);
         }
+
+        $this->require_login();
 
         if ($id === null && $method === 'POST') {
             return $this->create_akun();
@@ -90,6 +91,92 @@ class Api extends CI_Controller
 
         if ($id !== null && $method === 'DELETE') {
             return $this->delete_akun((int) $id);
+        }
+
+        return $this->json_error('Method tidak didukung', 405);
+    }
+
+    public function dashboard()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+
+        $akun = $this->db->get('akun')->result();
+        $available = $this->available_akun_query()
+            ->order_by('id_akun', 'ASC')
+            ->get()
+            ->result();
+
+        $stats = [
+            'total_akun' => count($akun),
+            'verif' => 0,
+            'aktif' => 0,
+            'deactived' => 0,
+            'disable_x' => 0,
+            'disable_email' => 0,
+            'ban' => 0,
+            'terjual' => 0,
+            'belum_terjual' => 0,
+            'available' => count($available),
+        ];
+
+        foreach ($akun as $row) {
+            $status = $this->normalize_status($row->status ?? '');
+
+            if (array_key_exists($status, $stats)) {
+                $stats[$status]++;
+            }
+
+            if (($row->kategori ?? '') === 'belum_terjual') {
+                $stats['belum_terjual']++;
+            }
+        }
+
+        return $this->json_success('Data dashboard', [
+            'stats' => $stats,
+            'available_accounts' => $available,
+            'notifications' => $this->notification_data(),
+        ]);
+    }
+
+    public function akun_deactived()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+
+        $rows = $this->db
+            ->where($this->status_problem_filter(), null, false)
+            ->order_by('id_akun', 'DESC')
+            ->get('akun')
+            ->result();
+
+        return $this->json_success('Data akun deactived', ['data' => $rows]);
+    }
+
+    public function akun_ganti_password_exp()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+
+        $rows = $this->expired_akun_query()
+            ->order_by($this->expired_date_expression(), 'ASC', false)
+            ->get('akun')
+            ->result();
+
+        return $this->json_success('Data akun harus ganti password', ['data' => $rows]);
+    }
+
+    public function bulk_akun()
+    {
+        $this->require_login();
+        $method = $this->input->method(TRUE);
+
+        if ($method === 'POST') {
+            return $this->bulk_create_akun();
+        }
+
+        if (in_array($method, ['PUT', 'PATCH'], true)) {
+            return $this->bulk_update_akun();
         }
 
         return $this->json_error('Method tidak didukung', 405);
@@ -385,6 +472,12 @@ class Api extends CI_Controller
 
         $kategori = (string) $payload['kategori'];
         $max_user = (int) ($payload['max_user'] ?? 0);
+        $username = trim((string) $payload['username']);
+
+        if ($this->username_exists($username)) {
+            return $this->json_error('Username sudah ada, gunakan username lain', 409);
+        }
+
         $status = $this->resolve_akun_status($kategori, $max_user, (string) ($payload['status'] ?? 'aktif'));
         $now = date('Y-m-d H:i:s');
 
@@ -392,7 +485,7 @@ class Api extends CI_Controller
             'nama_akun' => trim((string) $payload['nama_akun']),
             'kategori' => $kategori,
             'status' => $status,
-            'username' => trim((string) $payload['username']),
+            'username' => $username,
             'password' => (string) $payload['password'],
             'website' => (string) ($payload['website'] ?? ''),
             'note' => (string) ($payload['note'] ?? ''),
@@ -423,13 +516,19 @@ class Api extends CI_Controller
         $payload = $this->payload();
         $kategori = (string) ($payload['kategori'] ?? $akun->kategori);
         $max_user = (int) ($payload['max_user'] ?? $akun->max_user);
+        $username = array_key_exists('username', $payload) ? trim((string) $payload['username']) : $akun->username;
+
+        if ($this->username_exists($username, $id)) {
+            return $this->json_error('Username sudah ada, gunakan username lain', 409);
+        }
+
         $status = $this->resolve_akun_status($kategori, $max_user, (string) ($payload['status'] ?? $akun->status));
 
         $update = [
             'nama_akun' => array_key_exists('nama_akun', $payload) ? trim((string) $payload['nama_akun']) : $akun->nama_akun,
             'kategori' => $kategori,
             'status' => $status,
-            'username' => array_key_exists('username', $payload) ? trim((string) $payload['username']) : $akun->username,
+            'username' => $username,
             'password' => array_key_exists('password', $payload) ? (string) $payload['password'] : $akun->password,
             'website' => array_key_exists('website', $payload) ? (string) $payload['website'] : $akun->website,
             'note' => array_key_exists('note', $payload) ? (string) $payload['note'] : $akun->note,
@@ -447,6 +546,198 @@ class Api extends CI_Controller
         $updated = $this->db->get_where('akun', ['id_akun' => $id])->row();
 
         return $this->json_success('Akun berhasil diupdate', ['data' => $updated]);
+    }
+
+    private function bulk_create_akun()
+    {
+        $payload = $this->payload();
+        $accounts = $this->bulk_create_rows($payload);
+
+        if (empty($accounts)) {
+            return $this->json_error('Data akun bulk kosong', 422);
+        }
+
+        $created = [];
+        $skipped = [];
+        $seen = [];
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($accounts as $index => $row) {
+            $username = trim((string) ($row['username'] ?? ''));
+            $password = trim((string) ($row['password'] ?? ''));
+
+            if ($username === '' || $password === '') {
+                $skipped[] = ['index' => $index, 'reason' => 'Username atau password kosong'];
+                continue;
+            }
+
+            $username_key = strtolower($username);
+
+            if (isset($seen[$username_key]) || $this->username_exists($username)) {
+                $skipped[] = ['index' => $index, 'username' => $username, 'reason' => 'Username sudah ada'];
+                continue;
+            }
+
+            $seen[$username_key] = true;
+
+            $data = [
+                'nama_akun' => trim((string) ($row['nama_akun'] ?? 'Grok')),
+                'kategori' => (string) ($row['kategori'] ?? 'belum_terjual'),
+                'status' => $this->resolve_akun_status(
+                    (string) ($row['kategori'] ?? 'belum_terjual'),
+                    (int) ($row['max_user'] ?? 0),
+                    (string) ($row['status'] ?? 'aktif')
+                ),
+                'username' => $username,
+                'password' => $password,
+                'website' => (string) ($row['website'] ?? ''),
+                'note' => (string) ($row['note'] ?? ''),
+                'max_user' => (int) ($row['max_user'] ?? 0),
+                'expired_password' => $this->normalize_date($row['expired_password'] ?? ''),
+                'created_by' => $this->actor_name(),
+                'last_edited_by' => $this->actor_name(),
+                'last_edited_at' => $now,
+            ];
+
+            $this->db->insert('akun', $data);
+            $id = $this->db->insert_id();
+            $this->log_activity($id, 'Bulk tambah akun');
+            $created[] = $this->db->get_where('akun', ['id_akun' => $id])->row();
+        }
+
+        $response = [
+            'created_count' => count($created),
+            'skipped_count' => count($skipped),
+            'data' => $created,
+            'skipped' => $skipped,
+        ];
+
+        if (count($created) === 0) {
+            return $this->json_error('Tidak ada akun yang berhasil ditambahkan', 422, $response);
+        }
+
+        return $this->json_success('Bulk tambah akun selesai', $response, 201);
+    }
+
+    private function bulk_update_akun()
+    {
+        $payload = $this->payload();
+        $accounts = $payload['accounts'] ?? $payload['akun'] ?? [];
+
+        if (!is_array($accounts) || empty($accounts)) {
+            return $this->json_error('Data akun bulk kosong', 422);
+        }
+
+        $updated = [];
+        $skipped = [];
+        $seen = [];
+
+        foreach ($accounts as $key => $row) {
+            if (!is_array($row)) {
+                $skipped[] = ['index' => $key, 'reason' => 'Format akun tidak valid'];
+                continue;
+            }
+
+            $id = (int) ($row['id_akun'] ?? $row['id'] ?? $key);
+
+            if ($id <= 0) {
+                $skipped[] = ['index' => $key, 'reason' => 'ID akun kosong'];
+                continue;
+            }
+
+            $akun = $this->db->get_where('akun', ['id_akun' => $id])->row();
+
+            if (!$akun) {
+                $skipped[] = ['id_akun' => $id, 'reason' => 'Akun tidak ditemukan'];
+                continue;
+            }
+
+            $username = array_key_exists('username', $row) ? trim((string) $row['username']) : $akun->username;
+            $username_key = strtolower($username);
+
+            if ($username !== '' && (isset($seen[$username_key]) || $this->username_exists($username, $id))) {
+                $skipped[] = ['id_akun' => $id, 'username' => $username, 'reason' => 'Username sudah ada'];
+                continue;
+            }
+
+            if ($username !== '') {
+                $seen[$username_key] = true;
+            }
+
+            $kategori = (string) ($row['kategori'] ?? $akun->kategori);
+            $max_user = (int) ($row['max_user'] ?? $akun->max_user);
+            $status = $this->resolve_akun_status($kategori, $max_user, (string) ($row['status'] ?? $akun->status));
+
+            $update = [
+                'nama_akun' => array_key_exists('nama_akun', $row) ? trim((string) $row['nama_akun']) : $akun->nama_akun,
+                'kategori' => $kategori,
+                'status' => $status,
+                'username' => $username,
+                'password' => array_key_exists('password', $row) ? (string) $row['password'] : $akun->password,
+                'website' => array_key_exists('website', $row) ? (string) $row['website'] : $akun->website,
+                'note' => array_key_exists('note', $row) ? (string) $row['note'] : $akun->note,
+                'max_user' => $max_user,
+                'expired_password' => array_key_exists('expired_password', $row)
+                    ? $this->normalize_date($row['expired_password'])
+                    : $akun->expired_password,
+                'last_edited_by' => $this->actor_name(),
+                'last_edited_at' => date('Y-m-d H:i:s'),
+            ];
+
+            $this->db->where('id_akun', $id)->update('akun', $update);
+            $this->log_activity($id, 'bulk edit akun');
+            $updated[] = $this->db->get_where('akun', ['id_akun' => $id])->row();
+        }
+
+        $response = [
+            'updated_count' => count($updated),
+            'skipped_count' => count($skipped),
+            'data' => $updated,
+            'skipped' => $skipped,
+        ];
+
+        if (count($updated) === 0) {
+            return $this->json_error('Tidak ada akun yang berhasil diedit', 422, $response);
+        }
+
+        return $this->json_success('Bulk edit akun selesai', $response);
+    }
+
+    private function bulk_create_rows(array $payload)
+    {
+        if (isset($payload['accounts']) && is_array($payload['accounts'])) {
+            return $payload['accounts'];
+        }
+
+        $bulk = (string) ($payload['bulk_accounts'] ?? '');
+
+        if ($bulk === '') {
+            return [];
+        }
+
+        $rows = [];
+        $lines = preg_split('/\r\n|\r|\n/', $bulk);
+
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = explode('|', $line, 3);
+            $rows[] = [
+                'username' => trim($parts[0] ?? ''),
+                'password' => trim($parts[1] ?? ''),
+                'note' => trim($parts[2] ?? ''),
+                'nama_akun' => 'Grok',
+                'kategori' => 'belum_terjual',
+                'status' => 'aktif',
+                'max_user' => 0,
+            ];
+        }
+
+        return $rows;
     }
 
     private function delete_akun($id)
@@ -543,7 +834,7 @@ class Api extends CI_Controller
     private function resolve_akun_status($kategori, $max_user, $status)
     {
         $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
-        $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
+        $status = $this->normalize_status($status);
 
         if (in_array($status, $manual_statuses, true)) {
             return $status;
@@ -562,24 +853,81 @@ class Api extends CI_Controller
         return 'aktif';
     }
 
+    private function normalize_status($status)
+    {
+        return strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
+    }
+
+    private function username_exists($username, $exclude_id = null)
+    {
+        $username = trim((string) $username);
+
+        if ($username === '') {
+            return false;
+        }
+
+        $this->db->from('akun');
+        $this->db->where('username', $username);
+
+        if ($exclude_id !== null) {
+            $this->db->where('id_akun !=', (int) $exclude_id);
+        }
+
+        return $this->db->count_all_results() > 0;
+    }
+
+    private function status_problem_filter()
+    {
+        return "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+    }
+
+    private function expired_date_expression()
+    {
+        return "CASE WHEN expired_password REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN expired_password ELSE NULL END";
+    }
+
+    private function expired_akun_query()
+    {
+        $today = date('Y-m-d');
+        $expired_date = $this->expired_date_expression();
+
+        return $this->db
+            ->where($expired_date . ' IS NOT NULL', null, false)
+            ->where($expired_date . ' <= ' . $this->db->escape($today), null, false);
+    }
+
+    private function available_akun_query()
+    {
+        return $this->db
+            ->from('akun')
+            ->group_start()
+                ->group_start()
+                    ->where('kategori', 'sharing')
+                    ->where('max_user <', 5)
+                ->group_end()
+                ->or_group_start()
+                    ->where('kategori', 'private')
+                    ->where('max_user <', 1)
+                ->group_end()
+                ->or_group_start()
+                    ->where('kategori', 'belum_terjual')
+                ->group_end()
+            ->group_end()
+            ->where('status', 'aktif');
+    }
+
     private function notification_data()
     {
         $today = date('Y-m-d');
-        $expired_date = "CASE WHEN expired_password REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN expired_password ELSE NULL END";
+        $expired_date = $this->expired_date_expression();
 
-        $expiring_accounts = $this->db
-            ->where($expired_date . ' IS NOT NULL', null, false)
-            ->where(
-                $expired_date . ' <= ' . $this->db->escape($today),
-                null,
-                false
-            )
+        $expiring_accounts = $this->expired_akun_query()
             ->order_by($expired_date, 'ASC', false)
             ->get('akun')
             ->result();
 
         $status_problem = $this->db
-            ->where_in('status', ['deactived', 'verif', 'ban', 'disable_x', 'disable_email'])
+            ->where($this->status_problem_filter(), null, false)
             ->order_by('id_akun', 'DESC')
             ->get('akun')
             ->result();
@@ -636,25 +984,29 @@ class Api extends CI_Controller
     private function require_login()
     {
         if (!$this->session->userdata('id_user')) {
-            $this->json_error('Unauthorized. Silakan login terlebih dahulu.', 401);
-            exit;
+            $this->abort_json_error('Unauthorized. Silakan login terlebih dahulu.', 401);
         }
     }
 
     private function require_admin()
     {
         if ($this->session->userdata('tipe_user') !== 'admin') {
-            $this->json_error('Forbidden. Akses admin diperlukan.', 403);
-            exit;
+            $this->abort_json_error('Forbidden. Akses admin diperlukan.', 403);
         }
     }
 
     private function only_methods(array $methods)
     {
         if (!in_array($this->input->method(TRUE), $methods, true)) {
-            $this->json_error('Method tidak didukung', 405);
-            exit;
+            $this->abort_json_error('Method tidak didukung', 405);
         }
+    }
+
+    private function abort_json_error($message, $status_code = 400, array $extra = [])
+    {
+        $this->json_error($message, $status_code, $extra);
+        $this->output->_display();
+        exit;
     }
 
     private function json_success($message, array $extra = [], $status_code = 200)

@@ -25,6 +25,14 @@ GET /api/me
 POST /api/logout
 ```
 
+## Dashboard
+
+```http
+GET /api/dashboard
+```
+
+Mengembalikan ringkasan total akun, akun tersedia, dan data notifikasi.
+
 ## Akun
 
 ```http
@@ -35,6 +43,10 @@ PUT /api/akun/{id}
 PATCH /api/akun/{id}
 DELETE /api/akun/{id}
 POST /api/akun/{id}/tambah-max-user
+GET /api/akun/deactived
+GET /api/akun/ganti-password-exp
+POST /api/akun/bulk
+PATCH /api/akun/bulk
 ```
 
 Body tambah/update akun:
@@ -50,6 +62,56 @@ Body tambah/update akun:
   "note": "catatan",
   "max_user": 0,
   "expired_password": "2026-12-31"
+}
+```
+
+Body bulk tambah akun bisa pakai array:
+
+```json
+{
+  "accounts": [
+    {
+      "username": "user1@example.com",
+      "password": "secret1",
+      "note": "catatan",
+      "nama_akun": "Grok",
+      "kategori": "belum_terjual",
+      "status": "aktif",
+      "max_user": 0
+    },
+    {
+      "username": "user2@example.com",
+      "password": "secret2"
+    }
+  ]
+}
+```
+
+Atau format teks seperti fitur bulk web:
+
+```json
+{
+  "bulk_accounts": "user1@example.com|secret1|catatan\nuser2@example.com|secret2"
+}
+```
+
+Body bulk edit akun:
+
+```json
+{
+  "accounts": [
+    {
+      "id_akun": 1,
+      "status": "terjual",
+      "kategori": "private",
+      "max_user": 1
+    },
+    {
+      "id_akun": 2,
+      "username": "baru@example.com",
+      "password": "password-baru"
+    }
+  ]
 }
 ```
 
@@ -87,4 +149,3 @@ Body chat:
   "message": "Halo"
 }
 ```
-
