@@ -484,22 +484,7 @@
       if (!function_exists('kevstore_effective_akun_status')) {
         function kevstore_effective_akun_status($status, $note = '')
         {
-          $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
-          $note = strtolower(str_replace(['-', '_'], ' ', (string) $note));
-
-          if (preg_match('/\bdisable\s*x\b/', $note)) {
-            return 'disable_x';
-          }
-
-          if (preg_match('/\bdisable\s*email\b/', $note)) {
-            return 'disable_email';
-          }
-
-          if (preg_match('/\bban(ned)?\b/', $note)) {
-            return 'ban';
-          }
-
-          return $status;
+          return strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
         }
       }
 

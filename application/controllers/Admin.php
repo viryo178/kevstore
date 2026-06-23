@@ -59,8 +59,12 @@ class Admin extends CI_Controller
         return 'aktif';
     }
 
-    private function resolve_status_from_note($status, $note)
+    private function resolve_status_from_note($status, $note, $use_note_status = false)
     {
+        if (!$use_note_status) {
+            return $status;
+        }
+
         $note = strtolower((string) $note);
         $note = str_replace(['-', '_'], ' ', $note);
 
@@ -337,13 +341,9 @@ $data['akun_belum_penuh'] = $this->db
     public function deactived()
     {
         $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
-        $note_filter = "LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%disable x%' OR LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%disable email%' OR LOWER(REPLACE(REPLACE(note, '_', ' '), '-', ' ')) LIKE '%ban%'";
 
         $data['akun'] = $this->db
-            ->group_start()
-                ->where($status_filter, null, false)
-                ->or_where($note_filter, null, false)
-            ->group_end()
+            ->where($status_filter, null, false)
             ->order_by('id_akun', 'DESC')
             ->get('akun')
             ->result();
@@ -512,7 +512,7 @@ $data['akun_belum_penuh'] = $this->db
             $data = [
                 'nama_akun'        => 'Grok',
                 'kategori'         => 'belum_terjual',
-                'status'           => $this->resolve_status_from_note('aktif', $row_note),
+                'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
                 'username'         => $row_username,
                 'password'         => $row_password,
                 'website'          => '',
