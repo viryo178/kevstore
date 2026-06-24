@@ -53,7 +53,7 @@ class Admin extends CI_Controller
         }
 
         if ($kategori === 'sharing') {
-            return $max_user >= 5 ? 'terjual' : 'aktif';
+            return $max_user >= 4 ? 'terjual' : 'aktif';
         }
 
         return 'aktif';
@@ -272,7 +272,7 @@ $data['akun_belum_penuh'] = $this->db
         // sharing belum penuh
         ->group_start()
             ->where('kategori', 'sharing')
-            ->where('max_user <', 5)
+            ->where('max_user <', 4)
         ->group_end()
 
         // private belum penuh
@@ -824,7 +824,7 @@ $data['akun_belum_penuh'] = $this->db
         }
 
         // limit berdasarkan kategori
-        $max_limit = ($akun->kategori == 'private') ? 1 : 5;
+        $max_limit = ($akun->kategori == 'private') ? 1 : 4;
 
         // cek limit
         if ($akun->max_user >= $max_limit) {
@@ -890,7 +890,7 @@ $data['akun_belum_penuh'] = $this->db
             return;
         }
 
-        $limit = ($akun->kategori == 'private') ? 1 : 5;
+        $limit = ($akun->kategori == 'private') ? 1 : 4;
 
         if ($akun->max_user >= $limit) {
 

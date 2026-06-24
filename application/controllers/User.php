@@ -53,7 +53,7 @@ class User extends CI_Controller
         }
 
         if ($kategori === 'sharing') {
-            return $max_user >= 5 ? 'terjual' : 'aktif';
+            return $max_user >= 4 ? 'terjual' : 'aktif';
         }
 
         return 'aktif';
@@ -269,7 +269,7 @@ private function get_notification_data()
             ->group_start()
                 ->group_start()
                     ->where('kategori', 'sharing')
-                    ->where('max_user <', 5)
+                    ->where('max_user <', 4)
                 ->group_end()
                 ->or_group_start()
                     ->where('kategori', 'private')
@@ -814,7 +814,7 @@ private function get_notification_data()
         }
 
         // limit berdasarkan kategori
-        $max_limit = ($akun->kategori == 'private') ? 1 : 5;
+        $max_limit = ($akun->kategori == 'private') ? 1 : 4;
 
         // cek limit
         if ($akun->max_user >= $max_limit) {
@@ -880,7 +880,7 @@ private function get_notification_data()
             return;
         }
 
-        $limit = ($akun->kategori == 'private') ? 1 : 5;
+        $limit = ($akun->kategori == 'private') ? 1 : 4;
 
         if ($akun->max_user >= $limit) {
 

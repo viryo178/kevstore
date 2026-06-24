@@ -193,7 +193,7 @@ class Api extends CI_Controller
             return $this->json_error('Akun tidak ditemukan', 404);
         }
 
-        $limit = $akun->kategori === 'private' ? 1 : 5;
+        $limit = $akun->kategori === 'private' ? 1 : 4;
 
         if ((int) $akun->max_user >= $limit) {
             return $this->json_error('Max user sudah penuh', 422);
@@ -847,7 +847,7 @@ class Api extends CI_Controller
         }
 
         if ($kategori === 'sharing') {
-            return $max_user >= 5 ? 'terjual' : 'aktif';
+            return $max_user >= 4 ? 'terjual' : 'aktif';
         }
 
         return 'aktif';
@@ -903,7 +903,7 @@ class Api extends CI_Controller
             ->group_start()
                 ->group_start()
                     ->where('kategori', 'sharing')
-                    ->where('max_user <', 5)
+                    ->where('max_user <', 4)
                 ->group_end()
                 ->or_group_start()
                     ->where('kategori', 'private')

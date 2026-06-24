@@ -714,7 +714,7 @@
 
                 <h5 class="card-title">
                   Akun Tersedia
-                  <span>| Max User < 5</span>
+                  <span>| Max User < 4</span>
                 </h5>
 
                 <?php if (!empty($akun_belum_penuh)): ?>
@@ -771,7 +771,7 @@
 <td>
 
 <?php
-$limit = ($a->kategori == 'private') ? 1 : 5;
+$limit = ($a->kategori == 'private') ? 1 : 4;
 ?>
 
 <span class="<?= $a->max_user >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>">
@@ -1442,7 +1442,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK
   }
 
   function getAkunLimit(kategori) {
-    return kategori === 'private' ? 1 : 5;
+    return kategori === 'private' ? 1 : 4;
   }
 
   function isAkunAvailable(akun) {
@@ -1450,7 +1450,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK
 
     return akun.status === 'aktif' && (
       akun.kategori === 'belum_terjual' ||
-      (akun.kategori === 'sharing' && maxUser < 5) ||
+      (akun.kategori === 'sharing' && maxUser < 4) ||
       (akun.kategori === 'private' && maxUser < 1)
     );
   }
