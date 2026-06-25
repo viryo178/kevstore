@@ -40,27 +40,27 @@ $adminBadgeClass = function ($name) {
 
   .admin-badge-primary {
     color: #60a5fa !important;
-    border: 1px solid #3b82f6;
+    border: 1.5px solid #3b82f6 !important;
   }
 
   .admin-badge-success {
     color: #4ade80 !important;
-    border: 1px solid #22c55e;
+    border: 1.5px solid #22c55e !important;
   }
 
   .admin-badge-warning {
     color: #facc15 !important;
-    border: 1px solid #facc15;
+    border: 1.5px solid #facc15 !important;
   }
 
   .admin-badge-danger {
     color: #f87171 !important;
-    border: 1px solid #ef4444;
+    border: 1.5px solid #ef4444 !important;
   }
 
   .admin-badge-default {
     color: #cbd5e1 !important;
-    border: 1px solid #475569;
+    border: 1.5px solid #475569 !important;
   }
 </style>
 
