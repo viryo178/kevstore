@@ -1341,9 +1341,10 @@ private function get_notification_data()
     public function aktivitas()
     {
         $data['activity'] = $this->db
-            ->select('activity_log.*, akun.nama_akun, akun.username AS akun_username')
+            ->select('activity_log.*, akun.nama_akun, akun.username AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
+            ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
             ->order_by('activity_log.created_at', 'DESC')
             ->get()
             ->result();

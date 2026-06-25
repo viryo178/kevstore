@@ -42,7 +42,7 @@
                 <td><?= htmlspecialchars($a->nama_akun ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($a->akun_username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($a->action, ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= htmlspecialchars($a->changed_by, ENT_QUOTES, 'UTF-8') ?></td>
+                <td><?= htmlspecialchars($a->changed_by_name ?? $a->changed_by, ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($a->created_at, ENT_QUOTES, 'UTF-8') ?></td>
                 <td>
                   <a href="<?= base_url('user/hapus_activity/' . $a->id) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus log aktivitas ini?')">

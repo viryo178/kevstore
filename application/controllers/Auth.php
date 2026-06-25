@@ -48,7 +48,7 @@ class Auth extends CI_Controller
 		$this->session->set_userdata([
 			'id_user' => $user['id_user'],
 			'username' => $user['username'],
-			'nama_user' => $user['username'],
+			'nama_user' => $user['nama_user'] ?? $user['username'],
 			'tipe_user' => $user['tipe_user'],
 			'status' => $user['login'],
 			'last_login_at' => date('Y-m-d H:i:s'),
