@@ -29,38 +29,38 @@ $adminBadgeClass = function ($name) {
     align-items: center;
     justify-content: center;
     min-width: 84px;
-    padding: 5px 10px;
+    padding: 6px 10px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 700;
     line-height: 1.2;
     white-space: nowrap;
-    border: 0;
+    background: rgba(15, 23, 42, 0.35) !important;
   }
 
   .admin-badge-primary {
-    background: #2563eb !important;
-    color: #ffffff !important;
+    color: #60a5fa !important;
+    border: 1px solid #3b82f6;
   }
 
   .admin-badge-success {
-    background: #16a34a !important;
-    color: #ffffff !important;
+    color: #4ade80 !important;
+    border: 1px solid #22c55e;
   }
 
   .admin-badge-warning {
-    background: #facc15 !important;
-    color: #1f2937 !important;
+    color: #facc15 !important;
+    border: 1px solid #facc15;
   }
 
   .admin-badge-danger {
-    background: #dc2626 !important;
-    color: #ffffff !important;
+    color: #f87171 !important;
+    border: 1px solid #ef4444;
   }
 
   .admin-badge-default {
-    background: #334155 !important;
-    color: #ffffff !important;
+    color: #cbd5e1 !important;
+    border: 1px solid #475569;
   }
 </style>
 
