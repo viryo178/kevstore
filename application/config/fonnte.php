@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-$config['fonnte_token'] = 'J6WgtFwxavJ312gRdiVp';
+$config['fonnte_token'] = '';
 $config['fonnte_country_code'] = '62';
 
 // Isi nomor tambahan di sini. Bisa lebih dari satu nomor.
