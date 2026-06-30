@@ -372,6 +372,22 @@ class Api extends CI_Controller
             return $this->json_error('Pesan wajib diisi', 422);
         }
 
+        if ($this->is_delete_current_chat_command($content)) {
+            if ($conversation_id <= 0 || !$this->owned_conversation_exists($conversation_id)) {
+                return $this->json_success('Tidak ada riwayat chat yang dipilih', [
+                    'deleted_conversation' => false,
+                    'deleted_conversation_id' => null,
+                ]);
+            }
+
+            $this->hard_delete_chat_conversation($conversation_id);
+
+            return $this->json_success('Riwayat chat dihapus', [
+                'deleted_conversation' => true,
+                'deleted_conversation_id' => $conversation_id,
+            ]);
+        }
+
         if ($conversation_id <= 0 || !$this->owned_conversation_exists($conversation_id)) {
             $conversation_id = $this->create_chat_conversation($content);
         }
@@ -587,6 +603,31 @@ class Api extends CI_Controller
             ->count_all_results('chat_conversations') > 0;
     }
 
+    private function is_delete_current_chat_command($content)
+    {
+        $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
+
+        return in_array($normalized, [
+            'hapus riwayat chat ini',
+            'hapus chat ini',
+            'hapus percakapan ini',
+            'delete chat ini',
+            'delete this chat',
+        ], true);
+    }
+
+    private function hard_delete_chat_conversation($conversation_id)
+    {
+        $conversation_id = (int) $conversation_id;
+
+        $this->db->where('conversation_id', $conversation_id)->delete('chat_ai_messages');
+        $this->db->where('conversation_id', $conversation_id)->delete('chat_command_runs');
+        $this->db
+            ->where('id', $conversation_id)
+            ->where('user_id', (int) $this->session->userdata('id_user'))
+            ->delete('chat_conversations');
+    }
+
     private function create_chat_conversation($content)
     {
         $now = date('Y-m-d H:i:s');
@@ -707,6 +748,26 @@ class Api extends CI_Controller
             ];
         }
 
+        if ($this->is_feature_list_command($normalized)) {
+            return $this->chat_feature_list_response();
+        }
+
+        if ($this->is_date_question($normalized)) {
+            return $this->chat_date_response();
+        }
+
+        if ($this->is_deactived_count_question($normalized)) {
+            return $this->chat_deactived_count_response();
+        }
+
+        if ($this->is_available_account_question($normalized)) {
+            return $this->chat_stock_response();
+        }
+
+        if ($this->is_yesterday_created_accounts_question($normalized)) {
+            return $this->chat_yesterday_created_accounts_response();
+        }
+
         return [
             'content' => 'Fitur ini belum tersedia, bilang ke developernya buat bikin fitur ini ya!! :3',
             'summary' => 'Fitur belum tersedia',
@@ -752,6 +813,158 @@ class Api extends CI_Controller
             'tidak jadi',
             'nggak jadi',
         ], true);
+    }
+
+    private function is_feature_list_command($normalized)
+    {
+        return in_array($normalized, [
+            'fitur',
+            'fitur apa saja',
+            'ada fitur apa saja',
+            'apa saja fiturnya',
+            'list fitur',
+            'daftar fitur',
+            'help',
+            'bantuan',
+        ], true);
+    }
+
+    private function chat_feature_list_response()
+    {
+        return [
+            'content' => implode("\n", [
+                'Fitur chat yang tersedia:',
+                '1. halo',
+                '2. berapa stok hari ini',
+                '3. tambah',
+                '4. detail username atau note',
+                '5. use username',
+                '6. ubah status/password/username/note akun yang sudah di-use',
+                '7. salin no pesanan saja',
+                '8. hapus riwayat chat ini',
+                '9. sekarang tanggal berapa',
+                '10. berapa deactived',
+                '11. tunjukan data akun yang dibuat kemarin',
+            ]),
+            'summary' => 'Daftar fitur chat',
+            'command' => 'features',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [],
+        ];
+    }
+
+    private function is_date_question($normalized)
+    {
+        return strpos($normalized, 'tanggal') !== false
+            && (
+                strpos($normalized, 'berapa') !== false
+                || strpos($normalized, 'sekarang') !== false
+                || strpos($normalized, 'hari ini') !== false
+            );
+    }
+
+    private function chat_date_response()
+    {
+        return [
+            'content' => 'Sekarang tanggal ' . date('d-m-Y') . ' jam ' . date('H:i') . ' WIB.',
+            'summary' => 'Tanggal hari ini',
+            'command' => 'date',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['date' => date('Y-m-d'), 'time' => date('H:i:s')],
+        ];
+    }
+
+    private function is_deactived_count_question($normalized)
+    {
+        return strpos($normalized, 'deactived') !== false
+            || strpos($normalized, 'deactivated') !== false
+            || strpos($normalized, 'disable') !== false
+            || strpos($normalized, 'ban') !== false
+            || strpos($normalized, 'verif') !== false;
+    }
+
+    private function chat_deactived_count_response()
+    {
+        $count = $this->db
+            ->where($this->status_problem_filter(), null, false)
+            ->count_all_results('akun');
+
+        return [
+            'content' => 'Total akun deactived/bermasalah saat ini: ' . $count . ' akun.',
+            'summary' => 'Jumlah akun deactived',
+            'command' => 'deactived_count',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['count' => $count],
+        ];
+    }
+
+    private function is_available_account_question($normalized)
+    {
+        return (strpos($normalized, 'akun tersedia') !== false)
+            || (strpos($normalized, 'tersedia') !== false && strpos($normalized, 'berapa') !== false);
+    }
+
+    private function is_yesterday_created_accounts_question($normalized)
+    {
+        return (strpos($normalized, 'kemarin') !== false)
+            && (
+                strpos($normalized, 'dibuat') !== false
+                || strpos($normalized, 'ditambah') !== false
+                || strpos($normalized, 'tambah') !== false
+            )
+            && strpos($normalized, 'akun') !== false;
+    }
+
+    private function chat_yesterday_created_accounts_response()
+    {
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
+        $activity = [];
+
+        if ($this->db->table_exists('activity_log')) {
+            $this->ensure_activity_snapshot_columns();
+
+            $activity = $this->db
+                ->select('activity_log.*, COALESCE(akun.username, activity_log.akun_username_snapshot) AS akun_username, COALESCE(akun.nama_akun, activity_log.akun_nama_snapshot) AS nama_akun', false)
+                ->from('activity_log')
+                ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
+                ->where('DATE(activity_log.created_at) =', $yesterday)
+                ->where('LOWER(activity_log.action) LIKE', '%tambah%')
+                ->order_by('activity_log.created_at', 'DESC')
+                ->limit(20)
+                ->get()
+                ->result();
+        }
+
+        if (empty($activity)) {
+            return [
+                'content' => 'Tidak ada data akun yang dibuat kemarin (' . date('d-m-Y', strtotime($yesterday)) . ').',
+                'summary' => 'Akun kemarin kosong',
+                'command' => 'yesterday_created_accounts',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => ['date' => $yesterday, 'count' => 0],
+            ];
+        }
+
+        $lines = ['Akun yang dibuat kemarin (' . date('d-m-Y', strtotime($yesterday)) . '):'];
+
+        foreach ($activity as $row) {
+            $username = $row->akun_username ?: '-';
+            $name = $row->nama_akun ?: '-';
+            $lines[] = '- ' . $username . ' | ' . $name . ' | ' . $row->created_at;
+        }
+
+        return [
+            'content' => implode("\n", $lines),
+            'summary' => 'Akun dibuat kemarin',
+            'command' => 'yesterday_created_accounts',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['date' => $yesterday, 'count' => count($activity)],
+        ];
     }
 
     private function is_order_number_copy_command($normalized)
