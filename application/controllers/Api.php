@@ -228,9 +228,10 @@ class Api extends CI_Controller
     public function activity()
     {
         $this->require_login();
+        $this->ensure_activity_snapshot_columns();
 
         $activity = $this->db
-            ->select('activity_log.*, akun.nama_akun, akun.username AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
+            ->select('activity_log.*, COALESCE(akun.nama_akun, activity_log.akun_nama_snapshot) AS nama_akun, COALESCE(akun.username, activity_log.akun_username_snapshot) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
@@ -444,6 +445,15 @@ class Api extends CI_Controller
                     'icon' => 'Plus',
                     'is_public' => 1,
                 ],
+                [
+                    'id' => 3,
+                    'command' => 'salin no pesanan saja',
+                    'title' => 'Salin No Pesanan',
+                    'description' => 'Ambil nomor pesanan Shopee dari teks order.',
+                    'prompt_body' => "salin no pesanan saja\nNo. Pesanan 260630DVRB0X7G",
+                    'icon' => 'Clipboard',
+                    'is_public' => 1,
+                ],
             ],
         ]);
     }
@@ -580,6 +590,10 @@ class Api extends CI_Controller
     {
         $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
 
+        if ($this->is_order_number_copy_command($normalized)) {
+            return $this->chat_order_numbers_response($content);
+        }
+
         if ($this->is_stock_question($normalized)) {
             return $this->chat_stock_response();
         }
@@ -604,7 +618,7 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => "Saya bisa bantu dua hal:\n1. Ketik `berapa stok hari ini` untuk cek akun belum terjual.\n2. Ketik `tambah`, lalu kirim `username|password|catatan` untuk menambah akun.",
+            'content' => "Saya bisa bantu:\n1. Ketik `berapa stok hari ini` untuk cek akun belum terjual.\n2. Ketik `tambah`, lalu kirim `username|password|catatan` untuk menambah akun.\n3. Ketik `salin no pesanan saja`, lalu tempel teks order Shopee untuk mengambil nomor pesanannya saja.",
             'summary' => 'Panduan Fityu chat',
             'command' => 'help',
             'status' => 'success',
@@ -618,6 +632,56 @@ class Api extends CI_Controller
         return strpos($normalized, 'stok') !== false
             || strpos($normalized, 'stock') !== false
             || strpos($normalized, 'belum terjual') !== false;
+    }
+
+    private function is_order_number_copy_command($normalized)
+    {
+        return strpos($normalized, 'salin') !== false
+            && strpos($normalized, 'pesanan') !== false;
+    }
+
+    private function chat_order_numbers_response($content)
+    {
+        $order_numbers = $this->extract_order_numbers($content);
+
+        if (empty($order_numbers)) {
+            return [
+                'content' => "Nomor pesanan belum ditemukan. Tempel teks yang ada bagian seperti:\nNo. Pesanan 260630DVRB0X7G",
+                'summary' => 'No pesanan tidak ditemukan',
+                'command' => 'salin_no_pesanan',
+                'status' => 'failed',
+                'error' => 'Nomor pesanan tidak ditemukan',
+                'metadata' => [],
+            ];
+        }
+
+        return [
+            'content' => implode("\n", $order_numbers),
+            'summary' => 'Menyalin ' . count($order_numbers) . ' nomor pesanan',
+            'command' => 'salin_no_pesanan',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['order_numbers' => $order_numbers],
+        ];
+    }
+
+    private function extract_order_numbers($content)
+    {
+        preg_match_all('/No\.\s*Pesanan\s+([A-Z0-9]+)/i', (string) $content, $matches);
+
+        if (empty($matches[1])) {
+            return [];
+        }
+
+        $numbers = [];
+        foreach ($matches[1] as $number) {
+            $number = strtoupper(trim($number));
+            if ($number !== '' && !in_array($number, $numbers, true)) {
+                $numbers[] = $number;
+            }
+        }
+
+        return $numbers;
     }
 
     private function is_add_account_command($content)
@@ -1278,7 +1342,7 @@ class Api extends CI_Controller
             return $this->json_error('Akun tidak ditemukan', 404);
         }
 
-        $this->log_activity($id, 'hapus akun');
+        $this->log_activity($id, 'hapus akun', $akun);
         $this->db->where('id_akun', $id)->delete('akun');
 
         return $this->json_success('Akun berhasil dihapus', ['id_akun' => $id]);
@@ -1482,18 +1546,42 @@ class Api extends CI_Controller
         ];
     }
 
-    private function log_activity($akun_id, $action)
+    private function ensure_activity_snapshot_columns()
     {
         if (!$this->db->table_exists('activity_log')) {
             return;
         }
 
-        $this->db->insert('activity_log', [
+        if (!$this->db->field_exists('akun_nama_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_nama_snapshot` VARCHAR(191) NULL AFTER `akun_id`");
+        }
+
+        if (!$this->db->field_exists('akun_username_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_snapshot` VARCHAR(191) NULL AFTER `akun_nama_snapshot`");
+        }
+    }
+
+    private function log_activity($akun_id, $action, $akun = null)
+    {
+        if (!$this->db->table_exists('activity_log')) {
+            return;
+        }
+
+        $this->ensure_activity_snapshot_columns();
+
+        $data = [
             'akun_id' => $akun_id,
             'action' => $action,
             'changed_by' => $this->actor_name(),
             'created_at' => date('Y-m-d H:i:s'),
-        ]);
+        ];
+
+        if ($akun) {
+            $data['akun_nama_snapshot'] = $akun->nama_akun ?? null;
+            $data['akun_username_snapshot'] = $akun->username ?? null;
+        }
+
+        $this->db->insert('activity_log', $data);
     }
 
     private function public_user($user)

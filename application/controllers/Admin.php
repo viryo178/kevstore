@@ -122,6 +122,21 @@ class Admin extends CI_Controller
         redirect($redirect);
     }
 
+    private function ensure_activity_snapshot_columns()
+    {
+        if (!$this->db->table_exists('activity_log')) {
+            return;
+        }
+
+        if (!$this->db->field_exists('akun_nama_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_nama_snapshot` VARCHAR(191) NULL AFTER `akun_id`");
+        }
+
+        if (!$this->db->field_exists('akun_username_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_snapshot` VARCHAR(191) NULL AFTER `akun_nama_snapshot`");
+        }
+    }
+
 private function get_notification_data()
 {
     $today = date('Y-m-d');
@@ -737,10 +752,16 @@ $data['akun_belum_penuh'] = $this->db
             redirect('admin/kelola_akun');
         }
 
+        $this->ensure_activity_snapshot_columns();
+
         // activity log
         $this->db->insert('activity_log', [
 
             'akun_id'    => $id,
+
+            'akun_nama_snapshot' => $akun->nama_akun,
+
+            'akun_username_snapshot' => $akun->username,
 
             'action'     => 'hapus akun',
 
@@ -1350,8 +1371,10 @@ $data['akun_belum_penuh'] = $this->db
     }
     public function aktivitas()
     {
+        $this->ensure_activity_snapshot_columns();
+
         $data['activity'] = $this->db
-            ->select('activity_log.*, akun.nama_akun, akun.username AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
+            ->select('activity_log.*, COALESCE(akun.nama_akun, activity_log.akun_nama_snapshot) AS nama_akun, COALESCE(akun.username, activity_log.akun_username_snapshot) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
