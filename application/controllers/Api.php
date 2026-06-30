@@ -280,16 +280,26 @@ class Api extends CI_Controller
         $method = $this->input->method(TRUE);
 
         if ($method === 'GET') {
-            if (!$this->db->table_exists('chat_messages')) {
-                return $this->json_success('Tabel chat belum dibuat', ['data' => []]);
+            $this->ensure_chat_tables();
+            $conversation_id = (int) ($this->input->get('conversation_id') ?: 0);
+
+            if ($conversation_id > 0) {
+                $messages = $this->db
+                    ->where('conversation_id', $conversation_id)
+                    ->order_by('id', 'ASC')
+                    ->get('chat_ai_messages')
+                    ->result();
+
+                return $this->json_success('Data pesan', [
+                    'messages' => $messages,
+                    'data' => $messages,
+                ]);
             }
 
             $limit = max(1, min(100, (int) ($this->input->get('limit') ?: 50)));
-            $messages = $this->db
-                ->order_by('created_at', 'ASC')
-                ->limit($limit)
-                ->get('chat_messages')
-                ->result();
+            $messages = $this->db->table_exists('chat_messages')
+                ? $this->db->order_by('created_at', 'ASC')->limit($limit)->get('chat_messages')->result()
+                : [];
 
             return $this->json_success('Data pesan', ['data' => $messages]);
         }
@@ -318,6 +328,525 @@ class Api extends CI_Controller
         }
 
         return $this->json_error('Method tidak didukung', 405);
+    }
+
+    public function chat_conversations()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+        $this->ensure_chat_tables();
+
+        $search = trim((string) $this->input->get('search'));
+
+        $this->db
+            ->from('chat_conversations')
+            ->where('user_id', (int) $this->session->userdata('id_user'))
+            ->where('archived', 0);
+
+        if ($search !== '') {
+            $this->db->group_start()->like('title', $search)->or_like('summary', $search)->group_end();
+        }
+
+        $conversations = $this->db
+            ->order_by('last_message_at', 'DESC')
+            ->order_by('id', 'DESC')
+            ->limit(50)
+            ->get()
+            ->result();
+
+        return $this->json_success('Data percakapan', ['conversations' => $conversations]);
+    }
+
+    public function chat_send()
+    {
+        $this->require_login();
+        $this->only_methods(['POST']);
+        $this->ensure_chat_tables();
+
+        $payload = $this->payload();
+        $content = trim((string) ($payload['content'] ?? $payload['message'] ?? ''));
+        $conversation_id = (int) ($payload['conversation_id'] ?? 0);
+
+        if ($content === '') {
+            return $this->json_error('Pesan wajib diisi', 422);
+        }
+
+        if ($conversation_id <= 0 || !$this->owned_conversation_exists($conversation_id)) {
+            $conversation_id = $this->create_chat_conversation($content);
+        }
+
+        $user_message = $this->insert_chat_ai_message($conversation_id, 'user', $content);
+        $assistant = $this->build_chat_ai_response($content, $conversation_id);
+        $assistant_message = $this->insert_chat_ai_message($conversation_id, 'assistant', $assistant['content'], $assistant['metadata']);
+
+        $title = $this->conversation_title($content);
+        $this->db->where('id', $conversation_id)->update('chat_conversations', [
+            'title' => $title,
+            'summary' => $assistant['summary'],
+            'last_message_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $conversation = $this->db->get_where('chat_conversations', ['id' => $conversation_id])->row();
+        $command_run_id = $this->insert_command_run($conversation_id, $assistant['command'], $content, $assistant['status'], $assistant['error']);
+
+        return $this->json_success('Pesan diproses', [
+            'conversation' => $conversation,
+            'user_message' => $user_message,
+            'assistant_message' => $assistant_message,
+            'command_run_id' => $command_run_id,
+        ], 201);
+    }
+
+    public function chat_delete()
+    {
+        $this->require_login();
+        $this->only_methods(['POST']);
+        $this->ensure_chat_tables();
+
+        $payload = $this->payload();
+        $conversation_id = (int) ($payload['conversation_id'] ?? 0);
+
+        if ($conversation_id <= 0 || !$this->owned_conversation_exists($conversation_id)) {
+            return $this->json_error('Percakapan tidak ditemukan', 404);
+        }
+
+        $this->db->where('id', $conversation_id)->update('chat_conversations', [
+            'archived' => 1,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->json_success('Percakapan dihapus');
+    }
+
+    public function chat_prompts()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+
+        return $this->json_success('Prompt tersedia', [
+            'prompts' => [
+                [
+                    'id' => 1,
+                    'command' => 'berapa stok hari ini',
+                    'title' => 'Cek Stok',
+                    'description' => 'Melihat jumlah akun yang belum terjual dan masih aktif.',
+                    'prompt_body' => 'berapa stok hari ini',
+                    'icon' => 'ShoppingBag',
+                    'is_public' => 1,
+                ],
+                [
+                    'id' => 2,
+                    'command' => 'tambah',
+                    'title' => 'Tambah Akun',
+                    'description' => 'Tambah akun dengan format username|password|catatan.',
+                    'prompt_body' => "tambah\nusername|password|catatan",
+                    'icon' => 'Plus',
+                    'is_public' => 1,
+                ],
+            ],
+        ]);
+    }
+
+    public function chat_projects()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+
+        $now = date('Y-m-d H:i:s');
+        return $this->json_success('Project tersedia', [
+            'projects' => [
+                [
+                    'id' => 1,
+                    'name' => 'Kevstore',
+                    'description' => 'Assistant stok dan tambah akun.',
+                    'color' => '#60a5fa',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ],
+            ],
+        ]);
+    }
+
+    public function chat_history()
+    {
+        $this->require_login();
+        $this->only_methods(['GET']);
+        $this->ensure_chat_tables();
+
+        $history = $this->db
+            ->where('user_id', (int) $this->session->userdata('id_user'))
+            ->order_by('id', 'DESC')
+            ->limit(50)
+            ->get('chat_command_runs')
+            ->result();
+
+        return $this->json_success('Riwayat command', ['history' => $history]);
+    }
+
+    private function ensure_chat_tables()
+    {
+        $this->db->query("CREATE TABLE IF NOT EXISTS `chat_conversations` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `user_id` INT NULL,
+            `title` VARCHAR(191) NOT NULL,
+            `summary` TEXT NULL,
+            `model` VARCHAR(80) NOT NULL DEFAULT 'fityu-local',
+            `pinned` TINYINT(1) NOT NULL DEFAULT 0,
+            `archived` TINYINT(1) NOT NULL DEFAULT 0,
+            `last_message_at` DATETIME NULL,
+            `created_at` DATETIME NOT NULL,
+            `updated_at` DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_chat_conversations_user` (`user_id`, `archived`, `last_message_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `chat_ai_messages` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `conversation_id` INT NOT NULL,
+            `user_id` INT NULL,
+            `role` VARCHAR(20) NOT NULL,
+            `content` TEXT NOT NULL,
+            `metadata_json` TEXT NULL,
+            `created_at` DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_chat_ai_messages_conversation` (`conversation_id`, `id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `chat_command_runs` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `user_id` INT NULL,
+            `conversation_id` INT NULL,
+            `command` VARCHAR(80) NOT NULL,
+            `input_text` TEXT NULL,
+            `status` VARCHAR(30) NOT NULL,
+            `error_message` TEXT NULL,
+            `created_at` DATETIME NOT NULL,
+            `finished_at` DATETIME NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_chat_command_runs_user` (`user_id`, `id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+    }
+
+    private function owned_conversation_exists($conversation_id)
+    {
+        return $this->db
+            ->where('id', (int) $conversation_id)
+            ->where('user_id', (int) $this->session->userdata('id_user'))
+            ->where('archived', 0)
+            ->count_all_results('chat_conversations') > 0;
+    }
+
+    private function create_chat_conversation($content)
+    {
+        $now = date('Y-m-d H:i:s');
+
+        $this->db->insert('chat_conversations', [
+            'user_id' => (int) $this->session->userdata('id_user'),
+            'title' => $this->conversation_title($content),
+            'summary' => null,
+            'model' => 'fityu-local',
+            'pinned' => 0,
+            'archived' => 0,
+            'last_message_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return (int) $this->db->insert_id();
+    }
+
+    private function conversation_title($content)
+    {
+        $title = trim(preg_replace('/\s+/', ' ', (string) $content));
+        return strlen($title) > 60 ? substr($title, 0, 57) . '...' : ($title ?: 'Chat Baru');
+    }
+
+    private function insert_chat_ai_message($conversation_id, $role, $content, array $metadata = [])
+    {
+        $this->db->insert('chat_ai_messages', [
+            'conversation_id' => (int) $conversation_id,
+            'user_id' => $role === 'user' ? (int) $this->session->userdata('id_user') : null,
+            'role' => $role,
+            'content' => $content,
+            'metadata_json' => empty($metadata) ? null : json_encode($metadata),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->db->get_where('chat_ai_messages', ['id' => $this->db->insert_id()])->row();
+    }
+
+    private function build_chat_ai_response($content, $conversation_id)
+    {
+        $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
+
+        if ($this->is_stock_question($normalized)) {
+            return $this->chat_stock_response();
+        }
+
+        if ($this->is_add_account_command($content)) {
+            return $this->chat_add_accounts_response($content);
+        }
+
+        if ($this->conversation_is_waiting_for_add($conversation_id) && strpos($content, '|') !== false) {
+            return $this->chat_add_accounts_response($content);
+        }
+
+        if ($normalized === 'tambah' || $normalized === '/tambah') {
+            return [
+                'content' => "Siap. Kirim akun dengan format:\nusername|password|catatan\n\nBisa satu baris atau banyak baris sekaligus.",
+                'summary' => 'Menunggu format tambah akun',
+                'command' => 'tambah',
+                'status' => 'waiting',
+                'error' => null,
+                'metadata' => ['mode' => 'add_account'],
+            ];
+        }
+
+        return [
+            'content' => "Saya bisa bantu dua hal:\n1. Ketik `berapa stok hari ini` untuk cek akun belum terjual.\n2. Ketik `tambah`, lalu kirim `username|password|catatan` untuk menambah akun.",
+            'summary' => 'Panduan Fityu chat',
+            'command' => 'help',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [],
+        ];
+    }
+
+    private function is_stock_question($normalized)
+    {
+        return strpos($normalized, 'stok') !== false
+            || strpos($normalized, 'stock') !== false
+            || strpos($normalized, 'belum terjual') !== false;
+    }
+
+    private function is_add_account_command($content)
+    {
+        $trimmed = trim((string) $content);
+        $normalized = strtolower($trimmed);
+
+        return strpos($trimmed, '|') !== false
+            || strpos($normalized, "tambah\n") === 0
+            || strpos($normalized, "tambah ") === 0
+            || strpos($normalized, "/tambah\n") === 0
+            || strpos($normalized, "/tambah ") === 0;
+    }
+
+    private function conversation_is_waiting_for_add($conversation_id)
+    {
+        $last = $this->db
+            ->where('conversation_id', (int) $conversation_id)
+            ->where('role', 'assistant')
+            ->order_by('id', 'DESC')
+            ->limit(1)
+            ->get('chat_ai_messages')
+            ->row();
+
+        if (!$last || empty($last->metadata_json)) {
+            return false;
+        }
+
+        $metadata = json_decode($last->metadata_json, true);
+        return is_array($metadata) && ($metadata['mode'] ?? '') === 'add_account';
+    }
+
+    private function chat_stock_response()
+    {
+        $belum_terjual = $this->db
+            ->where('kategori', 'belum_terjual')
+            ->where('status', 'aktif')
+            ->count_all_results('akun');
+
+        $available = $this->available_akun_query()->count_all_results();
+
+        $examples = $this->db
+            ->select('username, note, last_edited_at')
+            ->where('kategori', 'belum_terjual')
+            ->where('status', 'aktif')
+            ->order_by('id_akun', 'DESC')
+            ->limit(5)
+            ->get('akun')
+            ->result();
+
+        $lines = [
+            'Stok hari ini:',
+            '- Belum terjual aktif: ' . $belum_terjual . ' akun',
+            '- Total akun tersedia termasuk sharing/private yang belum penuh: ' . $available . ' akun',
+        ];
+
+        if (!empty($examples)) {
+            $lines[] = '';
+            $lines[] = 'Contoh akun terbaru:';
+            foreach ($examples as $row) {
+                $note = trim((string) ($row->note ?? ''));
+                $lines[] = '- ' . $row->username . ($note !== '' ? ' - ' . $note : '');
+            }
+        }
+
+        return [
+            'content' => implode("\n", $lines),
+            'summary' => 'Cek stok akun belum terjual',
+            'command' => 'stok',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'belum_terjual' => $belum_terjual,
+                'available' => $available,
+            ],
+        ];
+    }
+
+    private function chat_add_accounts_response($content)
+    {
+        $rows = $this->parse_chat_account_rows($content);
+
+        if (empty($rows)) {
+            return [
+                'content' => "Format belum terbaca. Pakai format:\nusername|password|catatan",
+                'summary' => 'Format tambah akun salah',
+                'command' => 'tambah',
+                'status' => 'failed',
+                'error' => 'Format akun tidak valid',
+                'metadata' => ['mode' => 'add_account'],
+            ];
+        }
+
+        $created = [];
+        $skipped = [];
+        $seen = [];
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($rows as $index => $row) {
+            $username = trim((string) ($row['username'] ?? ''));
+            $password = trim((string) ($row['password'] ?? ''));
+            $note = trim((string) ($row['note'] ?? ''));
+
+            if ($username === '' || $password === '') {
+                $skipped[] = 'Baris ' . ($index + 1) . ': username/password kosong';
+                continue;
+            }
+
+            $username_key = strtolower($username);
+            if (isset($seen[$username_key]) || $this->username_exists($username)) {
+                $skipped[] = $username . ': username sudah ada';
+                continue;
+            }
+
+            $seen[$username_key] = true;
+
+            $data = [
+                'nama_akun' => 'Grok',
+                'kategori' => 'belum_terjual',
+                'status' => $this->resolve_status_from_note('aktif', $note, true),
+                'username' => $username,
+                'password' => $password,
+                'website' => '',
+                'note' => $note,
+                'max_user' => 0,
+                'expired_password' => null,
+                'created_by' => $this->actor_name(),
+                'last_edited_by' => $this->actor_name(),
+                'last_edited_at' => $now,
+            ];
+
+            $this->db->insert('akun', $data);
+            $id = $this->db->insert_id();
+            $this->log_activity($id, 'Fityu chat tambah akun');
+            $created[] = $username;
+        }
+
+        $lines = ['Tambah akun selesai.'];
+        $lines[] = '- Berhasil: ' . count($created);
+        $lines[] = '- Dilewati: ' . count($skipped);
+
+        if (!empty($created)) {
+            $lines[] = '';
+            $lines[] = 'Akun masuk: ' . implode(', ', array_slice($created, 0, 10));
+        }
+
+        if (!empty($skipped)) {
+            $lines[] = '';
+            $lines[] = 'Catatan dilewati:';
+            foreach (array_slice($skipped, 0, 10) as $skip) {
+                $lines[] = '- ' . $skip;
+            }
+        }
+
+        return [
+            'content' => implode("\n", $lines),
+            'summary' => 'Tambah ' . count($created) . ' akun dari chat',
+            'command' => 'tambah',
+            'status' => count($created) > 0 ? 'success' : 'failed',
+            'error' => count($created) > 0 ? null : 'Tidak ada akun yang berhasil ditambahkan',
+            'metadata' => [
+                'created' => $created,
+                'skipped' => $skipped,
+            ],
+        ];
+    }
+
+    private function parse_chat_account_rows($content)
+    {
+        $content = preg_replace('/^\/?tambah\s*/i', '', trim((string) $content));
+        $lines = preg_split('/\r\n|\r|\n/', $content);
+        $rows = [];
+
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '' || strpos($line, '|') === false) {
+                continue;
+            }
+
+            $parts = explode('|', $line, 3);
+            $rows[] = [
+                'username' => trim($parts[0] ?? ''),
+                'password' => trim($parts[1] ?? ''),
+                'note' => trim($parts[2] ?? ''),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function resolve_status_from_note($status, $note, $use_note_status = false)
+    {
+        if (!$use_note_status) {
+            return $status;
+        }
+
+        $note = strtolower((string) $note);
+        $note = str_replace(['-', '_'], ' ', $note);
+
+        if (preg_match('/\bdisable\s*x\b/', $note)) {
+            return 'disable_x';
+        }
+
+        if (preg_match('/\bdisable\s*email\b/', $note)) {
+            return 'disable_email';
+        }
+
+        if (preg_match('/\bban(ned)?\b/', $note)) {
+            return 'ban';
+        }
+
+        return $status;
+    }
+
+    private function insert_command_run($conversation_id, $command, $input_text, $status, $error)
+    {
+        $this->db->insert('chat_command_runs', [
+            'user_id' => (int) $this->session->userdata('id_user'),
+            'conversation_id' => (int) $conversation_id,
+            'command' => $command,
+            'input_text' => $input_text,
+            'status' => $status,
+            'error_message' => $error,
+            'created_at' => date('Y-m-d H:i:s'),
+            'finished_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return (int) $this->db->insert_id();
     }
 
     public function notes($id = null)
