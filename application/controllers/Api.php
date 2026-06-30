@@ -545,6 +545,37 @@ class Api extends CI_Controller
             PRIMARY KEY (`id`),
             KEY `idx_chat_command_runs_user` (`user_id`, `id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+        $this->cleanup_expired_chat_data();
+    }
+
+    private function cleanup_expired_chat_data()
+    {
+        $cutoff = date('Y-m-d H:i:s', strtotime('-7 days'));
+
+        $expired = $this->db
+            ->select('id')
+            ->group_start()
+                ->where('last_message_at <', $cutoff)
+                ->or_group_start()
+                    ->where('last_message_at IS NULL', null, false)
+                    ->where('created_at <', $cutoff)
+                ->group_end()
+            ->group_end()
+            ->get('chat_conversations')
+            ->result();
+
+        $ids = array_map(function ($row) {
+            return (int) $row->id;
+        }, $expired);
+
+        if (!empty($ids)) {
+            $this->db->where_in('conversation_id', $ids)->delete('chat_ai_messages');
+            $this->db->where_in('conversation_id', $ids)->delete('chat_command_runs');
+            $this->db->where_in('id', $ids)->delete('chat_conversations');
+        }
+
+        $this->db->where('created_at <', $cutoff)->delete('chat_messages');
     }
 
     private function owned_conversation_exists($conversation_id)
@@ -634,6 +665,10 @@ class Api extends CI_Controller
             return $this->chat_reset_selected_account_response($content, $conversation_id);
         }
 
+        if ($this->is_update_selected_account_command($normalized)) {
+            return $this->chat_update_selected_account_response($content, $conversation_id);
+        }
+
         if ($this->is_detail_command($normalized)) {
             return $this->chat_detail_response($content);
         }
@@ -673,9 +708,9 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => "Saya bisa bantu:\n1. Ketik `berapa stok hari ini` untuk cek akun belum terjual.\n2. Ketik `tambah`, lalu kirim `username|password|catatan` untuk menambah akun.\n3. Ketik `salin no pesanan saja`, lalu tempel teks order Shopee untuk mengambil nomor pesanannya saja.\n4. Ketik `detail`, lalu kirim username atau isi catatan untuk melihat detail akun.\n5. Ketik `use username`, lalu `ubah akun ini jadi seperti baru dengan username ..., password ..., note ...`.",
-            'summary' => 'Panduan Fityu chat',
-            'command' => 'help',
+            'content' => 'Fitur ini belum tersedia, bilang ke developernya buat bikin fitur ini ya!! :3',
+            'summary' => 'Fitur belum tersedia',
+            'command' => 'unsupported',
             'status' => 'success',
             'error' => null,
             'metadata' => [],
@@ -746,6 +781,13 @@ class Api extends CI_Controller
                 strpos($normalized, 'seperti baru') !== false
                 || strpos($normalized, 'jadi baru') !== false
             );
+    }
+
+    private function is_update_selected_account_command($normalized)
+    {
+        return strpos($normalized, 'ubah ') === 0
+            || strpos($normalized, 'ganti ') === 0
+            || strpos($normalized, 'edit ') === 0;
     }
 
     private function chat_use_account_response($content)
@@ -873,6 +915,88 @@ class Api extends CI_Controller
             'content' => "Akun berhasil diubah jadi seperti baru.\n\n" . $this->format_account_detail($updated),
             'summary' => 'Akun diubah jadi seperti baru',
             'command' => 'reset_selected_account',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'mode' => 'selected_account',
+                'selected_account_id' => (int) $updated->id_akun,
+                'selected_username' => $updated->username,
+            ],
+        ];
+    }
+
+    private function chat_update_selected_account_response($content, $conversation_id)
+    {
+        $selected = $this->selected_account_from_conversation($conversation_id);
+
+        if (!$selected) {
+            return [
+                'content' => 'Pilih akunnya dulu dengan format: use username',
+                'summary' => 'Belum ada akun dipilih',
+                'command' => 'update_selected_account',
+                'status' => 'failed',
+                'error' => 'Akun target belum dipilih',
+                'metadata' => [],
+            ];
+        }
+
+        $account = $this->db->get_where('akun', ['id_akun' => (int) $selected['id']])->row();
+
+        if (!$account) {
+            return [
+                'content' => 'Akun yang tadi dipilih sudah tidak ditemukan. Pilih ulang dengan: use username',
+                'summary' => 'Akun target hilang',
+                'command' => 'update_selected_account',
+                'status' => 'failed',
+                'error' => 'Akun target tidak ditemukan',
+                'metadata' => [],
+            ];
+        }
+
+        $changes = $this->parse_update_account_fields($content);
+
+        if (empty($changes)) {
+            return [
+                'content' => "Field belum terbaca. Contoh:\nubah status jadi aktif\nubah password jadi pass123\nubah note jadi catatan baru\nubah username jadi email@gmail.com",
+                'summary' => 'Format update akun belum terbaca',
+                'command' => 'update_selected_account',
+                'status' => 'failed',
+                'error' => 'Field update kosong',
+                'metadata' => [
+                    'mode' => 'selected_account',
+                    'selected_account_id' => (int) $account->id_akun,
+                    'selected_username' => $account->username,
+                ],
+            ];
+        }
+
+        if (isset($changes['username']) && $this->username_exists($changes['username'], (int) $account->id_akun)) {
+            return [
+                'content' => 'Username baru sudah dipakai akun lain: ' . $changes['username'],
+                'summary' => 'Username baru duplikat',
+                'command' => 'update_selected_account',
+                'status' => 'failed',
+                'error' => 'Username sudah ada',
+                'metadata' => [
+                    'mode' => 'selected_account',
+                    'selected_account_id' => (int) $account->id_akun,
+                    'selected_username' => $account->username,
+                ],
+            ];
+        }
+
+        $changes['last_edited_by'] = $this->actor_name();
+        $changes['last_edited_at'] = date('Y-m-d H:i:s');
+
+        $this->db->where('id_akun', (int) $account->id_akun)->update('akun', $changes);
+        $this->log_activity((int) $account->id_akun, 'Fityu chat ubah akun', $account);
+
+        $updated = $this->db->get_where('akun', ['id_akun' => (int) $account->id_akun])->row();
+
+        return [
+            'content' => "Akun berhasil diubah.\n\n" . $this->format_account_detail($updated),
+            'summary' => 'Akun berhasil diubah',
+            'command' => 'update_selected_account',
             'status' => 'success',
             'error' => null,
             'metadata' => [
@@ -1049,6 +1173,73 @@ class Api extends CI_Controller
             'password' => $this->extract_named_value($content, 'password'),
             'note' => $this->extract_named_value($content, 'note'),
         ];
+    }
+
+    private function parse_update_account_fields($content)
+    {
+        $fields = [
+            'username' => ['username', 'user'],
+            'password' => ['password', 'pass', 'pw'],
+            'note' => ['note', 'catatan'],
+            'status' => ['status'],
+            'kategori' => ['kategori', 'tipe'],
+            'nama_akun' => ['nama akun', 'nama'],
+            'website' => ['website', 'web'],
+            'max_user' => ['max user', 'max_user', 'slot'],
+            'expired_password' => ['expired password', 'expired_password', 'exp password', 'exp'],
+        ];
+
+        $changes = [];
+
+        foreach ($fields as $field => $aliases) {
+            foreach ($aliases as $alias) {
+                $value = $this->extract_update_value($content, $alias);
+
+                if ($value === '') {
+                    continue;
+                }
+
+                if ($field === 'max_user') {
+                    $changes[$field] = max(0, (int) $value);
+                } elseif ($field === 'expired_password') {
+                    $changes[$field] = $this->normalize_date($value);
+                } elseif ($field === 'status') {
+                    $changes[$field] = $this->normalize_status($value);
+                } elseif ($field === 'kategori') {
+                    $changes[$field] = strtolower(str_replace(' ', '_', trim($value)));
+                } else {
+                    $changes[$field] = trim($value);
+                }
+
+                break;
+            }
+        }
+
+        return array_filter($changes, function ($value) {
+            return $value !== '' && $value !== null;
+        });
+    }
+
+    private function extract_update_value($content, $name)
+    {
+        $all_aliases = 'username|user|password|pass|pw|note|catatan|status|kategori|tipe|nama akun|nama|website|web|max user|max_user|slot|expired password|expired_password|exp password|exp';
+        $name_pattern = str_replace('\ ', '\s+', preg_quote($name, '/'));
+        $boundary_pattern = str_replace(' ', '\s+', $all_aliases);
+        $pattern = '/\b' . $name_pattern . '\b\s*(?:jadi|menjadi|ke|=|:)?\s*(?:"([^"]*)"|\'([^\']*)\'|(.+?))(?=\s*(?:,|\bdan\b)?\s+\b(?:' . $boundary_pattern . ')\b|\s*$)/i';
+
+        if (!preg_match($pattern, (string) $content, $matches)) {
+            return '';
+        }
+
+        if (isset($matches[1]) && $matches[1] !== '') {
+            return trim($matches[1]);
+        }
+
+        if (isset($matches[2]) && $matches[2] !== '') {
+            return trim($matches[2]);
+        }
+
+        return isset($matches[3]) ? trim($matches[3], " \t\n\r\0\x0B,.") : '';
     }
 
     private function extract_named_value($content, $name)
