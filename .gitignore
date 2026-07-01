@@ -20,6 +20,7 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 # Local secrets
 application/config/local.php
 ai_studio_key.php
+groq_key.php
 
 # IDE Files
 #-------------------------

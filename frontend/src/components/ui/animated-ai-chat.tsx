@@ -76,6 +76,13 @@ interface CommandSuggestion {
   prefix: string;
 }
 
+type AiModelChoice = "gemini" | "groq";
+
+const AI_MODEL_OPTIONS: Array<{ id: AiModelChoice; label: string; caption: string }> = [
+  { id: "gemini", label: "Gemini", caption: "Google AI Studio" },
+  { id: "groq", label: "Groq", caption: "Llama 3.3 70B" },
+];
+
 function parseAccountSearchCommand(value: string): { mode: "detail" | "use"; keyword: string } | null {
   const match = value.trimStart().match(/^\/?(detail|use)(?:\s+(.*))?$/i);
   if (!match) return null;
@@ -217,7 +224,7 @@ interface AnimatedAIChatProps {
   isSending: boolean;
   isLoadingMessages: boolean;
   sidebarCollapsed: boolean;
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (content: string, aiModel?: AiModelChoice) => Promise<void>;
   onUsePrompt: (prompt: PromptTemplate) => void;
 }
 
@@ -238,6 +245,8 @@ export function AnimatedAIChat({
   const [attachments, setAttachments] = useState<string[]>([]);
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const [selectedAiModel, setSelectedAiModel] = useState<AiModelChoice>("gemini");
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [inputFocused, setInputFocused] = useState(false);
   const [accountSuggestions, setAccountSuggestions] = useState<StoreAccount[]>([]);
@@ -245,8 +254,10 @@ export function AnimatedAIChat({
   const [activeAccountSuggestion, setActiveAccountSuggestion] = useState(0);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 44, maxHeight: 120 });
   const commandPaletteRef = useRef<HTMLDivElement>(null);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isTyping = inputFocused && value.trim().length > 0 && !isSending;
+  const selectedAiModelInfo = AI_MODEL_OPTIONS.find((model) => model.id === selectedAiModel) ?? AI_MODEL_OPTIONS[0];
   const accountSearch = parseAccountSearchCommand(value);
   const showAccountSuggestions = inputFocused && Boolean(accountSearch) && (accountSuggestions.length > 0 || isLoadingAccountSuggestions);
   const pointerStyle = {
@@ -326,6 +337,9 @@ export function AnimatedAIChat({
       if (commandPaletteRef.current && !commandPaletteRef.current.contains(target) && !commandButton?.contains(target)) {
         setShowCommandPalette(false);
       }
+      if (modelMenuRef.current && !modelMenuRef.current.contains(target)) {
+        setShowModelMenu(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -358,7 +372,7 @@ export function AnimatedAIChat({
     setValue("");
     setAttachments([]);
     adjustHeight(true);
-    await onSendMessage(content);
+    await onSendMessage(content, selectedAiModel);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -454,6 +468,59 @@ export function AnimatedAIChat({
     </AnimatePresence>
   );
 
+  const modelSelector = (
+    <div ref={modelMenuRef} className="relative">
+      <motion.button
+        type="button"
+        data-model-button
+        onClick={(event) => {
+          event.stopPropagation();
+          setShowModelMenu((current) => !current);
+        }}
+        whileTap={{ scale: 0.94 }}
+        className={cn(
+          "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white/45 transition-colors hover:bg-white/[0.05] hover:text-white/90",
+          showModelMenu && "bg-white/10 text-white/90",
+        )}
+        aria-label="Pilih model AI"
+        title="Pilih model AI"
+      >
+        <Sparkles className="h-4 w-4" />
+        <span className="hidden sm:inline">{selectedAiModelInfo.label}</span>
+      </motion.button>
+
+      <AnimatePresence>
+        {showModelMenu && (
+          <motion.div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-lg border border-white/10 bg-black/90 shadow-2xl backdrop-blur-xl" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}>
+            <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+              Model AI
+            </div>
+            {AI_MODEL_OPTIONS.map((model) => (
+              <button
+                type="button"
+                key={model.id}
+                onClick={() => {
+                  setSelectedAiModel(model.id);
+                  setShowModelMenu(false);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors",
+                  selectedAiModel === model.id ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white",
+                )}
+              >
+                <span>
+                  <span className="block text-sm font-medium">{model.label}</span>
+                  <span className="block text-xs text-white/40">{model.caption}</span>
+                </span>
+                {selectedAiModel === model.id && <CheckCircle2 className="h-4 w-4 text-emerald-300" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   const composerBox = (
     <motion.div className="pointer-events-auto relative mx-auto w-full max-w-5xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 text-left shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
       {accountSuggestionPanel}
@@ -517,6 +584,7 @@ export function AnimatedAIChat({
             <Command className="h-4 w-4" />
             <span className="absolute inset-0 rounded-lg bg-white/[0.05] opacity-0 transition-opacity group-hover:opacity-100" />
           </motion.button>
+          {modelSelector}
         </div>
 
         <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || !value.trim()} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>
@@ -717,6 +785,7 @@ export function AnimatedAIChat({
                   <Command className="h-4 w-4" />
                   <span className="absolute inset-0 rounded-lg bg-white/[0.05] opacity-0 transition-opacity group-hover:opacity-100" />
                 </motion.button>
+                {modelSelector}
               </div>
 
               <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || !value.trim()} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>

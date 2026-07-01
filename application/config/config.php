@@ -559,6 +559,12 @@ if (file_exists($root_ai_studio_key_path)) {
 	$root_ai_studio_key = trim((string) include $root_ai_studio_key_path);
 }
 
+$root_groq_key = '';
+$root_groq_key_path = FCPATH . 'groq_key.php';
+if (file_exists($root_groq_key_path)) {
+	$root_groq_key = trim((string) include $root_groq_key_path);
+}
+
 $config['google_ai_studio_api_key'] =
 	getenv('GOOGLE_AI_STUDIO_API_KEY')
 	?: getenv('GEMINI_API_KEY')
@@ -574,3 +580,12 @@ $config['google_ai_studio_model'] =
 	getenv('GOOGLE_AI_STUDIO_MODEL')
 	?: (isset($local_config['google_ai_studio_model']) ? $local_config['google_ai_studio_model'] : '')
 	?: (isset($_SERVER['GOOGLE_AI_STUDIO_MODEL']) ? $_SERVER['GOOGLE_AI_STUDIO_MODEL'] : 'gemini-2.5-flash');
+$config['groq_api_key'] =
+	getenv('GROQ_API_KEY')
+	?: (isset($local_config['groq_api_key']) ? $local_config['groq_api_key'] : '')
+	?: $root_groq_key
+	?: (isset($_SERVER['GROQ_API_KEY']) ? $_SERVER['GROQ_API_KEY'] : '');
+$config['groq_model'] =
+	getenv('GROQ_MODEL')
+	?: (isset($local_config['groq_model']) ? $local_config['groq_model'] : '')
+	?: (isset($_SERVER['GROQ_MODEL']) ? $_SERVER['GROQ_MODEL'] : 'llama-3.3-70b-versatile');

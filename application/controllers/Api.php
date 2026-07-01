@@ -367,6 +367,7 @@ class Api extends CI_Controller
         $payload = $this->payload();
         $content = trim((string) ($payload['content'] ?? $payload['message'] ?? ''));
         $conversation_id = (int) ($payload['conversation_id'] ?? 0);
+        $ai_model = $this->normalize_ai_model($payload['ai_model'] ?? $payload['model'] ?? 'gemini');
 
         if ($content === '') {
             return $this->json_error('Pesan wajib diisi', 422);
@@ -393,7 +394,7 @@ class Api extends CI_Controller
         }
 
         $user_message = $this->insert_chat_ai_message($conversation_id, 'user', $content);
-        $assistant = $this->build_chat_ai_response($content, $conversation_id);
+        $assistant = $this->build_chat_ai_response($content, $conversation_id, $ai_model);
         $assistant_message = $this->insert_chat_ai_message($conversation_id, 'assistant', $assistant['content'], $assistant['metadata']);
 
         $title = $this->conversation_title($content);
@@ -671,7 +672,7 @@ class Api extends CI_Controller
         return $this->db->get_where('chat_ai_messages', ['id' => $this->db->insert_id()])->row();
     }
 
-    private function build_chat_ai_response($content, $conversation_id)
+    private function build_chat_ai_response($content, $conversation_id, $ai_model = 'gemini')
     {
         $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
         $normalized = trim(preg_replace('/[?!.,;:]+$/', '', $normalized));
@@ -763,7 +764,7 @@ class Api extends CI_Controller
         }
 
         if ($this->is_ai_studio_status_command($normalized)) {
-            return $this->chat_ai_studio_status_response();
+            return $this->chat_ai_studio_status_response($normalized);
         }
 
         if ($this->is_feature_list_command($normalized)) {
@@ -794,7 +795,7 @@ class Api extends CI_Controller
             return $this->chat_basic_response($normalized);
         }
 
-        return $this->chat_google_search_response($content);
+        return $this->chat_google_search_response($content, $ai_model);
     }
 
     private function is_stock_question($normalized)
@@ -802,6 +803,17 @@ class Api extends CI_Controller
         return strpos($normalized, 'stok') !== false
             || strpos($normalized, 'stock') !== false
             || strpos($normalized, 'belum terjual') !== false;
+    }
+
+    private function normalize_ai_model($model)
+    {
+        $model = strtolower(trim((string) $model));
+
+        if (in_array($model, ['groq', 'llama', 'llama-3.3'], true)) {
+            return 'groq';
+        }
+
+        return 'gemini';
     }
 
     private function is_take_unsold_account_command($normalized)
@@ -985,13 +997,20 @@ class Api extends CI_Controller
             'cek ai',
             'cek ai studio',
             'cek gemini',
+            'cek groq',
             'test ai',
             'test gemini',
+            'test groq',
         ], true);
     }
 
-    private function chat_ai_studio_status_response()
+    private function chat_ai_studio_status_response($normalized)
     {
+        $groq_requested = in_array($normalized, ['cek groq', 'test groq'], true);
+        if ($groq_requested) {
+            return $this->chat_groq_status_response();
+        }
+
         $api_key = $this->google_ai_studio_api_key();
 
         if ($api_key === '') {
@@ -1031,6 +1050,51 @@ class Api extends CI_Controller
             'content' => "AI Studio sudah aktif dan bisa dipakai.\n\nTes Gemini: " . $answer,
             'summary' => 'AI Studio aktif',
             'command' => 'ai_studio_status',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['configured' => true],
+        ];
+    }
+
+    private function chat_groq_status_response()
+    {
+        $api_key = $this->groq_api_key();
+
+        if ($api_key === '') {
+            return [
+                'content' => implode("\n", [
+                    'Groq belum aktif. API key belum terbaca oleh backend.',
+                    '',
+                    'Saya sudah cek lokasi ini:',
+                    '- ' . FCPATH . 'groq_key.php: ' . (file_exists(FCPATH . 'groq_key.php') ? 'ada' : 'tidak ada'),
+                    '- ' . APPPATH . 'config/local.php: ' . (file_exists(APPPATH . 'config/local.php') ? 'ada' : 'tidak ada'),
+                    '- environment GROQ_API_KEY: ' . (getenv('GROQ_API_KEY') ? 'ada' : 'tidak ada'),
+                ]),
+                'summary' => 'Groq belum aktif',
+                'command' => 'groq_status',
+                'status' => 'failed',
+                'error' => 'API key kosong',
+                'metadata' => ['configured' => false],
+            ];
+        }
+
+        $answer = $this->groq_answer('Jawab singkat: koneksi Violence AI ke Groq sudah aktif.');
+
+        if ($answer === null) {
+            return [
+                'content' => 'API key Groq sudah terbaca, tapi Groq belum berhasil menjawab. Cek quota/key Groq kamu, lalu coba lagi.',
+                'summary' => 'Groq gagal menjawab',
+                'command' => 'groq_status',
+                'status' => 'failed',
+                'error' => 'Groq tidak merespons',
+                'metadata' => ['configured' => true],
+            ];
+        }
+
+        return [
+            'content' => "Groq sudah aktif dan bisa dipakai.\n\nTes Groq: " . $answer,
+            'summary' => 'Groq aktif',
+            'command' => 'groq_status',
             'status' => 'success',
             'error' => null,
             'metadata' => ['configured' => true],
@@ -1168,7 +1232,7 @@ class Api extends CI_Controller
         return rtrim(rtrim(number_format($result, 6, '.', ''), '0'), '.');
     }
 
-    private function chat_google_search_response($content)
+    private function chat_google_search_response($content, $ai_model = 'gemini')
     {
         $query = trim((string) $content);
         $google_url = 'https://www.google.com/search?q=' . rawurlencode($query);
@@ -1178,17 +1242,19 @@ class Api extends CI_Controller
             return $this->chat_lyrics_search_response($query, $search, $google_url);
         }
 
-        $ai_answer = $this->google_ai_studio_answer($query);
+        $ai_answer = $ai_model === 'groq'
+            ? $this->groq_answer($query)
+            : $this->google_ai_studio_answer($query);
         if ($ai_answer !== null) {
             return [
                 'content' => $ai_answer,
-                'summary' => 'Jawaban Google AI Studio',
-                'command' => 'google_ai_studio',
+                'summary' => $ai_model === 'groq' ? 'Jawaban Groq' : 'Jawaban Google AI Studio',
+                'command' => $ai_model === 'groq' ? 'groq_ai' : 'google_ai_studio',
                 'status' => 'success',
                 'error' => null,
                 'metadata' => [
                     'query' => $query,
-                    'provider' => 'google_ai_studio',
+                    'provider' => $ai_model === 'groq' ? 'groq' : 'google_ai_studio',
                 ],
             ];
         }
@@ -1299,7 +1365,7 @@ class Api extends CI_Controller
             ],
             'generationConfig' => [
                 'temperature' => 0.45,
-                'maxOutputTokens' => 700,
+                'maxOutputTokens' => 1800,
             ],
         ];
 
@@ -1317,6 +1383,120 @@ class Api extends CI_Controller
         $answer = $this->extract_google_ai_text($response);
 
         return $answer !== '' ? $answer : null;
+    }
+
+    private function groq_answer($query)
+    {
+        $api_key = $this->groq_api_key();
+
+        if ($api_key === '') {
+            return null;
+        }
+
+        $model = trim((string) $this->config->item('groq_model'));
+        if ($model === '') {
+            $model = 'llama-3.3-70b-versatile';
+        }
+
+        $payload = [
+            'model' => $model,
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => implode("\n", [
+                        'Kamu adalah Violence AI, asisten ramah untuk Kevstore.',
+                        'Jawab dalam bahasa Indonesia yang santai, jelas, dan membantu.',
+                        'Kalau pertanyaan tentang akun Kevstore, arahkan user memakai command: stok, detail, use, tambah, atau bantuan.',
+                        'Jangan berikan lirik lagu lengkap atau teks berhak cipta panjang.',
+                        'Jawaban jangan setengah-setengah, tapi tetap ringkas dan mudah dibaca.',
+                    ]),
+                ],
+                [
+                    'role' => 'user',
+                    'content' => (string) $query,
+                ],
+            ],
+            'temperature' => 0.45,
+            'max_tokens' => 1800,
+        ];
+
+        $response = $this->groq_chat_completion($api_key, $payload);
+
+        if ($response === null) {
+            return null;
+        }
+
+        $answer = trim((string) ($response['choices'][0]['message']['content'] ?? ''));
+
+        return $answer !== '' ? $answer : null;
+    }
+
+    private function groq_api_key()
+    {
+        $api_key = trim((string) $this->config->item('groq_api_key'));
+
+        if ($api_key !== '') {
+            return $api_key;
+        }
+
+        $root_key = $this->read_plain_secret_file(FCPATH . 'groq_key.php', '/(gsk_[A-Za-z0-9_\-]+)/');
+        if ($root_key !== '') {
+            return $root_key;
+        }
+
+        return '';
+    }
+
+    private function read_plain_secret_file($path, $pattern)
+    {
+        if (!file_exists($path)) {
+            return '';
+        }
+
+        $value = include $path;
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
+        $text = (string) file_get_contents($path);
+        if (preg_match($pattern, $text, $matches) !== 1) {
+            return '';
+        }
+
+        return trim($matches[1]);
+    }
+
+    private function groq_chat_completion($api_key, array $payload)
+    {
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $api_key,
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload),
+        ]);
+
+        $body = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($body === false || $status < 200 || $status >= 300) {
+            log_message('error', 'Groq request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
+            return null;
+        }
+
+        $json = json_decode($body, true);
+
+        return is_array($json) ? $json : null;
     }
 
     private function google_ai_studio_api_key()

@@ -37,6 +37,7 @@ export type ActiveView =
   | "profile"
   | "settings"
   | "help";
+type AiModelChoice = "gemini" | "groq";
 const SELECTED_CHAT_KEY = "zap:selectedConversationId";
 const ACTIVE_VIEW_KEY = "zap:activeView";
 const THEME_COLOR_KEY = "zap:themeColor";
@@ -243,7 +244,7 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, aiModel: AiModelChoice = "gemini") => {
     if (isDeleteCurrentChatCommand(content)) {
       if (!selectedConversationId) {
         window.localStorage.setItem(SELECTED_CHAT_KEY, "draft");
@@ -410,6 +411,7 @@ function App() {
         apiPost<SendMessageResponse>("api/chat/send", {
           conversation_id: selectedConversationId,
           content,
+          ai_model: aiModel,
         }),
         delay(1000),
       ]);
