@@ -544,14 +544,26 @@ $config['proxy_ips'] = '';
 | Keep the real API key outside source code.
 |
 */
+$local_config = array();
+$local_config_path = APPPATH . 'config/local.php';
+if (file_exists($local_config_path)) {
+	$local_config = include $local_config_path;
+	if (!is_array($local_config)) {
+		$local_config = array();
+	}
+}
+
 $config['google_ai_studio_api_key'] =
 	getenv('GOOGLE_AI_STUDIO_API_KEY')
 	?: getenv('GEMINI_API_KEY')
+	?: (isset($local_config['google_ai_studio_api_key']) ? $local_config['google_ai_studio_api_key'] : '')
 	?: (isset($_SERVER['GOOGLE_AI_STUDIO_API_KEY']) ? $_SERVER['GOOGLE_AI_STUDIO_API_KEY'] : '')
 	?: (isset($_SERVER['GEMINI_API_KEY']) ? $_SERVER['GEMINI_API_KEY'] : '');
 $config['google_ai_studio_token'] =
 	getenv('GOOGLE_AI_STUDIO_TOKEN')
+	?: (isset($local_config['google_ai_studio_token']) ? $local_config['google_ai_studio_token'] : '')
 	?: (isset($_SERVER['GOOGLE_AI_STUDIO_TOKEN']) ? $_SERVER['GOOGLE_AI_STUDIO_TOKEN'] : '');
 $config['google_ai_studio_model'] =
 	getenv('GOOGLE_AI_STUDIO_MODEL')
+	?: (isset($local_config['google_ai_studio_model']) ? $local_config['google_ai_studio_model'] : '')
 	?: (isset($_SERVER['GOOGLE_AI_STUDIO_MODEL']) ? $_SERVER['GOOGLE_AI_STUDIO_MODEL'] : 'gemini-2.5-flash');
