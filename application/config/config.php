@@ -553,10 +553,17 @@ if (file_exists($local_config_path)) {
 	}
 }
 
+$root_ai_studio_key = '';
+$root_ai_studio_key_path = FCPATH . 'ai_studio_key.php';
+if (file_exists($root_ai_studio_key_path)) {
+	$root_ai_studio_key = trim((string) include $root_ai_studio_key_path);
+}
+
 $config['google_ai_studio_api_key'] =
 	getenv('GOOGLE_AI_STUDIO_API_KEY')
 	?: getenv('GEMINI_API_KEY')
 	?: (isset($local_config['google_ai_studio_api_key']) ? $local_config['google_ai_studio_api_key'] : '')
+	?: $root_ai_studio_key
 	?: (isset($_SERVER['GOOGLE_AI_STUDIO_API_KEY']) ? $_SERVER['GOOGLE_AI_STUDIO_API_KEY'] : '')
 	?: (isset($_SERVER['GEMINI_API_KEY']) ? $_SERVER['GEMINI_API_KEY'] : '');
 $config['google_ai_studio_token'] =
