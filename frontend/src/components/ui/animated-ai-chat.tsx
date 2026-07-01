@@ -81,6 +81,57 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   showRing?: boolean;
 }
 
+function TypewriterText({ text }: { text: string }) {
+  const [visibleText, setVisibleText] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    let deleting = false;
+    let timeoutId = 0;
+
+    const tick = () => {
+      if (!deleting) {
+        index += 1;
+        setVisibleText(text.slice(0, index));
+
+        if (index >= text.length) {
+          deleting = true;
+          timeoutId = window.setTimeout(tick, 1400);
+          return;
+        }
+
+        timeoutId = window.setTimeout(tick, 42);
+        return;
+      }
+
+      index -= 1;
+      setVisibleText(text.slice(0, Math.max(index, 0)));
+
+      if (index <= 0) {
+        deleting = false;
+        timeoutId = window.setTimeout(tick, 450);
+        return;
+      }
+
+      timeoutId = window.setTimeout(tick, 22);
+    };
+
+    timeoutId = window.setTimeout(tick, 250);
+    return () => window.clearTimeout(timeoutId);
+  }, [text]);
+
+  return (
+    <span className="inline-flex min-h-6 items-center">
+      <span>{visibleText}</span>
+      <motion.span
+        className="ml-0.5 h-4 w-px bg-white/45"
+        animate={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+      />
+    </span>
+  );
+}
+
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, containerClassName, showRing = true, ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false);
@@ -368,7 +419,9 @@ export function AnimatedAIChat({
                   <h1 className="bg-gradient-to-r from-white/90 to-white/40 bg-clip-text pb-1 text-4xl font-medium tracking-normal text-transparent">
                     How can I help today?
                   </h1>
-                  <p className="mt-3 text-base text-white/40">Tanya stok akun atau tambah akun Kevstore lewat chat.</p>
+                  <p className="mt-3 text-base text-white/40">
+                    <TypewriterText text="Tanya stok akun atau tambah akun Kevstore lewat chat." />
+                  </p>
                   <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                     {commandSuggestions.map((suggestion, index) => (
                       <motion.button type="button" key={suggestion.prefix} onClick={() => selectCommandSuggestion(index)} className="group relative flex items-center gap-2 rounded-lg bg-white/[0.02] px-4 py-2.5 text-base text-white/60 transition-all hover:bg-white/[0.05] hover:text-white/90" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
