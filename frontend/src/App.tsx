@@ -290,12 +290,12 @@ function App() {
 
     setMessages((current) => [...current, tempUserMessage]);
 
-    if (isTomorrowPasswordCommand(content)) {
+    const passwordExpiry = passwordExpiryCommand(content);
+    if (passwordExpiry) {
       setIsSending(true);
       try {
-        const tomorrow = tomorrowDateString();
-        const data = await apiGet<AccountsResponse>(`api/akun?q=${encodeURIComponent(tomorrow)}&limit=200&offset=0`);
-        const accounts = (data.accounts ?? data.data ?? []).filter((account) => account.expired_password === tomorrow);
+        const data = await apiGet<AccountsResponse>(`api/akun?q=${encodeURIComponent(passwordExpiry.date)}&limit=200&offset=0`);
+        const accounts = (data.accounts ?? data.data ?? []).filter((account) => account.expired_password === passwordExpiry.date);
         setMessages((current) => [
           ...current,
           {
@@ -303,7 +303,7 @@ function App() {
             conversation_id: selectedConversationId ?? "new",
             user_id: null,
             role: "assistant",
-            content: formatTomorrowPasswordResponse(tomorrow, accounts),
+            content: formatPasswordExpiryResponse(passwordExpiry.date, passwordExpiry.label, accounts),
             metadata_json: accountDetailsMetadata(accounts),
             created_at: new Date().toISOString(),
           },
@@ -316,7 +316,7 @@ function App() {
             conversation_id: selectedConversationId ?? "new",
             user_id: null,
             role: "assistant",
-            content: error instanceof Error ? error.message : "Data expired password besok gagal dimuat.",
+            content: error instanceof Error ? error.message : "Data expired password gagal dimuat.",
             created_at: new Date().toISOString(),
           },
         ]);
@@ -1061,25 +1061,32 @@ function isDeleteCurrentChatCommand(content: string) {
   ].includes(normalized);
 }
 
-function isTomorrowPasswordCommand(content: string) {
+function passwordExpiryCommand(content: string): { date: string; label: "hari ini" | "besok" } | null {
   const normalized = content
     .trim()
     .toLowerCase()
     .replace(/[.!?]+$/g, "")
     .replace(/\s+/g, " ");
 
-  return (
-    normalized === "ganti password besok"
-    || normalized === "ganti password exp besok"
-    || normalized === "password expired besok"
-    || normalized === "expired password besok"
-    || normalized === "exp password besok"
-  );
+  const asksPassword = /\b(pw|password|pass|expired password|exp password)\b/.test(normalized);
+  const asksChange = /\b(ubah|ganti|cek|lihat|tampilkan|berapa|data)\b/.test(normalized);
+
+  if (!asksPassword || !asksChange) return null;
+
+  if (/\b(besok|tomorrow)\b/.test(normalized)) {
+    return { date: relativeDateString(1), label: "besok" };
+  }
+
+  if (/\b(hari ini|today|sekarang)\b/.test(normalized)) {
+    return { date: relativeDateString(0), label: "hari ini" };
+  }
+
+  return null;
 }
 
-function tomorrowDateString() {
+function relativeDateString(offsetDays: number) {
   const date = new Date();
-  date.setDate(date.getDate() + 1);
+  date.setDate(date.getDate() + offsetDays);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -1107,12 +1114,12 @@ function statusFilterFromMessage(content: string): { value: string; label: strin
   return statuses.find((status) => status.aliases.includes(normalized)) ?? null;
 }
 
-function formatTomorrowPasswordResponse(date: string, accounts: StoreAccountSummary[]) {
+function formatPasswordExpiryResponse(date: string, label: "hari ini" | "besok", accounts: StoreAccountSummary[]) {
   if (accounts.length === 0) {
-    return `Tidak ada akun yang expired password tanggal besok (${date}).`;
+    return `Tidak ada akun yang expired password ${label} (${date}).`;
   }
 
-  const lines = [`Jumlah akun yang expired password besok (${date}): ${accounts.length} data`];
+  const lines = [`Akun yang perlu ubah password ${label} (${date}): ${accounts.length} akun`];
   lines.push("");
   accounts.slice(0, 30).forEach((account, index) => {
     lines.push(`${index + 1}. ${account.nama_akun || "Akun"} | ${account.username || "-"} | ${account.kategori || "-"} | ${account.status || "-"} | expired ${account.expired_password || "-"}`);

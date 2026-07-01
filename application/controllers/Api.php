@@ -688,6 +688,28 @@ class Api extends CI_Controller
             ];
         }
 
+        if ($this->is_enable_ai_command($normalized)) {
+            return [
+                'content' => 'Siap, mode AI saya aktifkan. Mulai sekarang pertanyaan umum boleh memakai model AI yang kamu pilih.',
+                'summary' => 'AI aktif',
+                'command' => 'enable_ai',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => ['ai_enabled' => true],
+            ];
+        }
+
+        if ($this->is_disable_ai_command($normalized)) {
+            return [
+                'content' => 'Oke, mode AI saya nonaktifkan. Pertanyaan umum tidak akan memakai Gemini atau Groq sampai kamu ketik `aktifkan ai` lagi.',
+                'summary' => 'AI nonaktif',
+                'command' => 'disable_ai',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => ['ai_enabled' => false],
+            ];
+        }
+
         if ($this->is_order_number_copy_command($normalized)) {
             return $this->chat_order_numbers_response($content);
         }
@@ -775,6 +797,10 @@ class Api extends CI_Controller
             return $this->chat_date_response();
         }
 
+        if ($this->is_password_expiry_question($normalized)) {
+            return $this->chat_password_expiry_response($normalized);
+        }
+
         if ($this->is_deactived_count_question($normalized)) {
             return $this->chat_deactived_count_response();
         }
@@ -793,6 +819,17 @@ class Api extends CI_Controller
 
         if ($this->is_basic_question($normalized)) {
             return $this->chat_basic_response($normalized);
+        }
+
+        if (!$this->conversation_ai_is_enabled($conversation_id)) {
+            return [
+                'content' => "Mode AI belum aktif, jadi saya tidak akan memakai Gemini atau Groq dulu agar quota kamu aman.\n\nKetik `aktifkan ai` kalau mau memakai model AI. Kalau sudah selesai, ketik `nonaktifkan ai`.",
+                'summary' => 'AI belum aktif',
+                'command' => 'ai_disabled',
+                'status' => 'waiting',
+                'error' => null,
+                'metadata' => ['ai_enabled' => false],
+            ];
         }
 
         return $this->chat_google_search_response($content, $ai_model);
@@ -814,6 +851,52 @@ class Api extends CI_Controller
         }
 
         return 'gemini';
+    }
+
+    private function is_enable_ai_command($normalized)
+    {
+        return in_array($normalized, [
+            'aktifkan ai',
+            'nyalakan ai',
+            'hidupkan ai',
+            'aktifkan model ai',
+            'pakai ai',
+        ], true);
+    }
+
+    private function is_disable_ai_command($normalized)
+    {
+        return in_array($normalized, [
+            'nonaktifkan ai',
+            'matikan ai',
+            'disable ai',
+            'stop ai',
+            'jangan pakai ai',
+        ], true);
+    }
+
+    private function conversation_ai_is_enabled($conversation_id)
+    {
+        $messages = $this->db
+            ->where('conversation_id', (int) $conversation_id)
+            ->where('role', 'assistant')
+            ->where('metadata_json IS NOT NULL', null, false)
+            ->order_by('id', 'DESC')
+            ->limit(30)
+            ->get('chat_ai_messages')
+            ->result();
+
+        foreach ($messages as $message) {
+            $metadata = json_decode($message->metadata_json, true);
+
+            if (!is_array($metadata) || !array_key_exists('ai_enabled', $metadata)) {
+                continue;
+            }
+
+            return (bool) $metadata['ai_enabled'];
+        }
+
+        return false;
     }
 
     private function is_take_unsold_account_command($normalized)
@@ -2084,6 +2167,85 @@ class Api extends CI_Controller
             'status' => 'success',
             'error' => null,
             'metadata' => ['date' => date('Y-m-d'), 'time' => date('H:i:s')],
+        ];
+    }
+
+    private function is_password_expiry_question($normalized)
+    {
+        $asks_password = preg_match('/\b(pw|password|pass|expired password|exp password)\b/', $normalized) === 1;
+        $asks_change = preg_match('/\b(ubah|ganti|cek|lihat|tampilkan|berapa|data)\b/', $normalized) === 1;
+        $has_date = strpos($normalized, 'besok') !== false
+            || strpos($normalized, 'tomorrow') !== false
+            || strpos($normalized, 'hari ini') !== false
+            || strpos($normalized, 'today') !== false
+            || strpos($normalized, 'sekarang') !== false;
+
+        return $asks_password && $asks_change && $has_date;
+    }
+
+    private function chat_password_expiry_response($normalized)
+    {
+        $is_tomorrow = strpos($normalized, 'besok') !== false || strpos($normalized, 'tomorrow') !== false;
+        $date = $is_tomorrow ? date('Y-m-d', strtotime('+1 day')) : date('Y-m-d');
+        $label = $is_tomorrow ? 'besok' : 'hari ini';
+
+        $accounts = $this->db
+            ->where('expired_password', $date)
+            ->order_by('id_akun', 'DESC')
+            ->limit(50)
+            ->get('akun')
+            ->result();
+
+        $total = $this->db
+            ->where('expired_password', $date)
+            ->count_all_results('akun');
+
+        if ($total === 0) {
+            return [
+                'content' => 'Tidak ada akun yang expired password ' . $label . ' (' . date('d-m-Y', strtotime($date)) . ').',
+                'summary' => 'Expired password kosong',
+                'command' => 'password_expiry',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => [
+                    'date' => $date,
+                    'label' => $label,
+                    'count' => 0,
+                    'account_details' => [],
+                ],
+            ];
+        }
+
+        $lines = [
+            'Akun yang perlu ubah password ' . $label . ' (' . date('d-m-Y', strtotime($date)) . '): ' . $total . ' akun.',
+            '',
+        ];
+
+        foreach (array_slice($accounts, 0, 30) as $index => $account) {
+            $lines[] = ($index + 1) . '. ' . ($account->nama_akun ?: 'Akun')
+                . ' | ' . ($account->username ?: '-')
+                . ' | ' . ($account->kategori ?: '-')
+                . ' | ' . ($account->status ?: '-')
+                . ' | expired ' . ($account->expired_password ?: '-');
+        }
+
+        if ($total > 30) {
+            $lines[] = '';
+            $lines[] = 'Saya tampilkan 30 akun pertama dari total ' . $total . ' akun.';
+        }
+
+        return [
+            'content' => implode("\n", $lines),
+            'summary' => 'Expired password ' . $label,
+            'command' => 'password_expiry',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'date' => $date,
+                'label' => $label,
+                'count' => $total,
+                'account_details' => $accounts,
+            ],
         ];
     }
 

@@ -81,6 +81,7 @@ interface CommandSuggestion {
 type AiModelChoice = "gemini" | "groq";
 
 const AI_MODEL_KEY = "violence:selectedAiModel";
+const AI_ENABLED_KEY = "violence:aiEnabled";
 const AI_USAGE_KEY_PREFIX = "violence:aiUsage:";
 
 const AI_MODEL_OPTIONS: Array<{ id: AiModelChoice; label: string; caption: string; accent: string; softLimit: number }> = [
@@ -104,6 +105,18 @@ function readAiUsage(): Record<AiModelChoice, number> {
 function initialAiModel(): AiModelChoice {
   const saved = window.localStorage.getItem(AI_MODEL_KEY);
   return saved === "groq" ? "groq" : "gemini";
+}
+
+function initialAiEnabled() {
+  return window.localStorage.getItem(AI_ENABLED_KEY) === "1";
+}
+
+function isEnableAiCommand(content: string) {
+  return ["aktifkan ai", "nyalakan ai", "hidupkan ai", "aktifkan model ai", "pakai ai"].includes(content.trim().toLowerCase());
+}
+
+function isDisableAiCommand(content: string) {
+  return ["nonaktifkan ai", "matikan ai", "disable ai", "stop ai", "jangan pakai ai"].includes(content.trim().toLowerCase());
 }
 
 function parseAccountSearchCommand(value: string): { mode: "detail" | "use"; keyword: string } | null {
@@ -270,6 +283,7 @@ export function AnimatedAIChat({
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [selectedAiModel, setSelectedAiModel] = useState<AiModelChoice>(() => initialAiModel());
+  const [aiEnabled, setAiEnabled] = useState(() => initialAiEnabled());
   const [aiUsage, setAiUsage] = useState<Record<AiModelChoice, number>>(() => readAiUsage());
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [inputFocused, setInputFocused] = useState(false);
@@ -349,6 +363,30 @@ export function AnimatedAIChat({
   }, [messages, isSending]);
 
   useEffect(() => {
+    const latestAssistant = [...messages].reverse().find((message) => message.role === "assistant");
+    if (!latestAssistant) return;
+
+    const content = latestAssistant.content.toLowerCase();
+    const limitedModel = content.includes("groq sedang kena limit/quota")
+      ? "groq"
+      : content.includes("gemini sedang kena limit/quota")
+        ? "gemini"
+        : null;
+
+    if (!limitedModel) return;
+
+    const modelInfo = AI_MODEL_OPTIONS.find((model) => model.id === limitedModel);
+    if (!modelInfo) return;
+
+    setAiUsage((current) => {
+      if ((current[limitedModel] || 0) >= modelInfo.softLimit) return current;
+      const next = { ...current, [limitedModel]: modelInfo.softLimit };
+      window.localStorage.setItem(todayUsageKey(), JSON.stringify(next));
+      return next;
+    });
+  }, [messages]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
@@ -372,6 +410,10 @@ export function AnimatedAIChat({
   useEffect(() => {
     window.localStorage.setItem(AI_MODEL_KEY, selectedAiModel);
   }, [selectedAiModel]);
+
+  useEffect(() => {
+    window.localStorage.setItem(AI_ENABLED_KEY, aiEnabled ? "1" : "0");
+  }, [aiEnabled]);
 
   const incrementAiUsage = (model: AiModelChoice) => {
     setAiUsage((current) => {
@@ -408,7 +450,15 @@ export function AnimatedAIChat({
     setValue("");
     setAttachments([]);
     adjustHeight(true);
-    incrementAiUsage(selectedAiModel);
+
+    if (isEnableAiCommand(content)) {
+      setAiEnabled(true);
+    } else if (isDisableAiCommand(content)) {
+      setAiEnabled(false);
+    } else if (aiEnabled) {
+      incrementAiUsage(selectedAiModel);
+    }
+
     await onSendMessage(content, selectedAiModel);
   };
 
@@ -516,14 +566,15 @@ export function AnimatedAIChat({
         }}
         whileTap={{ scale: 0.94 }}
         className={cn(
-          "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-white/45 transition-colors hover:bg-white/[0.05] hover:text-white/90",
+          "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-white/[0.05] hover:text-white/90",
+          aiEnabled ? "text-white/55" : "text-amber-200/70",
           showModelMenu && "bg-white/10 text-white/90",
         )}
         aria-label="Pilih model AI"
         title="Pilih model AI"
       >
         <Cpu className="h-4 w-4" />
-        <span className="hidden sm:inline">{selectedAiModelInfo.label}</span>
+        <span className="hidden sm:inline">{aiEnabled ? selectedAiModelInfo.label : "AI Off"}</span>
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showModelMenu && "rotate-180")} />
       </motion.button>
 
@@ -532,7 +583,9 @@ export function AnimatedAIChat({
           <motion.div className="absolute bottom-full left-0 z-50 mb-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#09090b]/95 shadow-2xl shadow-black/40 backdrop-blur-2xl" initial={{ opacity: 0, y: 5, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.98 }}>
             <div className="border-b border-white/10 px-4 py-3">
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Model AI</div>
-              <div className="mt-1 text-xs text-white/35">Pemakaian dihitung dari browser ini hari ini.</div>
+              <div className="mt-1 text-xs text-white/35">
+                {aiEnabled ? "AI aktif. Pemakaian dihitung dari browser ini hari ini." : "AI belum aktif. Ketik `aktifkan ai` untuk memakai model."}
+              </div>
             </div>
             {AI_MODEL_OPTIONS.map((model) => (
               <ModelOptionButton
@@ -540,6 +593,7 @@ export function AnimatedAIChat({
                 model={model}
                 selected={selectedAiModel === model.id}
                 used={aiUsage[model.id] || 0}
+                disabled={!aiEnabled}
                 onSelect={() => {
                   setSelectedAiModel(model.id);
                   setShowModelMenu(false);
@@ -547,7 +601,9 @@ export function AnimatedAIChat({
               />
             ))}
             <div className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-white/40">
-              Jika provider sudah limit, Violence AI akan memberi tahu dan kamu bisa ganti model dari tombol ini.
+              {aiEnabled
+                ? "Jika provider sudah limit, Violence AI akan memberi tahu dan kamu bisa ganti model dari tombol ini."
+                : "Quota tidak akan terpakai selama AI Off. Command lokal seperti stok, detail, use, dan tambah tetap berjalan."}
             </div>
           </motion.div>
         )}
@@ -843,11 +899,13 @@ function ModelOptionButton({
   model,
   selected,
   used,
+  disabled,
   onSelect,
 }: {
   model: (typeof AI_MODEL_OPTIONS)[number];
   selected: boolean;
   used: number;
+  disabled: boolean;
   onSelect: () => void;
 }) {
   const progress = Math.min(100, Math.round((used / model.softLimit) * 100));
@@ -858,6 +916,7 @@ function ModelOptionButton({
       onClick={onSelect}
       className={cn(
         "group w-full px-4 py-3 text-left transition-colors",
+        disabled && "opacity-55",
         selected ? "bg-white/[0.08]" : "hover:bg-white/[0.04]",
       )}
     >
@@ -866,7 +925,7 @@ function ModelOptionButton({
           <div className="flex items-center gap-2">
             <span className={cn("h-2.5 w-2.5 rounded-full bg-gradient-to-r", model.accent)} />
             <span className="text-sm font-semibold text-white">{model.label}</span>
-            {selected && <span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">Active</span>}
+            {selected && <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]", disabled ? "border-amber-300/30 bg-amber-300/10 text-amber-200" : "border-emerald-300/30 bg-emerald-300/10 text-emerald-200")}>{disabled ? "Off" : "Active"}</span>}
           </div>
           <div className="mt-1 text-xs text-white/42">{model.caption}</div>
         </div>
@@ -887,7 +946,7 @@ function ModelOptionButton({
           />
         </div>
         <div className="mt-1.5 text-[11px] text-white/32">
-          Limit asli mengikuti quota akun provider. Bar ini estimasi pemakaian lokal.
+          {disabled ? "Tidak akan memakai quota sebelum AI diaktifkan." : "Limit asli mengikuti quota akun provider. Bar ini estimasi pemakaian lokal."}
         </div>
       </div>
     </button>
