@@ -469,7 +469,7 @@ function App() {
       <div className="fixed inset-0 z-0 overflow-hidden">
         <GlowHorizonFM variant="top" />
       </div>
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_0%,transparent_52%,rgba(0,0,0,0.45)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_0%,transparent_68%,rgba(0,0,0,0.18)_100%)]" />
 
       <AnimatePresence mode="wait">
         {isCheckingSession ? (

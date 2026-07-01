@@ -112,8 +112,8 @@ body {
   --pointer-y: 45vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), color-mix(in srgb, var(--theme-400) 20%, transparent) 0 80px, transparent 220px),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 34%, rgba(255, 255, 255, 0.018));
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), color-mix(in srgb, var(--theme-400) 14%, transparent) 0 80px, transparent 220px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.018), transparent 34%, rgba(255, 255, 255, 0.01));
 }
 
 .interactive-chat-bg::after {
@@ -122,8 +122,8 @@ body {
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--theme-400) 12%, transparent), transparent 34%),
-    linear-gradient(180deg, transparent 0%, rgba(5, 5, 7, 0.66) 78%, #050507 100%);
+    radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--theme-400) 6%, transparent), transparent 34%),
+    linear-gradient(180deg, transparent 0%, rgba(5, 5, 7, 0.18) 82%, rgba(5, 5, 7, 0.32) 100%);
 }
 
 .interactive-chat-bg__grid {
