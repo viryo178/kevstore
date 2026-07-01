@@ -650,7 +650,7 @@ function LoginScreen({
             </label>
             {loginError && <div className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-100">{loginError}</div>}
             <button type="submit" disabled={isLoggingIn} className="theme-hover-fill flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white font-semibold text-[#09090b] shadow-lg shadow-white/10 transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-80">
-              {isLoggingIn ? <><LoaderIcon className="h-4 w-4 animate-spin" /><span>Memuat ruang chat</span></> : <><span>Masuk ke Zap</span><ArrowRight className="h-4 w-4" /></>}
+              {isLoggingIn ? <><LoaderIcon className="h-4 w-4 animate-spin" /><span>Memuat ruang chat</span></> : <><span>Masuk ke Violence AI</span><ArrowRight className="h-4 w-4" /></>}
             </button>
             <p className="text-center text-xs text-white/35">Login database: kocak / 12kali34kali</p>
           </div>
@@ -716,8 +716,7 @@ function Sidebar({
       <aside className={cn("fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-black/45 p-5 text-white shadow-2xl shadow-black/40 backdrop-blur-2xl transition-transform duration-300", open ? "translate-x-0" : "-translate-x-full", collapsed ? "md:-translate-x-full" : "md:translate-x-0")}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-20 w-28 place-items-center rounded-xl bg-black/35"><img src={oracleSiteLogo} alt="Oracle Site" className="h-[4.5rem] w-[6.5rem] object-contain" /></div>
-            <div><div className="text-lg font-semibold">Zap AI</div><div className="text-sm text-white/40">Dashboard pengelolaan</div></div>
+            <div><div className="text-lg font-semibold">Violence AI</div><div className="text-sm text-white/40">Dashboard pengelolaan</div></div>
           </div>
           <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg text-white/45 transition hover:bg-white/10 hover:text-white md:hidden" aria-label="Close sidebar"><X className="h-4 w-4" /></button>
         </div>

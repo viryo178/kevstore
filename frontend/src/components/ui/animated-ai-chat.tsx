@@ -276,7 +276,7 @@ export function AnimatedAIChat({
           onKeyDown={handleKeyDown}
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
-          placeholder="Ask zap a question..."
+          placeholder="Ask Violence AI a question..."
           containerClassName="w-full"
           className="chat-input-scroll min-h-14 w-full resize-none border-none bg-transparent px-4 py-3 text-xl text-white/90 placeholder:text-white/35 focus:outline-none"
           style={{ overflowY: "auto" }}
@@ -338,8 +338,8 @@ export function AnimatedAIChat({
         {activeView === "password" && <SimplePanel title="Ganti Password Exp" subtitle="Pengaturan password dan masa berlaku." items={["Form password bisa disambungkan ke tabel users", "Validasi minimal 6 karakter", "Session tetap memakai login CI3"]} />}
         {activeView === "upgrade" && <SimplePanel title="Upgrade plan" subtitle="Paket Plus aktif untuk workspace ini." items={["Akses prioritas", "Riwayat chat tersimpan", "Command workflow siap pakai"]} />}
         {activeView === "personalization" && <SimplePanel title="Personalization" subtitle="Preferensi tampilan dan gaya jawaban." items={["Theme: Dark", "Tone: Helpful", "Default model: local-demo-assistant"]} />}
-        {activeView === "profile" && <SimplePanel title="Profile" subtitle="Data profil pengguna aktif." items={["Name: Demo User", "Email: zap@ai.local", "Role: admin"]} />}
-        {activeView === "settings" && <SimplePanel title="Settings" subtitle="Pengaturan aplikasi Zap AI." items={["Sidebar state tersimpan", "Session memakai CI3", "Database: ai_chat"]} />}
+        {activeView === "profile" && <SimplePanel title="Profile" subtitle="Data profil pengguna aktif." items={["Name: Demo User", "Email: violence@ai.local", "Role: admin"]} />}
+        {activeView === "settings" && <SimplePanel title="Settings" subtitle="Pengaturan aplikasi Violence AI." items={["Sidebar state tersimpan", "Session memakai CI3", "Database: ai_chat"]} />}
         {activeView === "help" && <SimplePanel title="Help" subtitle="Panduan singkat." items={["Klik New Chat untuk mulai draft kosong", "Kirim pesan untuk menyimpan chat", "Gunakan /page, /clone, /figma, /improve untuk command"]} />}
       </Shell>
     );
@@ -408,7 +408,7 @@ export function AnimatedAIChat({
                   <div className="flex justify-start">
                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-xl text-white/65 backdrop-blur-xl">
                       <span className="inline-flex items-center gap-2">
-                        <span>Zap AI</span>
+                        <span>Violence AI</span>
                         <TypingDots />
                       </span>
                     </div>
@@ -450,7 +450,7 @@ export function AnimatedAIChat({
                 onKeyDown={handleKeyDown}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                placeholder="Ask zap a question..."
+                placeholder="Ask Violence AI a question..."
                 containerClassName="w-full"
                 className="chat-input-scroll min-h-14 w-full resize-none border-none bg-transparent px-4 py-3 text-xl text-white/90 placeholder:text-white/35 focus:outline-none"
                 style={{ overflowY: "auto" }}
@@ -537,7 +537,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )}
       >
         <div className="mb-2 flex items-center justify-between gap-3 text-base font-semibold uppercase tracking-[0.12em] text-white/45">
-          <span>{isUser ? "You" : "Zap AI"}</span>
+          <span>{isUser ? "You" : "Violence AI"}</span>
           {!isUser && (
             <button
               type="button"
