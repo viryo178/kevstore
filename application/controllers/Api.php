@@ -2257,7 +2257,7 @@ class Api extends CI_Controller
         }
 
         $exact = $this->db
-            ->where('username', $keyword)
+            ->where('BINARY `username` = ' . $this->db->escape($keyword), null, false)
             ->get('akun')
             ->row();
 
@@ -3386,7 +3386,7 @@ class Api extends CI_Controller
         }
 
         $this->db->from('akun');
-        $this->db->where('username', $username);
+        $this->db->where('BINARY `username` = ' . $this->db->escape($username), null, false);
 
         if ($exclude_id !== null) {
             $this->db->where('id_akun !=', (int) $exclude_id);
