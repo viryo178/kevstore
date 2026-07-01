@@ -77,12 +77,6 @@ $route['verify-otp'] = 'auth/verify_otp';
 $route['check-otp'] = 'auth/check_otp';
 $route['reset-password'] = 'auth/reset_password';
 $route['update-password'] = 'auth/update_password';
-$route['cron/send-expired-whatsapp/(:any)'] = 'cron/send_expired_whatsapp/$1';
-$route['cron/test-fonnte-targets/(:any)'] = 'cron/test_fonnte_targets/$1';
-$route['webhook/fonnte']['post'] = 'webhook/fonnte';
-$route['webhook/fonnte-test']['get'] = 'webhook/fonnte_test';
-$route['webhook/fonnte-simulate']['get'] = 'webhook/fonnte_simulate';
-
 $route['api/login']['post'] = 'api/login';
 $route['api/logout']['post'] = 'api/logout';
 $route['api/me']['get'] = 'api/me';

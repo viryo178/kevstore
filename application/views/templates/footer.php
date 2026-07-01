@@ -214,55 +214,6 @@
     })();
   </script>
 
-  <script>
-    (function() {
-      const cronUrl = "<?= base_url('cron/send-expired-whatsapp/kevstore-expired-wa-00') ?>";
-      const cronStorageKey = 'kevstoreExpiredWhatsappCronDate';
-
-      function localDateKey(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-
-      function runExpiredWhatsappCron() {
-        const today = localDateKey(new Date());
-
-        if (localStorage.getItem(cronStorageKey) === today) {
-          return;
-        }
-
-        localStorage.setItem(cronStorageKey, today);
-
-        fetch(cronUrl, {
-          method: 'GET',
-          credentials: 'same-origin',
-          cache: 'no-store'
-        }).catch(function() {
-          localStorage.removeItem(cronStorageKey);
-        });
-      }
-
-      function msUntilNextMidnight() {
-        const now = new Date();
-        const next = new Date(now);
-        next.setDate(now.getDate() + 1);
-        next.setHours(0, 0, 5, 0);
-        return next.getTime() - now.getTime();
-      }
-
-      document.addEventListener('DOMContentLoaded', function() {
-        runExpiredWhatsappCron();
-
-        setTimeout(function triggerDailyCron() {
-          runExpiredWhatsappCron();
-          setTimeout(triggerDailyCron, 24 * 60 * 60 * 1000);
-        }, msUntilNextMidnight());
-      });
-    })();
-  </script>
-
   <!-- Template Main JS File -->
   <script src="<?= base_url() ?>assets/js/main.js?v=<?= filemtime(FCPATH . 'assets/js/main.js') ?>"></script>
 

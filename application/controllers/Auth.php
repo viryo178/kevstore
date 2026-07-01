@@ -6,7 +6,6 @@ class Auth extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
-		$this->config->load('fonnte');
 	}
 
 	// ================= LOGIN =================
@@ -89,74 +88,12 @@ class Auth extends CI_Controller
 			redirect('forgot-password');
 		}
 
-		// nomor WA kosong
-		if (empty($user['no_wa'])) {
-
-			$this->session->set_flashdata(
-				'error',
-				'Nomor WhatsApp belum tersedia'
-			);
-
-			redirect('forgot-password');
-		}
-
-		// generate OTP
-		$otp = rand(100000, 999999);
-
-		$expired = date(
-			'Y-m-d H:i:s',
-			strtotime('+2 minutes')
+		$this->session->set_flashdata(
+			'error',
+			'Reset password via WhatsApp sudah dinonaktifkan. Hubungi admin untuk reset password.'
 		);
 
-		// simpan OTP
-		$this->db->where('id_user', $user['id_user']);
-
-		$this->db->update('users', [
-			'otp_code' => $otp,
-			'otp_expired' => $expired
-		]);
-
-		// pesan WA
-		$message = "Kode OTP Reset Password Anda: " . $otp . "\n\n";
-		$message .= "OTP berlaku 2 menit.\n";
-		$message .= "Jangan berikan kode ini kepada siapapun.";
-
-		// ================= FONNTE =================
-
-		if (!$this->is_blocked_recipient($user['no_wa'])) {
-			$curl = curl_init();
-
-			curl_setopt_array($curl, array(
-				CURLOPT_URL => 'https://api.fonnte.com/send',
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_ENCODING => '',
-				CURLOPT_MAXREDIRS => 10,
-				CURLOPT_TIMEOUT => 30,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-				CURLOPT_CUSTOMREQUEST => 'POST',
-				CURLOPT_POSTFIELDS => array(
-					'target' => $user['no_wa'],
-					'message' => $message,
-					'countryCode' => '62'
-				),
-				CURLOPT_HTTPHEADER => array(
-					'Authorization: J6WgtFwxavJ312gRdiVp'
-				),
-			));
-
-			$response = curl_exec($curl);
-
-			curl_close($curl);
-		}
-
-		// simpan session reset
-		$this->session->set_userdata(
-			'reset_user',
-			$user['id_user']
-		);
-
-		redirect('verify-otp');
+		redirect('forgot-password');
 	}
 
 	// ================= HALAMAN OTP =================
@@ -290,37 +227,4 @@ class Auth extends CI_Controller
 		redirect('/');
 	}
 
-	private function is_blocked_recipient($target)
-	{
-		$blocked = $this->config->item('fonnte_blocked_recipients');
-		$blocked = is_array($blocked) ? $this->normalize_phones($blocked) : [];
-
-		return in_array($this->normalize_phone($target), $blocked, true);
-	}
-
-	private function normalize_phones($phones)
-	{
-		$normalized = [];
-
-		foreach ($phones as $phone) {
-			$phone = $this->normalize_phone($phone);
-
-			if ($phone !== '') {
-				$normalized[] = $phone;
-			}
-		}
-
-		return array_values(array_unique($normalized));
-	}
-
-	private function normalize_phone($phone)
-	{
-		$phone = preg_replace('/[^0-9]/', '', (string) $phone);
-
-		if (strpos($phone, '0') === 0) {
-			$phone = '62' . substr($phone, 1);
-		}
-
-		return $phone;
-	}
 }

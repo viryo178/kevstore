@@ -501,7 +501,7 @@ export function AnimatedAIChat({
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      <div className="theme-user-bubble rounded-2xl border px-5 py-4 text-xl text-white shadow-xl backdrop-blur-xl">
+                      <div className="theme-user-bubble rounded-2xl border px-5 py-4 text-lg text-white shadow-xl backdrop-blur-xl">
                         <div className="mb-1 text-base font-semibold uppercase tracking-[0.12em] text-white/45">You</div>
                         <TypingDots />
                       </div>
@@ -510,7 +510,7 @@ export function AnimatedAIChat({
                 </AnimatePresence>
                 {isSending && (
                   <div className="flex justify-start">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-xl text-white/65 backdrop-blur-xl">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-lg text-white/65 backdrop-blur-xl">
                       <span className="inline-flex items-center gap-2">
                         <span>Violence AI</span>
                         <TypingDots />
@@ -634,7 +634,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: isUser ? 0.18 : 0.55, ease: "easeOut" }}
         className={cn(
-          "max-w-[88%] rounded-2xl border px-5 py-4 text-xl leading-9 shadow-xl backdrop-blur-xl sm:max-w-[82%]",
+          "max-w-[88%] rounded-2xl border px-5 py-4 text-lg leading-8 shadow-xl backdrop-blur-xl sm:max-w-[82%]",
           isUser
             ? "theme-user-bubble text-white"
             : "border-white/12 bg-[#18181b]/95 text-white shadow-black/35"

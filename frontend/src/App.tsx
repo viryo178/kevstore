@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Palette,
   Plus,
   Search,
   Trash2,
@@ -520,6 +521,10 @@ function App() {
               onSearchChange={setSearchTerm}
               onSelectConversation={handleSelectConversation}
               onDeleteConversation={handleDeleteConversation}
+              onOpenPersonalization={() => {
+                setPersonalizationOpen(true);
+                setSidebarOpen(false);
+              }}
               onViewChange={(view) => {
                 setActiveView(view);
                 setSidebarOpen(false);
@@ -662,6 +667,7 @@ interface SidebarProps {
   onSearchChange: (value: string) => void;
   onSelectConversation: (id: number) => void;
   onDeleteConversation: (id: number) => void;
+  onOpenPersonalization: () => void;
   onViewChange: (view: ActiveView) => void;
 }
 
@@ -679,6 +685,7 @@ function Sidebar({
   onSearchChange,
   onSelectConversation,
   onDeleteConversation,
+  onOpenPersonalization,
   onViewChange,
 }: SidebarProps) {
   const [accountOpen, setAccountOpen] = useState(false);
@@ -720,7 +727,7 @@ function Sidebar({
             type="button"
             onClick={() => {
               closeAccountMenu();
-              window.location.href = "https://kevs.my.id";
+              window.location.href = "https://kevs.my.id/admin";
             }}
             className={cn(
               "flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm font-semibold transition",
@@ -794,6 +801,7 @@ function Sidebar({
                   </div>
                 </div>
                 <div className="my-2 h-px bg-white/10" />
+                <AccountMenuItem icon={<Palette className="h-4 w-4" />} label="Personalization" onClick={() => { closeAccountMenu(); onOpenPersonalization(); }} />
                 <AccountMenuItem icon={<LogOut className="h-4 w-4" />} label="Log out" onClick={() => { closeAccountMenu(); onLogout(); }} />
               </motion.div>
             )}
