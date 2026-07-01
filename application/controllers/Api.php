@@ -2265,13 +2265,20 @@ class Api extends CI_Controller
             return $exact;
         }
 
-        $accounts = $this->search_accounts_for_chat($keyword, 2);
+        $prefix = $this->db
+            ->like('username', $keyword, 'after')
+            ->order_by('id_akun', 'DESC')
+            ->limit(1)
+            ->get('akun')
+            ->row();
 
-        if (count($accounts) === 1) {
-            return $accounts[0];
+        if ($prefix) {
+            return $prefix;
         }
 
-        return null;
+        $accounts = $this->search_accounts_for_chat($keyword, 1);
+
+        return !empty($accounts) ? $accounts[0] : null;
     }
 
     private function search_accounts_for_chat($keyword = '', $limit = 10)
@@ -2671,7 +2678,7 @@ class Api extends CI_Controller
 
             $username_key = strtolower($username);
             if (isset($seen[$username_key]) || $this->username_exists($username)) {
-                $skipped[] = $username . ': username sudah ada';
+                $skipped[] = $username . ': username sudah ada. Kalau mau pakai akun ini, ketik `use ' . $username . '` atau `detail ' . $username . '`.';
                 continue;
             }
 
