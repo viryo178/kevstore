@@ -6,7 +6,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clipboard,
+  ChevronDown,
   Command,
+  Cpu,
   Edit3,
   Eye,
   FileText,
@@ -78,10 +80,31 @@ interface CommandSuggestion {
 
 type AiModelChoice = "gemini" | "groq";
 
-const AI_MODEL_OPTIONS: Array<{ id: AiModelChoice; label: string; caption: string }> = [
-  { id: "gemini", label: "Gemini", caption: "Google AI Studio" },
-  { id: "groq", label: "Groq", caption: "Llama 3.3 70B" },
+const AI_MODEL_KEY = "violence:selectedAiModel";
+const AI_USAGE_KEY_PREFIX = "violence:aiUsage:";
+
+const AI_MODEL_OPTIONS: Array<{ id: AiModelChoice; label: string; caption: string; accent: string; softLimit: number }> = [
+  { id: "gemini", label: "Gemini", caption: "Google AI Studio", accent: "from-sky-400 to-violet-400", softLimit: 100 },
+  { id: "groq", label: "Groq", caption: "Llama 3.3 70B", accent: "from-emerald-300 to-cyan-300", softLimit: 100 },
 ];
+
+function todayUsageKey() {
+  return `${AI_USAGE_KEY_PREFIX}${new Date().toISOString().slice(0, 10)}`;
+}
+
+function readAiUsage(): Record<AiModelChoice, number> {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(todayUsageKey()) || "{}") as Partial<Record<AiModelChoice, number>>;
+    return { gemini: Number(parsed.gemini || 0), groq: Number(parsed.groq || 0) };
+  } catch {
+    return { gemini: 0, groq: 0 };
+  }
+}
+
+function initialAiModel(): AiModelChoice {
+  const saved = window.localStorage.getItem(AI_MODEL_KEY);
+  return saved === "groq" ? "groq" : "gemini";
+}
 
 function parseAccountSearchCommand(value: string): { mode: "detail" | "use"; keyword: string } | null {
   const match = value.trimStart().match(/^\/?(detail|use)(?:\s+(.*))?$/i);
@@ -246,7 +269,8 @@ export function AnimatedAIChat({
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
-  const [selectedAiModel, setSelectedAiModel] = useState<AiModelChoice>("gemini");
+  const [selectedAiModel, setSelectedAiModel] = useState<AiModelChoice>(() => initialAiModel());
+  const [aiUsage, setAiUsage] = useState<Record<AiModelChoice, number>>(() => readAiUsage());
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [inputFocused, setInputFocused] = useState(false);
   const [accountSuggestions, setAccountSuggestions] = useState<StoreAccount[]>([]);
@@ -345,6 +369,18 @@ export function AnimatedAIChat({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem(AI_MODEL_KEY, selectedAiModel);
+  }, [selectedAiModel]);
+
+  const incrementAiUsage = (model: AiModelChoice) => {
+    setAiUsage((current) => {
+      const next = { ...current, [model]: Number(current[model] || 0) + 1 };
+      window.localStorage.setItem(todayUsageKey(), JSON.stringify(next));
+      return next;
+    });
+  };
+
   const selectCommandSuggestion = (index: number) => {
     const selectedCommand = commandSuggestions[index];
     setValue(`${selectedCommand.prefix} `);
@@ -372,6 +408,7 @@ export function AnimatedAIChat({
     setValue("");
     setAttachments([]);
     adjustHeight(true);
+    incrementAiUsage(selectedAiModel);
     await onSendMessage(content, selectedAiModel);
   };
 
@@ -485,36 +522,33 @@ export function AnimatedAIChat({
         aria-label="Pilih model AI"
         title="Pilih model AI"
       >
-        <Sparkles className="h-4 w-4" />
+        <Cpu className="h-4 w-4" />
         <span className="hidden sm:inline">{selectedAiModelInfo.label}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showModelMenu && "rotate-180")} />
       </motion.button>
 
       <AnimatePresence>
         {showModelMenu && (
-          <motion.div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-lg border border-white/10 bg-black/90 shadow-2xl backdrop-blur-xl" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}>
-            <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
-              Model AI
+          <motion.div className="absolute bottom-full left-0 z-50 mb-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#09090b]/95 shadow-2xl shadow-black/40 backdrop-blur-2xl" initial={{ opacity: 0, y: 5, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.98 }}>
+            <div className="border-b border-white/10 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Model AI</div>
+              <div className="mt-1 text-xs text-white/35">Pemakaian dihitung dari browser ini hari ini.</div>
             </div>
             {AI_MODEL_OPTIONS.map((model) => (
-              <button
-                type="button"
+              <ModelOptionButton
                 key={model.id}
-                onClick={() => {
+                model={model}
+                selected={selectedAiModel === model.id}
+                used={aiUsage[model.id] || 0}
+                onSelect={() => {
                   setSelectedAiModel(model.id);
                   setShowModelMenu(false);
                 }}
-                className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors",
-                  selectedAiModel === model.id ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white",
-                )}
-              >
-                <span>
-                  <span className="block text-sm font-medium">{model.label}</span>
-                  <span className="block text-xs text-white/40">{model.caption}</span>
-                </span>
-                {selectedAiModel === model.id && <CheckCircle2 className="h-4 w-4 text-emerald-300" />}
-              </button>
+              />
             ))}
+            <div className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-white/40">
+              Jika provider sudah limit, Violence AI akan memberi tahu dan kamu bisa ganti model dari tombol ini.
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -522,7 +556,7 @@ export function AnimatedAIChat({
   );
 
   const composerBox = (
-    <motion.div className="pointer-events-auto relative mx-auto w-full max-w-5xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 text-left shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
+    <motion.div className="pointer-events-auto relative mx-auto w-full max-w-6xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 text-left shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
       {accountSuggestionPanel}
       <AnimatePresence>
         {showCommandPalette && (
@@ -659,8 +693,8 @@ export function AnimatedAIChat({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-56 pt-7 sm:px-6 sm:pb-64 sm:pt-8">
-          <div className="mx-auto w-full max-w-6xl sm:p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-6 sm:pb-48 sm:pt-8">
+          <div className="mx-auto w-full max-w-6xl sm:px-4 sm:pt-4">
             {messages.length === 0 && !isLoadingMessages ? (
               <div className="future-empty-state grid min-h-[calc(100vh-15rem)] place-items-center text-center">
                 <div>
@@ -679,7 +713,7 @@ export function AnimatedAIChat({
                       </motion.button>
                     ))}
                   </div>
-                  <div className="mt-10 w-[min(64rem,calc(100vw-2rem))]">
+                  <div className="mt-10 w-[min(72rem,calc(100vw-2rem))]">
                     {composerBox}
                   </div>
                 </div>
@@ -715,15 +749,15 @@ export function AnimatedAIChat({
                     </div>
                   </div>
                 )}
-                <div ref={messagesEndRef} className="scroll-mb-64" />
+                <div ref={messagesEndRef} className="scroll-mb-44" />
               </div>
             )}
           </div>
         </div>
 
         {messages.length > 0 && (
-        <div className={cn("pointer-events-none fixed bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[#050507] via-[#050507]/98 via-70% to-transparent px-5 pb-5 pt-16 sm:px-4 sm:pt-24", sidebarCollapsed ? "md:left-0" : "md:left-72")}>
-          <motion.div className="pointer-events-auto relative mx-auto w-full max-w-5xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
+        <div className={cn("pointer-events-none fixed bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[#050507] via-[#050507]/96 via-72% to-transparent px-5 pb-4 pt-8 sm:px-6 sm:pt-12", sidebarCollapsed ? "md:left-0" : "md:left-72")}>
+          <motion.div className="pointer-events-auto relative mx-auto w-full max-w-6xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
             {accountSuggestionPanel}
             <AnimatePresence>
               {showCommandPalette && (
@@ -802,6 +836,61 @@ export function AnimatedAIChat({
         <motion.div className="theme-cursor-glow pointer-events-none fixed z-0 h-[32rem] w-[32rem] rounded-full opacity-[0.018] blur-[84px]" animate={{ x: mousePosition.x - 256, y: mousePosition.y - 256 }} transition={{ type: "spring", damping: 25, stiffness: 150, mass: 0.5 }} />
       )}
     </div>
+  );
+}
+
+function ModelOptionButton({
+  model,
+  selected,
+  used,
+  onSelect,
+}: {
+  model: (typeof AI_MODEL_OPTIONS)[number];
+  selected: boolean;
+  used: number;
+  onSelect: () => void;
+}) {
+  const progress = Math.min(100, Math.round((used / model.softLimit) * 100));
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "group w-full px-4 py-3 text-left transition-colors",
+        selected ? "bg-white/[0.08]" : "hover:bg-white/[0.04]",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={cn("h-2.5 w-2.5 rounded-full bg-gradient-to-r", model.accent)} />
+            <span className="text-sm font-semibold text-white">{model.label}</span>
+            {selected && <span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">Active</span>}
+          </div>
+          <div className="mt-1 text-xs text-white/42">{model.caption}</div>
+        </div>
+        {selected ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" /> : <ChevronDown className="-rotate-90 mt-0.5 h-4 w-4 shrink-0 text-white/25 transition-colors group-hover:text-white/50" />}
+      </div>
+
+      <div className="mt-3">
+        <div className="mb-1.5 flex items-center justify-between text-[11px] text-white/40">
+          <span>Dipakai hari ini</span>
+          <span>{used} request</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+          <motion.div
+            className={cn("h-full rounded-full bg-gradient-to-r", model.accent)}
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ type: "spring", damping: 24, stiffness: 180 }}
+          />
+        </div>
+        <div className="mt-1.5 text-[11px] text-white/32">
+          Limit asli mengikuti quota akun provider. Bar ini estimasi pemakaian lokal.
+        </div>
+      </div>
+    </button>
   );
 }
 
