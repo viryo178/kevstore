@@ -15,6 +15,7 @@ import {
   FolderKanban,
   LoaderIcon,
   Mail,
+  MessageSquare,
   Paperclip,
   PenTool,
   SendIcon,
@@ -963,6 +964,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   const messageMetadata = React.useMemo(() => readMessageMetadata(message.metadata_json), [message.metadata_json]);
   const accountDetails = messageMetadata.accountDetails;
   const copyText = messageMetadata.copyText || message.content;
+  const showDeveloperButton = !isUser && (
+    messageMetadata.developerButton
+    || message.content.toLowerCase().includes("fitur pembahasaan ini belum di tambahkan oleh developer")
+  );
 
   const copyMessage = async () => {
     try {
@@ -1013,6 +1018,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           >
             {expanded ? "Lihat lebih sedikit" : "Lihat lebih banyak"}
           </button>
+        )}
+        {showDeveloperButton && (
+          <a
+            href="https://kevs.my.id/"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white text-sm font-semibold text-black px-4 py-2.5 shadow-lg shadow-white/10 transition hover:bg-white/90"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Hubungi developer
+          </a>
         )}
         {!isUser && accountDetails.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-white/10 pt-3">
@@ -1066,16 +1082,17 @@ interface AccountDetail {
   note?: string | null;
 }
 
-function readMessageMetadata(metadataJson?: string | null): { accountDetails: AccountDetail[]; copyText: string | null } {
-  if (!metadataJson) return { accountDetails: [], copyText: null };
+function readMessageMetadata(metadataJson?: string | null): { accountDetails: AccountDetail[]; copyText: string | null; developerButton: boolean } {
+  if (!metadataJson) return { accountDetails: [], copyText: null, developerButton: false };
   try {
-    const metadata = JSON.parse(metadataJson) as { account_details?: AccountDetail[]; copy_text?: string | null };
+    const metadata = JSON.parse(metadataJson) as { account_details?: AccountDetail[]; copy_text?: string | null; developer_button?: boolean };
     return {
       accountDetails: Array.isArray(metadata.account_details) ? metadata.account_details : [],
       copyText: typeof metadata.copy_text === "string" && metadata.copy_text.trim() ? metadata.copy_text : null,
+      developerButton: metadata.developer_button === true,
     };
   } catch {
-    return { accountDetails: [], copyText: null };
+    return { accountDetails: [], copyText: null, developerButton: false };
   }
 }
 

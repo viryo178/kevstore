@@ -823,12 +823,15 @@ class Api extends CI_Controller
 
         if (!$this->conversation_ai_is_enabled($conversation_id)) {
             return [
-                'content' => "Mode AI belum aktif, jadi saya tidak akan memakai Gemini atau Groq dulu agar quota kamu aman.\n\nKetik `aktifkan ai` kalau mau memakai model AI. Kalau sudah selesai, ketik `nonaktifkan ai`.",
+                'content' => 'maaf ya cuy fitur pembahasaan ini belum di tambahkan oleh developer minta developer untuk membuatkna fitur ini atau aktifkan mode ai dengan mengetik " aktifkan ai " kalau sudah selesai menggunakan model ai mohon ketik nonaktifkan ai biar limitnya tetap awet ya :3',
                 'summary' => 'AI belum aktif',
                 'command' => 'ai_disabled',
                 'status' => 'waiting',
                 'error' => null,
-                'metadata' => ['ai_enabled' => false],
+                'metadata' => [
+                    'ai_enabled' => false,
+                    'developer_button' => true,
+                ],
             ];
         }
 
