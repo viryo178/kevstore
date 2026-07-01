@@ -989,36 +989,23 @@ class Api extends CI_Controller
         $google_url = 'https://www.google.com/search?q=' . rawurlencode($query);
         $search = $this->search_web_for_answer($query);
 
+        if ($this->is_lyrics_request($query)) {
+            return $this->chat_lyrics_search_response($query, $search, $google_url);
+        }
+
         if (!empty($search['results'])) {
-            $lines = [];
-            $lines[] = 'Saya cari dari web. Ringkasnya:';
-
-            foreach ($search['results'] as $index => $result) {
-                $snippet = trim($result['snippet']);
-                if ($snippet === '') {
-                    continue;
-                }
-
-                $lines[] = ($index + 1) . '. ' . $snippet;
-            }
-
-            if (count($lines) > 1) {
-                $lines[] = '';
-                $lines[] = 'Sumber: ' . $search['results'][0]['url'];
-
-                return [
-                    'content' => implode("\n", $lines),
-                    'summary' => 'Jawaban dari web',
-                    'command' => 'web_search',
-                    'status' => 'success',
-                    'error' => null,
-                    'metadata' => [
-                        'query' => $query,
-                        'source' => $search['source'],
-                        'results' => $search['results'],
-                    ],
-                ];
-            }
+            return [
+                'content' => $this->compose_web_answer($search['results']),
+                'summary' => 'Jawaban dari web',
+                'command' => 'web_search',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => [
+                    'query' => $query,
+                    'source' => $search['source'],
+                    'results' => $search['results'],
+                ],
+            ];
         }
 
         return [
@@ -1042,22 +1029,32 @@ class Api extends CI_Controller
             return ['source' => 'none', 'results' => []];
         }
 
-        $results = $this->google_custom_search_results($query);
-        if (!empty($results)) {
-            return ['source' => 'google_custom_search', 'results' => $results];
+        $sources = [
+            'google_custom_search' => $this->google_custom_search_results($query),
+            'google' => $this->google_html_search_results($query),
+            'bing_fallback' => $this->bing_search_results($query),
+        ];
+
+        $results = [];
+        $used_sources = [];
+
+        foreach ($sources as $source => $items) {
+            if (empty($items)) {
+                continue;
+            }
+
+            $used_sources[] = $source;
+            foreach ($items as $item) {
+                $results[] = $item;
+            }
         }
 
-        $results = $this->google_html_search_results($query);
-        if (!empty($results)) {
-            return ['source' => 'google', 'results' => $results];
-        }
+        $results = $this->rank_search_results($results, $query);
 
-        $results = $this->bing_search_results($query);
-        if (!empty($results)) {
-            return ['source' => 'bing_fallback', 'results' => $results];
-        }
-
-        return ['source' => 'none', 'results' => []];
+        return [
+            'source' => empty($used_sources) ? 'none' : implode(',', $used_sources),
+            'results' => $results,
+        ];
     }
 
     private function google_custom_search_results($query)
@@ -1190,23 +1187,171 @@ class Api extends CI_Controller
     private function filter_search_results(array $results)
     {
         $filtered = [];
+        $seen = [];
 
         foreach ($results as $result) {
             $snippet = isset($result['snippet']) ? $this->clean_search_text($result['snippet']) : '';
             $url = isset($result['url']) ? trim($result['url']) : '';
+            $title = isset($result['title']) ? $this->clean_search_text($result['title']) : '';
+            $key = strtolower($url ?: $title);
 
-            if ($snippet === '' || $url === '' || strpos($url, 'http') !== 0) {
+            if ($snippet === '' || $url === '' || strpos($url, 'http') !== 0 || isset($seen[$key])) {
                 continue;
             }
 
+            $seen[$key] = true;
             $filtered[] = [
-                'title' => isset($result['title']) ? $this->clean_search_text($result['title']) : '',
+                'title' => $title,
                 'snippet' => $snippet,
                 'url' => $url,
             ];
         }
 
-        return array_slice($filtered, 0, 3);
+        return $filtered;
+    }
+
+    private function rank_search_results(array $results, $query)
+    {
+        $results = $this->filter_search_results($results);
+        $terms = $this->important_search_terms($query);
+
+        foreach ($results as $index => $result) {
+            $haystack_title = strtolower($result['title']);
+            $haystack_text = strtolower($result['title'] . ' ' . $result['snippet'] . ' ' . $result['url']);
+            $score = max(0, 20 - $index);
+
+            foreach ($terms as $term) {
+                if (strpos($haystack_title, $term) !== false) {
+                    $score += 8;
+                }
+
+                if (strpos($haystack_text, $term) !== false) {
+                    $score += 3;
+                }
+            }
+
+            if (preg_match('/kumpulan|terbaru|terpopuler|berbagai artis|various artists|favorite music/i', $haystack_text)) {
+                $score -= 12;
+            }
+
+            $results[$index]['score'] = $score;
+        }
+
+        usort($results, function ($a, $b) {
+            return $b['score'] <=> $a['score'];
+        });
+
+        return array_slice($results, 0, 3);
+    }
+
+    private function important_search_terms($query)
+    {
+        $query = strtolower($this->clean_search_text($query));
+        $query = preg_replace('/[^a-z0-9\s]/', ' ', $query);
+        $words = preg_split('/\s+/', $query);
+        $stopwords = [
+            'apa', 'itu', 'yang', 'dan', 'atau', 'dari', 'untuk', 'dengan', 'ke',
+            'di', 'ini', 'dong', 'tolong', 'cari', 'carikan', 'lirik', 'lagu',
+            'lyrics', 'lyric', 'full', 'lengkap',
+        ];
+        $terms = [];
+
+        foreach ($words as $word) {
+            $word = trim($word);
+            if (strlen($word) < 3 || in_array($word, $stopwords, true)) {
+                continue;
+            }
+
+            $terms[] = $word;
+        }
+
+        return array_values(array_unique($terms));
+    }
+
+    private function compose_web_answer(array $results)
+    {
+        $best = $results[0];
+        $lines = [];
+        $lines[] = 'Saya cari dari web. Jawaban paling relevan yang saya temukan:';
+        $lines[] = $this->trim_answer_text($best['snippet']);
+        $lines[] = '';
+        $lines[] = 'Sumber utama: ' . ($best['title'] ?: $best['url']);
+        $lines[] = $best['url'];
+
+        if (count($results) > 1) {
+            $lines[] = '';
+            $lines[] = 'Hasil terkait:';
+
+            foreach (array_slice($results, 1) as $result) {
+                $lines[] = '- ' . ($result['title'] ?: $result['url']);
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function is_lyrics_request($query)
+    {
+        return preg_match('/\b(lirik|lyrics|lyric)\b/i', $query) === 1;
+    }
+
+    private function chat_lyrics_search_response($query, array $search, $google_url)
+    {
+        if (empty($search['results'])) {
+            return [
+                'content' => "Saya coba cari liriknya, tapi hasil pencarian belum bisa dibaca otomatis saat ini.\n\nBuka Google:\n" . $google_url,
+                'summary' => 'Fallback lirik Google',
+                'command' => 'lyrics_search',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => [
+                    'query' => $query,
+                    'google_url' => $google_url,
+                ],
+            ];
+        }
+
+        $best = $search['results'][0];
+        $lines = [];
+        $lines[] = 'Saya cari dari web. Sepertinya yang paling relevan:';
+        $lines[] = $best['title'] ?: $best['snippet'];
+        $lines[] = '';
+        $lines[] = 'Saya tidak bisa menyalin lirik lagu lengkap di chat, tapi saya bisa bantu jelaskan makna lagunya atau kasih sumbernya.';
+        $lines[] = '';
+        $lines[] = 'Sumber: ' . $best['url'];
+
+        if (count($search['results']) > 1) {
+            $lines[] = '';
+            $lines[] = 'Hasil terkait:';
+
+            foreach (array_slice($search['results'], 1) as $result) {
+                $lines[] = '- ' . ($result['title'] ?: $result['url']);
+            }
+        }
+
+        return [
+            'content' => implode("\n", $lines),
+            'summary' => 'Pencarian lirik',
+            'command' => 'lyrics_search',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'query' => $query,
+                'source' => $search['source'],
+                'results' => $search['results'],
+            ],
+        ];
+    }
+
+    private function trim_answer_text($text)
+    {
+        $text = $this->clean_search_text($text);
+
+        if (strlen($text) <= 420) {
+            return $text;
+        }
+
+        return rtrim(substr($text, 0, 417)) . '...';
     }
 
     private function clean_search_text($text)
