@@ -76,6 +76,30 @@ interface CommandSuggestion {
   prefix: string;
 }
 
+const BACKGROUND_PARTICLES = [
+  { left: "2%", delay: "-0.6s", duration: "8s", size: "3px", drift: "12px", rise: "46vh" },
+  { left: "5%", delay: "-3.2s", duration: "11s", size: "2px", drift: "-16px", rise: "49vh" },
+  { left: "8%", delay: "-6.8s", duration: "9s", size: "3px", drift: "18px", rise: "43vh" },
+  { left: "12%", delay: "-1.9s", duration: "10s", size: "2px", drift: "-10px", rise: "52vh" },
+  { left: "16%", delay: "-8.4s", duration: "12s", size: "2px", drift: "16px", rise: "48vh" },
+  { left: "21%", delay: "-4.7s", duration: "8.8s", size: "3px", drift: "-22px", rise: "45vh" },
+  { left: "26%", delay: "-10.3s", duration: "13s", size: "2px", drift: "14px", rise: "51vh" },
+  { left: "31%", delay: "-2.8s", duration: "9.6s", size: "2px", drift: "-18px", rise: "44vh" },
+  { left: "36%", delay: "-7.5s", duration: "11.5s", size: "3px", drift: "20px", rise: "49vh" },
+  { left: "42%", delay: "-5.4s", duration: "8.6s", size: "2px", drift: "-16px", rise: "46vh" },
+  { left: "48%", delay: "-11.2s", duration: "12.4s", size: "2px", drift: "22px", rise: "52vh" },
+  { left: "54%", delay: "-1.2s", duration: "9.2s", size: "3px", drift: "-14px", rise: "45vh" },
+  { left: "59%", delay: "-6.1s", duration: "10.6s", size: "2px", drift: "18px", rise: "50vh" },
+  { left: "64%", delay: "-9.7s", duration: "12.8s", size: "2px", drift: "-24px", rise: "47vh" },
+  { left: "69%", delay: "-3.9s", duration: "8.4s", size: "3px", drift: "12px", rise: "44vh" },
+  { left: "74%", delay: "-12.6s", duration: "13.5s", size: "2px", drift: "-18px", rise: "51vh" },
+  { left: "79%", delay: "-2.3s", duration: "9.8s", size: "3px", drift: "10px", rise: "46vh" },
+  { left: "84%", delay: "-7.9s", duration: "11.8s", size: "2px", drift: "-12px", rise: "50vh" },
+  { left: "89%", delay: "-5.8s", duration: "8.9s", size: "3px", drift: "16px", rise: "44vh" },
+  { left: "94%", delay: "-10.9s", duration: "12.2s", size: "2px", drift: "-20px", rise: "48vh" },
+  { left: "98%", delay: "-4.4s", duration: "9.4s", size: "3px", drift: "8px", rise: "45vh" },
+];
+
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   containerClassName?: string;
   showRing?: boolean;
@@ -413,6 +437,21 @@ export function AnimatedAIChat({
           animate={{ x: ["-35%", "135%"] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.5 }}
         />
+        <div className="interactive-chat-bg__particles" aria-hidden="true">
+          {BACKGROUND_PARTICLES.map((particle, index) => (
+            <span
+              key={`${particle.left}-${index}`}
+              style={{
+                "--particle-left": particle.left,
+                "--particle-delay": particle.delay,
+                "--particle-duration": particle.duration,
+                "--particle-size": particle.size,
+                "--particle-drift": particle.drift,
+                "--particle-rise": particle.rise,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
         <div className="interactive-chat-bg__pointer" />
       </div>
 
@@ -426,12 +465,12 @@ export function AnimatedAIChat({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-56 pt-7 sm:px-6 sm:pb-64 sm:pt-8">
           <div className="mx-auto w-full max-w-6xl sm:p-4">
             {messages.length === 0 && !isLoadingMessages ? (
-              <div className="grid min-h-[calc(100vh-15rem)] place-items-center text-center">
+              <div className="future-empty-state grid min-h-[calc(100vh-15rem)] place-items-center text-center">
                 <div>
-                  <h1 className="bg-gradient-to-r from-white/90 to-white/40 bg-clip-text pb-1 text-4xl font-medium tracking-normal text-transparent">
+                  <h1 className="future-hero-title bg-gradient-to-r from-white/90 to-white/40 bg-clip-text pb-1 text-4xl font-medium tracking-normal text-transparent">
                     How can I help today?
                   </h1>
-                  <p className="mt-3 text-base text-white/40">
+                  <p className="future-hero-subtitle mt-3 text-base text-white/40">
                     <TypewriterText text="Tanya stok akun atau tambah akun Kevstore lewat chat." />
                   </p>
                   <div className="mt-6 flex flex-wrap items-center justify-center gap-2">

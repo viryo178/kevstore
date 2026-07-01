@@ -428,12 +428,12 @@ class Api extends CI_Controller
             return $this->json_error('Percakapan tidak ditemukan', 404);
         }
 
-        $this->db->where('id', $conversation_id)->update('chat_conversations', [
-            'archived' => 1,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->hard_delete_chat_conversation($conversation_id);
 
-        return $this->json_success('Percakapan dihapus');
+        return $this->json_success('Percakapan dihapus permanen', [
+            'deleted_conversation' => true,
+            'deleted_conversation_id' => $conversation_id,
+        ]);
     }
 
     public function chat_prompts()
@@ -606,13 +606,17 @@ class Api extends CI_Controller
     private function is_delete_current_chat_command($content)
     {
         $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
+        $normalized = preg_replace('/[.!?]+$/', '', $normalized);
 
         return in_array($normalized, [
             'hapus riwayat chat ini',
             'hapus chat ini',
+            'hapus chat ini history ini',
             'hapus percakapan ini',
+            'hapus conversation ini',
             'delete chat ini',
             'delete this chat',
+            'bersihkan chat ini',
         ], true);
     }
 

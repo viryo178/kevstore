@@ -2,12 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
-  Bell,
   Check,
-  Clock3,
   ChevronDown,
-  FolderKanban,
-  KeyRound,
   LayoutDashboard,
   LoaderIcon,
   LogOut,
@@ -15,15 +11,9 @@ import {
   MessageSquare,
   Plus,
   Search,
-  Settings,
   Trash2,
-  UserRound,
-  Users,
   X,
   ChevronRight,
-  CircleHelp,
-  Crown,
-  Palette,
   ShoppingBag,
 } from "lucide-react";
 import oracleSiteLogo from "@/assets/oracle-site-logo.png";
@@ -531,10 +521,6 @@ function App() {
               onSearchChange={setSearchTerm}
               onSelectConversation={handleSelectConversation}
               onDeleteConversation={handleDeleteConversation}
-              onOpenPersonalization={() => {
-                setPersonalizationOpen(true);
-                setSidebarOpen(false);
-              }}
               onViewChange={(view) => {
                 setActiveView(view);
                 setSidebarOpen(false);
@@ -674,7 +660,6 @@ interface SidebarProps {
   onSearchChange: (value: string) => void;
   onSelectConversation: (id: number) => void;
   onDeleteConversation: (id: number) => void;
-  onOpenPersonalization: () => void;
   onViewChange: (view: ActiveView) => void;
 }
 
@@ -692,13 +677,11 @@ function Sidebar({
   onSearchChange,
   onSelectConversation,
   onDeleteConversation,
-  onOpenPersonalization,
   onViewChange,
 }: SidebarProps) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(true);
-  const [dashboardOpen, setDashboardOpen] = useState(true);
-  const dashboardViews: ActiveView[] = ["dashboard", "accounts", "profile", "notifications", "activities", "employees", "password"];
+  const dashboardViews: ActiveView[] = ["dashboard"];
   const closeAccountMenu = () => setAccountOpen(false);
   const navigateSidebar = (view: ActiveView) => {
     closeAccountMenu();
@@ -721,7 +704,7 @@ function Sidebar({
           <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg text-white/45 transition hover:bg-white/10 hover:text-white md:hidden" aria-label="Close sidebar"><X className="h-4 w-4" /></button>
         </div>
 
-        <button type="button" onClick={() => { closeAccountMenu(); onNewChat(); }} className="theme-slide-button mb-4 flex h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-white font-semibold text-[#09090b] shadow-lg shadow-white/10 transition hover:-translate-y-0.5">
+        <button type="button" onClick={() => { closeAccountMenu(); onNewChat(); }} className="theme-slide-button new-chat-button mb-4 flex h-11 items-center justify-center gap-2 rounded-lg bg-white font-semibold text-[#09090b] shadow-lg shadow-white/10 transition hover:-translate-y-0.5">
           <Plus className="h-4 w-4" /> New Chat
         </button>
 
@@ -735,7 +718,7 @@ function Sidebar({
             type="button"
             onClick={() => {
               closeAccountMenu();
-              setDashboardOpen((current) => !current);
+              window.location.href = "https://kevs.my.id";
             }}
             className={cn(
               "flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm font-semibold transition",
@@ -744,28 +727,8 @@ function Sidebar({
           >
             <LayoutDashboard className="h-4 w-4" />
             <span className="flex-1 text-left">Dashboard</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", dashboardOpen ? "rotate-180" : "rotate-0")} />
+            <ChevronRight className="h-4 w-4" />
           </button>
-
-          <AnimatePresence initial={false}>
-            {dashboardOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="space-y-2 pl-3">
-                  <SidebarItem active={activeView === "accounts"} onClick={() => navigateSidebar("accounts")} icon={<FolderKanban className="h-4 w-4" />} label="Kelola Akun" />
-                  <SidebarItem active={activeView === "profile"} onClick={() => navigateSidebar("profile")} icon={<UserRound className="h-4 w-4" />} label="Profile" />
-                  <SidebarItem active={activeView === "notifications"} onClick={() => navigateSidebar("notifications")} icon={<Bell className="h-4 w-4" />} label="Notifikasi" />
-                  <SidebarItem active={activeView === "activities"} onClick={() => navigateSidebar("activities")} icon={<Clock3 className="h-4 w-4" />} label="Aktivitas" />
-                  <SidebarItem active={activeView === "employees"} onClick={() => navigateSidebar("employees")} icon={<Users className="h-4 w-4" />} label="Kepegawaian" />
-                  <SidebarItem active={activeView === "password"} onClick={() => navigateSidebar("password")} icon={<KeyRound className="h-4 w-4" />} label="Ganti Password Exp" />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <SidebarItem active={activeView === "chat"} onClick={() => navigateSidebar("chat")} icon={<MessageSquare className="h-4 w-4" />} label="Chat AI" />
         </nav>
@@ -821,21 +784,14 @@ function Sidebar({
                 exit={{ opacity: 0, y: 12, scale: 0.98 }}
                 className="absolute bottom-[4.7rem] left-0 right-0 overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-3 shadow-2xl shadow-black/70 backdrop-blur-2xl"
               >
-                <button type="button" onClick={() => navigateSidebar("profile")} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.06]">
+                <div className="flex w-full items-center gap-3 rounded-xl p-2 text-left">
                   <AvatarMark />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">ZAP PRO</div>
                     <div className="text-xs text-white/65">PRO</div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-white/70" />
-                </button>
+                </div>
                 <div className="my-2 h-px bg-white/10" />
-                <AccountMenuItem icon={<Crown className="h-4 w-4" />} label="Upgrade plan" onClick={() => navigateSidebar("upgrade")} />
-                <AccountMenuItem icon={<Palette className="h-4 w-4" />} label="Personalization" onClick={() => { closeAccountMenu(); onOpenPersonalization(); }} />
-                <AccountMenuItem icon={<UserRound className="h-4 w-4" />} label="Profile" onClick={() => navigateSidebar("profile")} />
-                <AccountMenuItem icon={<Settings className="h-4 w-4" />} label="Settings" onClick={() => navigateSidebar("settings")} />
-                <div className="my-2 h-px bg-white/10" />
-                <AccountMenuItem icon={<CircleHelp className="h-4 w-4" />} label="Help" onClick={() => navigateSidebar("help")} trailing />
                 <AccountMenuItem icon={<LogOut className="h-4 w-4" />} label="Log out" onClick={() => { closeAccountMenu(); onLogout(); }} />
               </motion.div>
             )}
@@ -1084,6 +1040,7 @@ function isDeleteCurrentChatCommand(content: string) {
   return [
     "hapus riwayat chat ini",
     "hapus chat ini",
+    "hapus chat ini history ini",
     "hapus percakapan ini",
     "hapus conversation ini",
     "delete chat ini",

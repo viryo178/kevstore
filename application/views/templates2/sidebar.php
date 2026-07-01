@@ -53,6 +53,19 @@
 
     </li>
 
+    <!-- Chat AI -->
+    <li class="nav-item">
+
+      <a class="nav-link collapsed"
+        href="<?= base_url('v2') ?>">
+
+        <i class="bi bi-chat-dots"></i>
+        <span>Chat AI</span>
+
+      </a>
+
+    </li>
+
     <!-- Kelola Akun -->
     <li class="nav-item">
 
