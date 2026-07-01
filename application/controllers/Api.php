@@ -776,14 +776,11 @@ class Api extends CI_Controller
             return $this->chat_stock_response();
         }
 
-        return [
-            'content' => 'Fitur ini belum tersedia, bilang ke developernya buat bikin fitur ini ya!! :3',
-            'summary' => 'Fitur belum tersedia',
-            'command' => 'unsupported',
-            'status' => 'success',
-            'error' => null,
-            'metadata' => [],
-        ];
+        if ($this->is_basic_question($normalized)) {
+            return $this->chat_basic_response($normalized);
+        }
+
+        return $this->chat_google_search_response($content);
     }
 
     private function is_stock_question($normalized)
@@ -858,6 +855,149 @@ class Api extends CI_Controller
             'assalamualaikum',
             'assalamu alaikum',
         ], true);
+    }
+
+    private function is_basic_question($normalized)
+    {
+        if ($normalized === '') {
+            return false;
+        }
+
+        $basic_exact = [
+            'apa kabar',
+            'apa kabar mu',
+            'apa kabarmu',
+            'bagaimana kabar mu',
+            'bagaimana kabarmu',
+            'kamu siapa',
+            'siapa kamu',
+            'nama kamu siapa',
+            'siapa nama kamu',
+            'terima kasih',
+            'makasih',
+            'thanks',
+            'thank you',
+            'oke',
+            'ok',
+            'siap',
+            'apa itu violence ai',
+            'violence ai itu apa',
+            'kamu bisa apa',
+            'bisa apa',
+        ];
+
+        if (in_array($normalized, $basic_exact, true)) {
+            return true;
+        }
+
+        if (preg_match('/^(berapa\s+)?[0-9]+(\s*[\+\-\*\/x]\s*[0-9]+)+$/', $normalized) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function chat_basic_response($normalized)
+    {
+        if (in_array($normalized, ['apa kabar', 'apa kabar mu', 'apa kabarmu', 'bagaimana kabar mu', 'bagaimana kabarmu'], true)) {
+            $content = 'Kabar saya baik. Saya siap bantu cek stok akun, tambah akun, cari detail akun, atau bantu command lain di Kevstore.';
+            $summary = 'Menjawab kabar';
+        } elseif (in_array($normalized, ['kamu siapa', 'siapa kamu', 'nama kamu siapa', 'siapa nama kamu'], true)) {
+            $content = 'Saya Violence AI, asisten chat untuk membantu pengelolaan akun Kevstore.';
+            $summary = 'Identitas asisten';
+        } elseif (in_array($normalized, ['terima kasih', 'makasih', 'thanks', 'thank you'], true)) {
+            $content = 'Sama-sama. Kalau butuh data akun atau stok, tinggal ketik saja.';
+            $summary = 'Ucapan terima kasih';
+        } elseif (in_array($normalized, ['oke', 'ok', 'siap'], true)) {
+            $content = 'Siap.';
+            $summary = 'Konfirmasi singkat';
+        } elseif (in_array($normalized, ['apa itu violence ai', 'violence ai itu apa'], true)) {
+            $content = 'Violence AI adalah asisten chat untuk Kevstore. Saya bisa membantu cek stok, tambah akun, cari detail akun, dan membaca beberapa perintah operasional.';
+            $summary = 'Penjelasan Violence AI';
+        } elseif (in_array($normalized, ['kamu bisa apa', 'bisa apa'], true)) {
+            return $this->chat_feature_list_response();
+        } elseif (preg_match('/^(berapa\s+)?([0-9]+(\s*[\+\-\*\/x]\s*[0-9]+)+)$/', $normalized, $matches) === 1) {
+            $expression = str_replace(['berapa', 'x', ' '], ['', '*', ''], $matches[2]);
+            $content = 'Hasilnya: ' . $this->safe_calculate_expression($expression);
+            $summary = 'Kalkulasi sederhana';
+        } else {
+            $content = 'Saya bisa bantu pertanyaan dasar dan kebutuhan Kevstore. Untuk hal di luar konteks, saya akan bantu arahkan ke Google.';
+            $summary = 'Pertanyaan dasar';
+        }
+
+        return [
+            'content' => $content,
+            'summary' => $summary,
+            'command' => 'basic_answer',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [],
+        ];
+    }
+
+    private function safe_calculate_expression($expression)
+    {
+        if (preg_match('/^[0-9\+\-\*\/\.]+$/', $expression) !== 1) {
+            return 'format hitungan belum didukung';
+        }
+
+        preg_match_all('/\d+(?:\.\d+)?|[\+\-\*\/]/', $expression, $matches);
+        $tokens = $matches[0];
+
+        if (empty($tokens) || count($tokens) % 2 === 0) {
+            return 'hitungan tidak valid';
+        }
+
+        $values = [(float) array_shift($tokens)];
+        $operators = [];
+
+        while (!empty($tokens)) {
+            $operator = array_shift($tokens);
+            $value = (float) array_shift($tokens);
+
+            if ($operator === '*') {
+                $values[count($values) - 1] *= $value;
+                continue;
+            }
+
+            if ($operator === '/') {
+                if ($value == 0.0) {
+                    return 'tidak bisa dibagi 0';
+                }
+
+                $values[count($values) - 1] /= $value;
+                continue;
+            }
+
+            $operators[] = $operator;
+            $values[] = $value;
+        }
+
+        $result = $values[0];
+        foreach ($operators as $index => $operator) {
+            $next_value = $values[$index + 1];
+            $result = $operator === '-' ? $result - $next_value : $result + $next_value;
+        }
+
+        return rtrim(rtrim(number_format($result, 6, '.', ''), '0'), '.');
+    }
+
+    private function chat_google_search_response($content)
+    {
+        $query = trim((string) $content);
+        $google_url = 'https://www.google.com/search?q=' . rawurlencode($query);
+
+        return [
+            'content' => "Saya belum punya jawaban pasti untuk pertanyaan di luar konteks Kevstore itu.\n\nSaya bantu carikan lewat Google:\n" . $google_url,
+            'summary' => 'Fallback Google Search',
+            'command' => 'google_search',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'query' => $query,
+                'google_url' => $google_url,
+            ],
+        ];
     }
 
     private function is_cancel_command($normalized)
