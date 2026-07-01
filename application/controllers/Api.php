@@ -1299,7 +1299,7 @@ class Api extends CI_Controller
     {
         if (empty($search['results'])) {
             return [
-                'content' => "Saya coba cari liriknya, tapi hasil pencarian belum bisa dibaca otomatis saat ini.\n\nBuka Google:\n" . $google_url,
+                'content' => "Saya belum menemukan sumber lirik yang cocok dari hasil web.\n\nCoba buka Google:\n" . $google_url,
                 'summary' => 'Fallback lirik Google',
                 'command' => 'lyrics_search',
                 'status' => 'success',
@@ -1313,12 +1313,13 @@ class Api extends CI_Controller
 
         $best = $search['results'][0];
         $lines = [];
-        $lines[] = 'Saya cari dari web. Sepertinya yang paling relevan:';
+        $lines[] = 'Ketemu. Ini sumber lirik yang paling cocok:';
         $lines[] = $best['title'] ?: $best['snippet'];
         $lines[] = '';
-        $lines[] = 'Saya tidak bisa menyalin lirik lagu lengkap di chat, tapi saya bisa bantu jelaskan makna lagunya atau kasih sumbernya.';
+        $lines[] = 'Buka lirik:';
+        $lines[] = $best['url'];
         $lines[] = '';
-        $lines[] = 'Sumber: ' . $best['url'];
+        $lines[] = 'Saya juga bisa bantu jelaskan makna lagunya, tema ceritanya, atau terjemahkan bagian pendek yang kamu kirim.';
 
         if (count($search['results']) > 1) {
             $lines[] = '';
