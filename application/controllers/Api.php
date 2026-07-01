@@ -694,8 +694,8 @@ class Api extends CI_Controller
             return $this->chat_order_numbers_response($content);
         }
 
-        if ($this->is_stock_question($normalized)) {
-            return $this->chat_stock_response();
+        if ($this->is_take_unsold_account_command($normalized)) {
+            return $this->chat_take_unsold_account_response();
         }
 
         if ($this->is_use_account_command($normalized)) {
@@ -768,6 +768,10 @@ class Api extends CI_Controller
             return $this->chat_yesterday_created_accounts_response();
         }
 
+        if ($this->is_stock_question($normalized)) {
+            return $this->chat_stock_response();
+        }
+
         return [
             'content' => 'Fitur ini belum tersedia, bilang ke developernya buat bikin fitur ini ya!! :3',
             'summary' => 'Fitur belum tersedia',
@@ -783,6 +787,56 @@ class Api extends CI_Controller
         return strpos($normalized, 'stok') !== false
             || strpos($normalized, 'stock') !== false
             || strpos($normalized, 'belum terjual') !== false;
+    }
+
+    private function is_take_unsold_account_command($normalized)
+    {
+        $asks_for_account = strpos($normalized, 'akun') !== false
+            && (
+                strpos($normalized, 'bawa') !== false
+                || strpos($normalized, 'ambil') !== false
+                || strpos($normalized, 'kasih') !== false
+                || strpos($normalized, 'berikan') !== false
+                || strpos($normalized, 'minta') !== false
+                || strpos($normalized, 'butuh') !== false
+            );
+
+        return $asks_for_account && strpos($normalized, 'belum terjual') !== false;
+    }
+
+    private function chat_take_unsold_account_response()
+    {
+        $account = $this->db
+            ->where('kategori', 'belum_terjual')
+            ->where('status', 'aktif')
+            ->order_by('id_akun', 'ASC')
+            ->limit(1)
+            ->get('akun')
+            ->row();
+
+        if (!$account) {
+            return [
+                'content' => 'Tidak ada akun belum terjual yang aktif saat ini.',
+                'summary' => 'Akun belum terjual kosong',
+                'command' => 'take_unsold_account',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => ['found' => false],
+            ];
+        }
+
+        return [
+            'content' => "Ini satu akun yang belum terjual:\n\n" . $this->format_account_detail($account),
+            'summary' => 'Ambil akun belum terjual',
+            'command' => 'take_unsold_account',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'found' => true,
+                'id_akun' => (int) $account->id_akun,
+                'username' => $account->username,
+            ],
+        ];
     }
 
     private function is_greeting($normalized)
@@ -845,6 +899,7 @@ class Api extends CI_Controller
                 '9. sekarang tanggal berapa',
                 '10. berapa deactived',
                 '11. tunjukan data akun yang dibuat kemarin',
+                '12. bawakan saya sebuah akun yang belum terjual',
             ]),
             'summary' => 'Daftar fitur chat',
             'command' => 'features',

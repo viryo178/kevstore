@@ -53,6 +53,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $route['default_controller'] = 'auth';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
+$route['v2'] = 'v2';
+$route['v2/(:any)'] = 'v2/index/$1';
 $route['admin/kelola_akun'] = 'admin/kelola_akun';
 $route['admin/deactived'] = 'admin/deactived';
 $route['admin/ganti_password_exp'] = 'admin/ganti_password_exp';
