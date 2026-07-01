@@ -16,7 +16,6 @@ import {
   ChevronRight,
   ShoppingBag,
 } from "lucide-react";
-import oracleSiteLogo from "@/assets/oracle-site-logo.png";
 import { AnimatedAIChat } from "@/components/ui/animated-ai-chat";
 import GlowHorizonFM from "@/components/ui/glow-horizon";
 import { cn } from "@/lib/utils";
@@ -605,8 +604,11 @@ function LoginScreen({
           animate={{ opacity: 1, y: 0, scale: 1 }}
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-violet-600/10" />
-          <div className="relative mx-auto mb-6 grid h-44 w-60 place-items-center rounded-2xl bg-black/35 shadow-2xl shadow-violet-600/20">
-            <img src={oracleSiteLogo} alt="Oracle Site" className="h-40 w-56 object-contain" />
+          <div className="relative mx-auto mb-6 grid h-24 w-full place-items-center rounded-2xl bg-black/35 shadow-2xl shadow-violet-600/20">
+            <div className="text-center">
+              <div className="text-2xl font-semibold text-white">Violence AI</div>
+              <div className="mt-1 text-xs uppercase tracking-[0.28em] text-white/35">Kevstore Assistant</div>
+            </div>
           </div>
           <div className="relative space-y-4">
             <label className="block">
