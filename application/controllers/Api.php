@@ -678,7 +678,7 @@ class Api extends CI_Controller
 
         if ($this->is_cancel_command($normalized)) {
             return [
-                'content' => 'Oke, fitur tambah dibatalkan.',
+                'content' => 'Oke, saya batalkan ya. Kita mulai lagi dari awal kalau kamu mau.',
                 'summary' => 'Command dibatalkan',
                 'command' => 'batal',
                 'status' => 'success',
@@ -733,7 +733,7 @@ class Api extends CI_Controller
 
         if ($normalized === 'tambah' || $normalized === '/tambah') {
             return [
-                'content' => "Siap. Kirim akun dengan format:\nusername|password|catatan\n\nBisa satu baris atau banyak baris sekaligus.",
+                'content' => "Siap, kirim datanya dengan format ini ya:\nusername|password|catatan\n\nBoleh satu akun atau banyak akun sekaligus.",
                 'summary' => 'Menunggu format tambah akun',
                 'command' => 'tambah',
                 'status' => 'waiting',
@@ -744,7 +744,7 @@ class Api extends CI_Controller
 
         if ($this->is_greeting($normalized)) {
             return [
-                'content' => 'Halo, ada yang bisa saya bantu?',
+                'content' => 'Halo, saya di sini. Mau cek stok, cari detail akun, atau tambah akun?',
                 'summary' => 'Sapaan',
                 'command' => 'greeting',
                 'status' => 'success',
@@ -827,7 +827,7 @@ class Api extends CI_Controller
 
         if (!$account) {
             return [
-                'content' => 'Tidak ada akun belum terjual yang aktif saat ini.',
+                'content' => 'Belum ada akun belum terjual yang aktif saat ini.',
                 'summary' => 'Akun belum terjual kosong',
                 'command' => 'take_unsold_account',
                 'status' => 'success',
@@ -837,7 +837,7 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => "Ini satu akun yang belum terjual:\n\n" . $this->format_account_detail($account),
+            'content' => "Saya ambilkan satu akun yang belum terjual:\n\n" . $this->format_account_detail($account),
             'summary' => 'Ambil akun belum terjual',
             'command' => 'take_unsold_account',
             'status' => 'success',
@@ -944,7 +944,7 @@ class Api extends CI_Controller
     private function chat_user_name_intro_response($name)
     {
         return [
-            'content' => 'Halo ' . $name . ', saya ingat. Ada yang bisa saya bantu?',
+            'content' => 'Halo ' . $name . ', saya ingat nama kamu. Mau saya bantu apa hari ini?',
             'summary' => 'Mengingat nama user',
             'command' => 'remember_user_name',
             'status' => 'success',
@@ -958,10 +958,10 @@ class Api extends CI_Controller
         $name = $this->find_user_name_from_conversation($conversation_id);
 
         if ($name === null) {
-            $content = 'Saya belum tahu nama kamu. Coba ketik: nama saya Viryo';
+            $content = 'Saya belum tahu nama kamu. Kenalin dulu ya, contoh: nama saya Viryo';
             $metadata = [];
         } else {
-            $content = 'Nama kamu ' . $name . '.';
+            $content = 'Nama kamu ' . $name . '. Saya masih ingat.';
             $metadata = ['user_name' => $name];
         }
 
@@ -1024,19 +1024,19 @@ class Api extends CI_Controller
     private function chat_basic_response($normalized)
     {
         if (in_array($normalized, ['apa kabar', 'apa kabar mu', 'apa kabarmu', 'bagaimana kabar mu', 'bagaimana kabarmu'], true)) {
-            $content = 'Kabar saya baik. Saya siap bantu cek stok akun, tambah akun, cari detail akun, atau bantu command lain di Kevstore.';
+            $content = 'Kabar saya baik. Kamu mau saya bantu cek stok, tambah akun, atau cari detail akun?';
             $summary = 'Menjawab kabar';
         } elseif (in_array($normalized, ['kamu siapa', 'siapa kamu', 'nama kamu siapa', 'siapa nama kamu'], true)) {
-            $content = 'Saya Violence AI, asisten chat untuk membantu pengelolaan akun Kevstore.';
+            $content = 'Saya Violence AI, asisten chat kamu untuk bantu kelola akun Kevstore.';
             $summary = 'Identitas asisten';
         } elseif (in_array($normalized, ['terima kasih', 'makasih', 'thanks', 'thank you'], true)) {
-            $content = 'Sama-sama. Kalau butuh data akun atau stok, tinggal ketik saja.';
+            $content = 'Sama-sama. Kalau butuh stok atau detail akun, tinggal panggil saya.';
             $summary = 'Ucapan terima kasih';
         } elseif (in_array($normalized, ['oke', 'ok', 'siap'], true)) {
             $content = 'Siap.';
             $summary = 'Konfirmasi singkat';
         } elseif (in_array($normalized, ['apa itu violence ai', 'violence ai itu apa'], true)) {
-            $content = 'Violence AI adalah asisten chat untuk Kevstore. Saya bisa membantu cek stok, tambah akun, cari detail akun, dan membaca beberapa perintah operasional.';
+            $content = 'Violence AI itu asisten chat untuk Kevstore. Saya bisa bantu cek stok, tambah akun, cari detail akun, dan bantu beberapa perintah operasional.';
             $summary = 'Penjelasan Violence AI';
         } elseif (in_array($normalized, ['kamu bisa apa', 'bisa apa'], true)) {
             return $this->chat_feature_list_response();
@@ -1116,6 +1116,21 @@ class Api extends CI_Controller
             return $this->chat_lyrics_search_response($query, $search, $google_url);
         }
 
+        $ai_answer = $this->google_ai_studio_answer($query);
+        if ($ai_answer !== null) {
+            return [
+                'content' => $ai_answer,
+                'summary' => 'Jawaban Google AI Studio',
+                'command' => 'google_ai_studio',
+                'status' => 'success',
+                'error' => null,
+                'metadata' => [
+                    'query' => $query,
+                    'provider' => 'google_ai_studio',
+                ],
+            ];
+        }
+
         if (!empty($search['results'])) {
             return [
                 'content' => $this->compose_web_answer($search['results']),
@@ -1132,7 +1147,7 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => "Saya coba cari jawabannya, tapi hasil pencarian belum bisa dibaca otomatis saat ini.\n\nBuka Google:\n" . $google_url,
+            'content' => "Saya sudah coba cari, tapi hasilnya belum bisa saya baca dengan jelas.\n\nKamu bisa cek lewat Google ini:\n" . $google_url,
             'summary' => 'Fallback Google Search',
             'command' => 'google_search',
             'status' => 'success',
@@ -1178,6 +1193,129 @@ class Api extends CI_Controller
             'source' => empty($used_sources) ? 'none' : implode(',', $used_sources),
             'results' => $results,
         ];
+    }
+
+    private function google_ai_studio_answer($query)
+    {
+        $api_key = trim((string) $this->config->item('google_ai_studio_api_key'));
+        $token = trim((string) $this->config->item('google_ai_studio_token'));
+
+        if ($api_key === '' && $token === '') {
+            return null;
+        }
+
+        $model = trim((string) $this->config->item('google_ai_studio_model'));
+        if ($model === '') {
+            $model = 'gemini-2.5-flash';
+        }
+
+        $system_prompt = implode("\n", [
+            'Kamu adalah Violence AI, asisten ramah untuk Kevstore.',
+            'Jawab dalam bahasa Indonesia yang santai, jelas, dan membantu.',
+            'Kalau pertanyaan tentang akun Kevstore, arahkan user memakai command: stok, detail, use, tambah, atau bantuan.',
+            'Kalau butuh informasi terbaru, gunakan kemampuan pencarian Google bila tersedia.',
+            'Jangan berikan lirik lagu lengkap atau teks berhak cipta panjang. Untuk lirik, arahkan ke sumber dan bantu jelaskan makna atau terjemahkan bagian pendek.',
+            'Jawaban maksimal 5 paragraf pendek.',
+        ]);
+
+        $payload = [
+            'systemInstruction' => [
+                'parts' => [
+                    ['text' => $system_prompt],
+                ],
+            ],
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $query],
+                    ],
+                ],
+            ],
+            'tools' => [
+                ['google_search' => new stdClass()],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.45,
+                'maxOutputTokens' => 700,
+            ],
+        ];
+
+        $response = $this->google_ai_studio_generate_content($model, $api_key, $token, $payload);
+
+        if ($response === null) {
+            unset($payload['tools']);
+            $response = $this->google_ai_studio_generate_content($model, $api_key, $token, $payload);
+        }
+
+        if ($response === null) {
+            return null;
+        }
+
+        $answer = $this->extract_google_ai_text($response);
+
+        return $answer !== '' ? $answer : null;
+    }
+
+    private function google_ai_studio_generate_content($model, $api_key, $token, array $payload)
+    {
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($model)
+            . ':generateContent';
+
+        $headers = [
+            'Content-Type: application/json',
+        ];
+
+        if ($api_key !== '') {
+            $headers[] = 'x-goog-api-key: ' . $api_key;
+        } elseif ($token !== '') {
+            $headers[] = 'Authorization: Bearer ' . $token;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+        ]);
+
+        $body = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($body === false || $status < 200 || $status >= 300) {
+            return null;
+        }
+
+        $json = json_decode($body, true);
+
+        return is_array($json) ? $json : null;
+    }
+
+    private function extract_google_ai_text(array $response)
+    {
+        $parts = $response['candidates'][0]['content']['parts'] ?? [];
+
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $texts = [];
+        foreach ($parts as $part) {
+            if (!empty($part['text'])) {
+                $texts[] = $part['text'];
+            }
+        }
+
+        return trim(implode("\n", $texts));
     }
 
     private function google_custom_search_results($query)
@@ -1395,15 +1533,15 @@ class Api extends CI_Controller
     {
         $best = $results[0];
         $lines = [];
-        $lines[] = 'Saya cari dari web. Jawaban paling relevan yang saya temukan:';
+        $lines[] = 'Saya cari dari web, ini jawaban yang paling nyambung:';
         $lines[] = $this->trim_answer_text($best['snippet']);
         $lines[] = '';
-        $lines[] = 'Sumber utama: ' . ($best['title'] ?: $best['url']);
+        $lines[] = 'Sumber yang saya pakai: ' . ($best['title'] ?: $best['url']);
         $lines[] = $best['url'];
 
         if (count($results) > 1) {
             $lines[] = '';
-            $lines[] = 'Hasil terkait:';
+            $lines[] = 'Yang masih terkait:';
 
             foreach (array_slice($results, 1) as $result) {
                 $lines[] = '- ' . ($result['title'] ?: $result['url']);
@@ -1422,7 +1560,7 @@ class Api extends CI_Controller
     {
         if (empty($search['results'])) {
             return [
-                'content' => "Saya belum menemukan sumber lirik yang cocok dari hasil web.\n\nCoba buka Google:\n" . $google_url,
+                'content' => "Saya belum menemukan sumber lirik yang cocok.\n\nCoba cek lewat Google ini:\n" . $google_url,
                 'summary' => 'Fallback lirik Google',
                 'command' => 'lyrics_search',
                 'status' => 'success',
@@ -1436,17 +1574,17 @@ class Api extends CI_Controller
 
         $best = $search['results'][0];
         $lines = [];
-        $lines[] = 'Ketemu. Ini sumber lirik yang paling cocok:';
+        $lines[] = 'Ketemu, ini sumber lirik yang paling cocok:';
         $lines[] = $best['title'] ?: $best['snippet'];
         $lines[] = '';
-        $lines[] = 'Buka lirik:';
+        $lines[] = 'Buka liriknya di sini:';
         $lines[] = $best['url'];
         $lines[] = '';
-        $lines[] = 'Saya juga bisa bantu jelaskan makna lagunya, tema ceritanya, atau terjemahkan bagian pendek yang kamu kirim.';
+        $lines[] = 'Kalau mau, kirim bagian pendeknya. Saya bisa bantu jelaskan makna atau terjemahannya.';
 
         if (count($search['results']) > 1) {
             $lines[] = '';
-            $lines[] = 'Hasil terkait:';
+            $lines[] = 'Yang masih terkait:';
 
             foreach (array_slice($search['results'], 1) as $result) {
                 $lines[] = '- ' . ($result['title'] ?: $result['url']);
@@ -1546,7 +1684,7 @@ class Api extends CI_Controller
     {
         return [
             'content' => implode("\n", [
-                'Fitur chat yang tersedia:',
+                'Saya bisa bantu beberapa hal ini:',
                 '1. halo',
                 '2. berapa stok hari ini',
                 '3. tambah',
@@ -1581,7 +1719,7 @@ class Api extends CI_Controller
     private function chat_date_response()
     {
         return [
-            'content' => 'Sekarang tanggal ' . date('d-m-Y') . ' jam ' . date('H:i') . ' WIB.',
+            'content' => 'Sekarang tanggal ' . date('d-m-Y') . ', jam ' . date('H:i') . ' WIB.',
             'summary' => 'Tanggal hari ini',
             'command' => 'date',
             'status' => 'success',
@@ -1606,7 +1744,7 @@ class Api extends CI_Controller
             ->count_all_results('akun');
 
         return [
-            'content' => 'Total akun deactived/bermasalah saat ini: ' . $count . ' akun.',
+            'content' => 'Saat ini ada ' . $count . ' akun deactived atau bermasalah.',
             'summary' => 'Jumlah akun deactived',
             'command' => 'deactived_count',
             'status' => 'success',
@@ -1654,7 +1792,7 @@ class Api extends CI_Controller
 
         if (empty($activity)) {
             return [
-                'content' => 'Tidak ada data akun yang dibuat kemarin (' . date('d-m-Y', strtotime($yesterday)) . ').',
+                'content' => 'Kemarin (' . date('d-m-Y', strtotime($yesterday)) . ') belum ada akun baru yang tercatat.',
                 'summary' => 'Akun kemarin kosong',
                 'command' => 'yesterday_created_accounts',
                 'status' => 'success',
@@ -1663,7 +1801,7 @@ class Api extends CI_Controller
             ];
         }
 
-        $lines = ['Akun yang dibuat kemarin (' . date('d-m-Y', strtotime($yesterday)) . '):'];
+        $lines = ['Ini akun yang dibuat kemarin (' . date('d-m-Y', strtotime($yesterday)) . '):'];
 
         foreach ($activity as $row) {
             $username = $row->akun_username ?: '-';
@@ -1727,7 +1865,7 @@ class Api extends CI_Controller
             $accounts = $this->search_accounts_for_chat('', 10);
 
             return [
-                'content' => $this->format_account_search_results($accounts, 'Pilih akun yang mau di-use:', 'use'),
+                'content' => $this->format_account_search_results($accounts, 'Saya temukan beberapa akun. Mau pakai yang mana?', 'use'),
                 'summary' => 'Menampilkan pilihan akun untuk use',
                 'command' => 'use_account',
                 'status' => 'waiting',
@@ -1743,7 +1881,7 @@ class Api extends CI_Controller
 
             if (!empty($accounts)) {
                 return [
-                    'content' => $this->format_account_search_results($accounts, 'Akun yang mirip dengan "' . $keyword . '":', 'use'),
+                    'content' => $this->format_account_search_results($accounts, 'Saya nemu akun yang mirip dengan "' . $keyword . '":', 'use'),
                     'summary' => 'Menampilkan hasil search akun untuk use',
                     'command' => 'use_account',
                     'status' => 'waiting',
@@ -1753,7 +1891,7 @@ class Api extends CI_Controller
             }
 
             return [
-                'content' => 'Akun tidak ditemukan untuk: ' . $keyword,
+                'content' => 'Saya belum menemukan akun untuk: ' . $keyword . '. Coba pakai username, nama akun, note, atau ID akun.',
                 'summary' => 'Use akun gagal',
                 'command' => 'use_account',
                 'status' => 'failed',
@@ -1763,7 +1901,7 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => $this->format_account_detail($account) . "\n\nAkun ini sudah dipilih. Kamu bisa ketik:\nubah akun ini jadi seperti baru dengan username ..., password ..., note ...",
+            'content' => $this->format_account_detail($account) . "\n\nAkun ini sudah saya pilih. Kalau mau reset jadi akun baru, ketik:\nubah akun ini jadi seperti baru dengan username ..., password ..., note ...",
             'summary' => 'Akun dipilih: ' . $account->username,
             'command' => 'use_account',
             'status' => 'success',
@@ -1782,7 +1920,7 @@ class Api extends CI_Controller
 
         if (!$selected) {
             return [
-                'content' => 'Pilih akunnya dulu dengan format: use username',
+                'content' => 'Pilih akunnya dulu ya. Ketik `use username` atau `use #ID`.',
                 'summary' => 'Belum ada akun dipilih',
                 'command' => 'reset_selected_account',
                 'status' => 'failed',
@@ -1795,7 +1933,7 @@ class Api extends CI_Controller
 
         if (!$account) {
             return [
-                'content' => 'Akun yang tadi dipilih sudah tidak ditemukan. Pilih ulang dengan: use username',
+                'content' => 'Akun yang tadi dipilih sudah tidak ketemu. Pilih ulang ya dengan `use username` atau `use #ID`.',
                 'summary' => 'Akun target hilang',
                 'command' => 'reset_selected_account',
                 'status' => 'failed',
@@ -1808,7 +1946,7 @@ class Api extends CI_Controller
 
         if (empty($fields['username']) || empty($fields['password'])) {
             return [
-                'content' => "Format belum lengkap. Contoh:\nubah akun ini jadi seperti baru dengan username email@gmail.com, password pass123, note catatan",
+                'content' => "Formatnya hampir benar, tapi masih kurang username atau password. Contoh:\nubah akun ini jadi seperti baru dengan username email@gmail.com, password pass123, note catatan",
                 'summary' => 'Format ubah akun kurang lengkap',
                 'command' => 'reset_selected_account',
                 'status' => 'failed',
@@ -1823,7 +1961,7 @@ class Api extends CI_Controller
 
         if ($this->username_exists($fields['username'], (int) $account->id_akun)) {
             return [
-                'content' => 'Username baru sudah dipakai akun lain: ' . $fields['username'],
+                'content' => 'Username ini sudah dipakai akun lain: ' . $fields['username'] . '. Coba username lain ya.',
                 'summary' => 'Username baru duplikat',
                 'command' => 'reset_selected_account',
                 'status' => 'failed',
@@ -1856,7 +1994,7 @@ class Api extends CI_Controller
         $updated = $this->db->get_where('akun', ['id_akun' => (int) $account->id_akun])->row();
 
         return [
-            'content' => "Akun berhasil diubah jadi seperti baru.\n\n" . $this->format_account_detail($updated),
+            'content' => "Beres, akun ini sudah saya ubah jadi seperti baru.\n\n" . $this->format_account_detail($updated),
             'summary' => 'Akun diubah jadi seperti baru',
             'command' => 'reset_selected_account',
             'status' => 'success',
@@ -1875,7 +2013,7 @@ class Api extends CI_Controller
 
         if (!$selected) {
             return [
-                'content' => 'Pilih akunnya dulu dengan format: use username',
+                'content' => 'Pilih akunnya dulu ya. Ketik `use username` atau `use #ID`.',
                 'summary' => 'Belum ada akun dipilih',
                 'command' => 'update_selected_account',
                 'status' => 'failed',
@@ -1888,7 +2026,7 @@ class Api extends CI_Controller
 
         if (!$account) {
             return [
-                'content' => 'Akun yang tadi dipilih sudah tidak ditemukan. Pilih ulang dengan: use username',
+                'content' => 'Akun yang tadi dipilih sudah tidak ketemu. Pilih ulang ya dengan `use username` atau `use #ID`.',
                 'summary' => 'Akun target hilang',
                 'command' => 'update_selected_account',
                 'status' => 'failed',
@@ -1901,7 +2039,7 @@ class Api extends CI_Controller
 
         if (empty($changes)) {
             return [
-                'content' => "Field belum terbaca. Contoh:\nubah status jadi aktif\nubah password jadi pass123\nubah note jadi catatan baru\nubah username jadi email@gmail.com",
+                'content' => "Saya belum menangkap field yang mau diubah. Contoh:\nubah status jadi aktif\nubah password jadi pass123\nubah note jadi catatan baru\nubah username jadi email@gmail.com",
                 'summary' => 'Format update akun belum terbaca',
                 'command' => 'update_selected_account',
                 'status' => 'failed',
@@ -1916,7 +2054,7 @@ class Api extends CI_Controller
 
         if (isset($changes['username']) && $this->username_exists($changes['username'], (int) $account->id_akun)) {
             return [
-                'content' => 'Username baru sudah dipakai akun lain: ' . $changes['username'],
+                'content' => 'Username ini sudah dipakai akun lain: ' . $changes['username'] . '. Coba username lain ya.',
                 'summary' => 'Username baru duplikat',
                 'command' => 'update_selected_account',
                 'status' => 'failed',
@@ -1938,7 +2076,7 @@ class Api extends CI_Controller
         $updated = $this->db->get_where('akun', ['id_akun' => (int) $account->id_akun])->row();
 
         return [
-            'content' => "Akun berhasil diubah.\n\n" . $this->format_account_detail($updated),
+            'content' => "Beres, akun berhasil saya ubah.\n\n" . $this->format_account_detail($updated),
             'summary' => 'Akun berhasil diubah',
             'command' => 'update_selected_account',
             'status' => 'success',
@@ -1959,7 +2097,7 @@ class Api extends CI_Controller
             $accounts = $this->search_accounts_for_chat('', 10);
 
             return [
-                'content' => $this->format_account_search_results($accounts, 'Pilih akun untuk lihat detail:', 'detail'),
+                'content' => $this->format_account_search_results($accounts, 'Saya temukan beberapa akun. Mau lihat detail yang mana?', 'detail'),
                 'summary' => 'Menampilkan pilihan detail akun',
                 'command' => 'detail',
                 'status' => 'waiting',
@@ -1972,7 +2110,7 @@ class Api extends CI_Controller
 
         if (empty($accounts)) {
             return [
-                'content' => 'Akun tidak ditemukan untuk keyword: ' . $keyword,
+                'content' => 'Saya belum menemukan akun untuk keyword: ' . $keyword . '. Coba ketik username, nama akun, note, atau ID akun.',
                 'summary' => 'Detail akun tidak ditemukan',
                 'command' => 'detail',
                 'status' => 'failed',
@@ -1981,7 +2119,7 @@ class Api extends CI_Controller
             ];
         }
 
-        $lines = ['Detail akun ditemukan:'];
+        $lines = ['Ini detail akun yang saya temukan:'];
 
         foreach ($accounts as $index => $account) {
             if ($index > 0) {
@@ -2002,7 +2140,7 @@ class Api extends CI_Controller
 
         if (count($accounts) >= 5) {
             $lines[] = '';
-            $lines[] = 'Saya tampilkan 5 hasil pertama. Perjelas keyword kalau ingin hasil lebih spesifik.';
+            $lines[] = 'Saya tampilkan 5 hasil pertama dulu. Kalau mau lebih pas, coba keyword yang lebih spesifik.';
         }
 
         return [
@@ -2084,7 +2222,7 @@ class Api extends CI_Controller
     private function format_account_search_results(array $accounts, $heading, $command)
     {
         if (empty($accounts)) {
-            return 'Tidak ada akun yang bisa ditampilkan.';
+            return 'Saya belum menemukan akun yang bisa ditampilkan.';
         }
 
         $lines = [$heading];
@@ -2102,9 +2240,9 @@ class Api extends CI_Controller
         $lines[] = '';
 
         if ($command === 'use') {
-            $lines[] = 'Ketik: use username atau use #ID';
+            $lines[] = 'Ketik `use username` atau `use #ID` untuk pilih akun.';
         } else {
-            $lines[] = 'Ketik: detail username atau detail #ID';
+            $lines[] = 'Ketik `detail username` atau `detail #ID` untuk lihat lengkapnya.';
         }
 
         return implode("\n", $lines);
@@ -2146,7 +2284,7 @@ class Api extends CI_Controller
     private function format_account_detail($account)
     {
         return implode("\n", [
-            'Detail akun:',
+            'Detail akun yang saya temukan:',
             'Nama: ' . ($account->nama_akun ?? '-'),
             'Username: ' . ($account->username ?? '-'),
             'Password: ' . ($account->password ?? '-'),
@@ -2423,7 +2561,7 @@ class Api extends CI_Controller
 
         if (empty($rows)) {
             return [
-                'content' => "Format belum terbaca. Pakai format:\nusername|password|catatan",
+                'content' => "Formatnya belum kebaca. Pakai format ini ya:\nusername|password|catatan",
                 'summary' => 'Format tambah akun salah',
                 'command' => 'tambah',
                 'status' => 'failed',
@@ -2476,7 +2614,7 @@ class Api extends CI_Controller
             $created[] = $username;
         }
 
-        $lines = ['Tambah akun selesai.'];
+        $lines = ['Beres, proses tambah akun selesai.'];
         $lines[] = '- Berhasil: ' . count($created);
         $lines[] = '- Dilewati: ' . count($skipped);
 

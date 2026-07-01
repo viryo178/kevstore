@@ -533,3 +533,25 @@ $config['rewrite_short_tags'] = FALSE;
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
 $config['proxy_ips'] = '';
+
+/*
+|--------------------------------------------------------------------------
+| Google AI Studio / Gemini
+|--------------------------------------------------------------------------
+|
+| Set GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY in hosting environment.
+| If you only have an OAuth-style token, set GOOGLE_AI_STUDIO_TOKEN.
+| Keep the real API key outside source code.
+|
+*/
+$config['google_ai_studio_api_key'] =
+	getenv('GOOGLE_AI_STUDIO_API_KEY')
+	?: getenv('GEMINI_API_KEY')
+	?: (isset($_SERVER['GOOGLE_AI_STUDIO_API_KEY']) ? $_SERVER['GOOGLE_AI_STUDIO_API_KEY'] : '')
+	?: (isset($_SERVER['GEMINI_API_KEY']) ? $_SERVER['GEMINI_API_KEY'] : '');
+$config['google_ai_studio_token'] =
+	getenv('GOOGLE_AI_STUDIO_TOKEN')
+	?: (isset($_SERVER['GOOGLE_AI_STUDIO_TOKEN']) ? $_SERVER['GOOGLE_AI_STUDIO_TOKEN'] : '');
+$config['google_ai_studio_model'] =
+	getenv('GOOGLE_AI_STUDIO_MODEL')
+	?: (isset($_SERVER['GOOGLE_AI_STUDIO_MODEL']) ? $_SERVER['GOOGLE_AI_STUDIO_MODEL'] : 'gemini-2.5-flash');

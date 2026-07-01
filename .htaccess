@@ -1,5 +1,11 @@
 RewriteEngine On
 
+# Google AI Studio / Gemini
+# Isi salah satu di hosting, lalu hapus tanda # di depannya:
+# SetEnv GOOGLE_AI_STUDIO_API_KEY "ISI_API_KEY_AI_STUDIO"
+# SetEnv GOOGLE_AI_STUDIO_TOKEN "ISI_TOKEN_JIKA_BUKAN_API_KEY"
+# SetEnv GOOGLE_AI_STUDIO_MODEL "gemini-2.5-flash"
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php/$1 [L]
