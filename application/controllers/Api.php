@@ -2737,15 +2737,15 @@ class Api extends CI_Controller
         foreach ($lines as $line) {
             $line = trim((string) $line);
 
-            if ($line === '' || strpos($line, '|') === false) {
+            if ($line === '') {
                 continue;
             }
 
-            $parts = explode('|', $line, 3);
+            $parsed = $this->parse_account_line($line);
             $rows[] = [
-                'username' => trim($parts[0] ?? ''),
-                'password' => trim($parts[1] ?? ''),
-                'note' => trim($parts[2] ?? ''),
+                'username' => $parsed['username'],
+                'password' => $parsed['password'],
+                'note' => $parsed['note'],
             ];
         }
 
@@ -3086,7 +3086,7 @@ class Api extends CI_Controller
         ];
 
         if (count($created) === 0) {
-            return $this->json_error('Tidak ada akun yang berhasil ditambahkan', 422, $response);
+            return $this->json_error($this->bulk_create_error_message($skipped), 422, $response);
         }
 
         return $this->json_success('Bulk tambah akun selesai', $response, 201);
@@ -3198,11 +3198,12 @@ class Api extends CI_Controller
                 continue;
             }
 
-            $parts = explode('|', $line, 3);
+            $parsed = $this->parse_account_line($line);
+
             $rows[] = [
-                'username' => trim($parts[0] ?? ''),
-                'password' => trim($parts[1] ?? ''),
-                'note' => trim($parts[2] ?? ''),
+                'username' => $parsed['username'],
+                'password' => $parsed['password'],
+                'note' => $parsed['note'],
                 'nama_akun' => 'Grok',
                 'kategori' => 'belum_terjual',
                 'status' => 'aktif',
@@ -3211,6 +3212,44 @@ class Api extends CI_Controller
         }
 
         return $rows;
+    }
+
+    private function parse_account_line($line)
+    {
+        $line = trim((string) $line);
+
+        if ($line === '') {
+            return ['username' => '', 'password' => '', 'note' => ''];
+        }
+
+        if (strpos($line, '|') !== false) {
+            $parts = explode('|', $line, 3);
+        } elseif (strpos($line, "\t") !== false) {
+            $parts = preg_split('/\t+/', $line, 3);
+        } elseif (substr_count($line, ':') >= 1 && preg_match('/^\S+@\S+:\S+/', $line) === 1) {
+            $parts = explode(':', $line, 3);
+        } else {
+            $parts = preg_split('/\s+/', $line, 3);
+        }
+
+        return [
+            'username' => trim($parts[0] ?? ''),
+            'password' => trim($parts[1] ?? ''),
+            'note' => trim($parts[2] ?? ''),
+        ];
+    }
+
+    private function bulk_create_error_message(array $skipped)
+    {
+        if (empty($skipped)) {
+            return 'Belum ada akun yang berhasil ditambahkan. Cek lagi format datanya ya.';
+        }
+
+        $first = $skipped[0];
+        $reason = is_array($first) ? (string) ($first['reason'] ?? 'Format belum valid') : (string) $first;
+        $username = is_array($first) && !empty($first['username']) ? ' (' . $first['username'] . ')' : '';
+
+        return 'Belum ada akun yang berhasil ditambahkan. Penyebab pertama: ' . $reason . $username . '.';
     }
 
     private function delete_akun($id)
