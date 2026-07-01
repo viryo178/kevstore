@@ -76,6 +76,16 @@ interface CommandSuggestion {
   prefix: string;
 }
 
+function parseAccountSearchCommand(value: string): { mode: "detail" | "use"; keyword: string } | null {
+  const match = value.trimStart().match(/^\/?(detail|use)(?:\s+(.*))?$/i);
+  if (!match) return null;
+
+  return {
+    mode: match[1].toLowerCase() as "detail" | "use",
+    keyword: (match[2] ?? "").trim(),
+  };
+}
+
 const BACKGROUND_PARTICLES = [
   { left: "2%", delay: "-0.6s", duration: "8s", size: "3px", drift: "12px", rise: "46vh" },
   { left: "5%", delay: "-3.2s", duration: "11s", size: "2px", drift: "-16px", rise: "49vh" },
@@ -230,10 +240,15 @@ export function AnimatedAIChat({
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [inputFocused, setInputFocused] = useState(false);
+  const [accountSuggestions, setAccountSuggestions] = useState<StoreAccount[]>([]);
+  const [isLoadingAccountSuggestions, setIsLoadingAccountSuggestions] = useState(false);
+  const [activeAccountSuggestion, setActiveAccountSuggestion] = useState(0);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 44, maxHeight: 120 });
   const commandPaletteRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isTyping = inputFocused && value.trim().length > 0 && !isSending;
+  const accountSearch = parseAccountSearchCommand(value);
+  const showAccountSuggestions = inputFocused && Boolean(accountSearch) && (accountSuggestions.length > 0 || isLoadingAccountSuggestions);
   const pointerStyle = {
     "--pointer-x": `${mousePosition.x}px`,
     "--pointer-y": `${mousePosition.y}px`,
@@ -255,6 +270,37 @@ export function AnimatedAIChat({
       setShowCommandPalette(false);
     }
   }, [value]);
+
+  useEffect(() => {
+    if (!accountSearch) {
+      setAccountSuggestions([]);
+      setIsLoadingAccountSuggestions(false);
+      setActiveAccountSuggestion(0);
+      return;
+    }
+
+    let isCurrent = true;
+    const timeout = window.setTimeout(async () => {
+      setIsLoadingAccountSuggestions(true);
+      try {
+        const data = await localApiGet<{ accounts?: StoreAccount[]; data?: StoreAccount[] }>(
+          `api/akun?limit=6&offset=0&q=${encodeURIComponent(accountSearch.keyword)}`,
+        );
+        if (!isCurrent) return;
+        setAccountSuggestions((data.accounts ?? data.data ?? []).slice(0, 6));
+        setActiveAccountSuggestion(0);
+      } catch {
+        if (isCurrent) setAccountSuggestions([]);
+      } finally {
+        if (isCurrent) setIsLoadingAccountSuggestions(false);
+      }
+    }, 180);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeout);
+    };
+  }, [accountSearch?.keyword, accountSearch?.mode]);
 
   useEffect(() => {
     const scrollToLatest = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -292,6 +338,19 @@ export function AnimatedAIChat({
     requestAnimationFrame(() => adjustHeight());
   };
 
+  const selectAccountSuggestion = (account: StoreAccount) => {
+    if (!accountSearch) return;
+
+    const username = account.username || `#${account.id_akun}`;
+    setValue(`${accountSearch.mode} ${username}`);
+    setAccountSuggestions([]);
+    setActiveAccountSuggestion(0);
+    requestAnimationFrame(() => {
+      adjustHeight();
+      textareaRef.current?.focus();
+    });
+  };
+
   const handleSendMessage = async () => {
     const content = value.trim();
     if (!content || isSending) return;
@@ -320,14 +379,84 @@ export function AnimatedAIChat({
       return;
     }
 
+    if (showAccountSuggestions && accountSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveAccountSuggestion((prev) => (prev < accountSuggestions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveAccountSuggestion((prev) => (prev > 0 ? prev - 1 : accountSuggestions.length - 1));
+        return;
+      }
+
+      if (e.key === "Tab") {
+        e.preventDefault();
+        selectAccountSuggestion(accountSuggestions[activeAccountSuggestion]);
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setAccountSuggestions([]);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSendMessage();
     }
   };
 
+  const accountSuggestionPanel = (
+    <AnimatePresence>
+      {showAccountSuggestions && (
+        <motion.div className="absolute bottom-full left-4 right-4 z-50 mb-2 overflow-hidden rounded-lg border border-white/10 bg-black/90 shadow-2xl backdrop-blur-xl" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}>
+          <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+            Search akun
+          </div>
+          {isLoadingAccountSuggestions && (
+            <div className="flex items-center gap-2 px-3 py-3 text-sm text-white/55">
+              <LoaderIcon className="h-4 w-4 animate-spin" />
+              Mencari akun...
+            </div>
+          )}
+          {!isLoadingAccountSuggestions && accountSuggestions.length === 0 && (
+            <div className="px-3 py-3 text-sm text-white/55">Tidak ada akun yang cocok.</div>
+          )}
+          {!isLoadingAccountSuggestions && accountSuggestions.map((account, index) => (
+            <button
+              type="button"
+              key={`${account.id_akun}-${account.username}`}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                selectAccountSuggestion(account);
+              }}
+              className={cn(
+                "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors",
+                activeAccountSuggestion === index ? "bg-white/10 text-white" : "text-white/72 hover:bg-white/5 hover:text-white",
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{account.nama_akun || "Akun"} | {account.username || "-"}</span>
+                <span className="block truncate text-xs text-white/42">#{account.id_akun} | {account.kategori || "-"} | {account.status || "-"} | {account.note || "tanpa catatan"}</span>
+              </span>
+              <span className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-xs text-white/45">
+                {accountSearch?.mode}
+              </span>
+            </button>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   const composerBox = (
     <motion.div className="pointer-events-auto relative mx-auto w-full max-w-5xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 text-left shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
+      {accountSuggestionPanel}
       <AnimatePresence>
         {showCommandPalette && (
           <motion.div ref={commandPaletteRef} className="absolute bottom-full left-4 right-4 z-50 mb-2 overflow-hidden rounded-lg border border-white/10 bg-black/90 shadow-lg backdrop-blur-xl" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}>
@@ -527,6 +656,7 @@ export function AnimatedAIChat({
         {messages.length > 0 && (
         <div className={cn("pointer-events-none fixed bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[#050507] via-[#050507]/98 via-70% to-transparent px-5 pb-5 pt-16 sm:px-4 sm:pt-24", sidebarCollapsed ? "md:left-0" : "md:left-72")}>
           <motion.div className="pointer-events-auto relative mx-auto w-full max-w-5xl rounded-2xl border border-white/[0.08] bg-[#1f1f22]/90 shadow-2xl backdrop-blur-2xl" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
+            {accountSuggestionPanel}
             <AnimatePresence>
               {showCommandPalette && (
                 <motion.div ref={commandPaletteRef} className="absolute bottom-full left-4 right-4 z-50 mb-2 overflow-hidden rounded-lg border border-white/10 bg-black/90 shadow-lg backdrop-blur-xl" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}>
