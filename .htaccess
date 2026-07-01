@@ -1,8 +1,8 @@
 RewriteEngine On
 
 # Google AI Studio / Gemini
-# Isi API key dari AI Studio di sini, lalu hapus tanda # di depannya:
-# SetEnv GOOGLE_AI_STUDIO_API_KEY "AQ...ATAU_AIza...API_KEY_KAMU"
+# Isi API key asli hanya di hosting/local, jangan commit ke GitHub:
+# SetEnv GOOGLE_AI_STUDIO_API_KEY "ISI_API_KEY_AI_STUDIO"
 # SetEnv GOOGLE_AI_STUDIO_MODEL "gemini-2.5-flash"
 
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -762,6 +762,10 @@ class Api extends CI_Controller
             return $this->chat_user_name_question_response($conversation_id);
         }
 
+        if ($this->is_ai_studio_status_command($normalized)) {
+            return $this->chat_ai_studio_status_response();
+        }
+
         if ($this->is_feature_list_command($normalized)) {
             return $this->chat_feature_list_response();
         }
@@ -972,6 +976,55 @@ class Api extends CI_Controller
             'status' => 'success',
             'error' => null,
             'metadata' => $metadata,
+        ];
+    }
+
+    private function is_ai_studio_status_command($normalized)
+    {
+        return in_array($normalized, [
+            'cek ai',
+            'cek ai studio',
+            'cek gemini',
+            'test ai',
+            'test gemini',
+        ], true);
+    }
+
+    private function chat_ai_studio_status_response()
+    {
+        $api_key = trim((string) $this->config->item('google_ai_studio_api_key'));
+
+        if ($api_key === '') {
+            return [
+                'content' => 'AI Studio belum aktif. API key belum terbaca oleh backend.',
+                'summary' => 'AI Studio belum aktif',
+                'command' => 'ai_studio_status',
+                'status' => 'failed',
+                'error' => 'API key kosong',
+                'metadata' => ['configured' => false],
+            ];
+        }
+
+        $answer = $this->google_ai_studio_answer('Jawab singkat: koneksi Violence AI ke Gemini sudah aktif.');
+
+        if ($answer === null) {
+            return [
+                'content' => 'API key sudah terbaca, tapi Gemini belum berhasil menjawab. Coba restart Apache/Laragon, lalu cek lagi.',
+                'summary' => 'AI Studio gagal menjawab',
+                'command' => 'ai_studio_status',
+                'status' => 'failed',
+                'error' => 'Gemini tidak merespons',
+                'metadata' => ['configured' => true],
+            ];
+        }
+
+        return [
+            'content' => "AI Studio sudah aktif dan bisa dipakai.\n\nTes Gemini: " . $answer,
+            'summary' => 'AI Studio aktif',
+            'command' => 'ai_studio_status',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['configured' => true],
         ];
     }
 
