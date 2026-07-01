@@ -210,6 +210,10 @@ export function AnimatedAIChat({
   const commandPaletteRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isTyping = inputFocused && value.trim().length > 0 && !isSending;
+  const pointerStyle = {
+    "--pointer-x": `${mousePosition.x}px`,
+    "--pointer-y": `${mousePosition.y}px`,
+  } as React.CSSProperties;
 
   const commandSuggestions: CommandSuggestion[] = [
     { icon: <ShoppingBag className="h-4 w-4" />, label: "Cek Stok", prefix: "berapa stok hari ini" },
@@ -398,10 +402,18 @@ export function AnimatedAIChat({
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-transparent text-white">
-      <div className="absolute inset-0 h-full w-full overflow-hidden">
-        <div className="absolute left-1/4 top-0 h-96 w-96 animate-pulse rounded-full bg-violet-500/10 blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-pulse rounded-full bg-indigo-500/10 blur-[128px] delay-700" />
-        <div className="absolute right-1/3 top-1/4 h-64 w-64 animate-pulse rounded-full bg-fuchsia-500/10 blur-[96px] delay-1000" />
+      <div className="interactive-chat-bg pointer-events-none fixed inset-0 z-0" style={pointerStyle}>
+        <motion.div
+          className="interactive-chat-bg__grid"
+          animate={{ backgroundPosition: ["0px 0px", "44px 44px"] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="interactive-chat-bg__sweep"
+          animate={{ x: ["-35%", "135%"] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.5 }}
+        />
+        <div className="interactive-chat-bg__pointer" />
       </div>
 
       <motion.div className="relative z-10 flex min-h-screen flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -549,7 +561,7 @@ export function AnimatedAIChat({
       </motion.div>
 
       {inputFocused && (
-        <motion.div className="theme-cursor-glow pointer-events-none fixed z-0 h-[50rem] w-[50rem] rounded-full opacity-[0.025] blur-[96px]" animate={{ x: mousePosition.x - 400, y: mousePosition.y - 400 }} transition={{ type: "spring", damping: 25, stiffness: 150, mass: 0.5 }} />
+        <motion.div className="theme-cursor-glow pointer-events-none fixed z-0 h-[32rem] w-[32rem] rounded-full opacity-[0.018] blur-[84px]" animate={{ x: mousePosition.x - 256, y: mousePosition.y - 256 }} transition={{ type: "spring", damping: 25, stiffness: 150, mass: 0.5 }} />
       )}
     </div>
   );
