@@ -674,6 +674,7 @@ class Api extends CI_Controller
     private function build_chat_ai_response($content, $conversation_id)
     {
         $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
+        $normalized = trim(preg_replace('/[?!.,;:]+$/', '', $normalized));
 
         if ($this->is_cancel_command($normalized)) {
             return [
@@ -986,9 +987,42 @@ class Api extends CI_Controller
     {
         $query = trim((string) $content);
         $google_url = 'https://www.google.com/search?q=' . rawurlencode($query);
+        $search = $this->search_web_for_answer($query);
+
+        if (!empty($search['results'])) {
+            $lines = [];
+            $lines[] = 'Saya cari dari web. Ringkasnya:';
+
+            foreach ($search['results'] as $index => $result) {
+                $snippet = trim($result['snippet']);
+                if ($snippet === '') {
+                    continue;
+                }
+
+                $lines[] = ($index + 1) . '. ' . $snippet;
+            }
+
+            if (count($lines) > 1) {
+                $lines[] = '';
+                $lines[] = 'Sumber: ' . $search['results'][0]['url'];
+
+                return [
+                    'content' => implode("\n", $lines),
+                    'summary' => 'Jawaban dari web',
+                    'command' => 'web_search',
+                    'status' => 'success',
+                    'error' => null,
+                    'metadata' => [
+                        'query' => $query,
+                        'source' => $search['source'],
+                        'results' => $search['results'],
+                    ],
+                ];
+            }
+        }
 
         return [
-            'content' => "Saya belum punya jawaban pasti untuk pertanyaan di luar konteks Kevstore itu.\n\nSaya bantu carikan lewat Google:\n" . $google_url,
+            'content' => "Saya coba cari jawabannya, tapi hasil pencarian belum bisa dibaca otomatis saat ini.\n\nBuka Google:\n" . $google_url,
             'summary' => 'Fallback Google Search',
             'command' => 'google_search',
             'status' => 'success',
@@ -998,6 +1032,218 @@ class Api extends CI_Controller
                 'google_url' => $google_url,
             ],
         ];
+    }
+
+    private function search_web_for_answer($query)
+    {
+        $query = trim((string) $query);
+
+        if ($query === '') {
+            return ['source' => 'none', 'results' => []];
+        }
+
+        $results = $this->google_custom_search_results($query);
+        if (!empty($results)) {
+            return ['source' => 'google_custom_search', 'results' => $results];
+        }
+
+        $results = $this->google_html_search_results($query);
+        if (!empty($results)) {
+            return ['source' => 'google', 'results' => $results];
+        }
+
+        $results = $this->bing_search_results($query);
+        if (!empty($results)) {
+            return ['source' => 'bing_fallback', 'results' => $results];
+        }
+
+        return ['source' => 'none', 'results' => []];
+    }
+
+    private function google_custom_search_results($query)
+    {
+        $api_key = getenv('GOOGLE_CSE_API_KEY');
+        $cx = getenv('GOOGLE_CSE_ID');
+
+        if (!$api_key || !$cx) {
+            return [];
+        }
+
+        $url = 'https://www.googleapis.com/customsearch/v1?key=' . rawurlencode($api_key)
+            . '&cx=' . rawurlencode($cx)
+            . '&num=3&hl=id&q=' . rawurlencode($query);
+        $body = $this->http_get($url, 8);
+
+        if ($body === null) {
+            return [];
+        }
+
+        $json = json_decode($body, true);
+        if (empty($json['items']) || !is_array($json['items'])) {
+            return [];
+        }
+
+        $results = [];
+        foreach (array_slice($json['items'], 0, 3) as $item) {
+            $results[] = [
+                'title' => isset($item['title']) ? $this->clean_search_text($item['title']) : '',
+                'snippet' => isset($item['snippet']) ? $this->clean_search_text($item['snippet']) : '',
+                'url' => isset($item['link']) ? $item['link'] : '',
+            ];
+        }
+
+        return $this->filter_search_results($results);
+    }
+
+    private function google_html_search_results($query)
+    {
+        $url = 'https://www.google.com/search?hl=id&num=5&q=' . rawurlencode($query);
+        $html = $this->http_get($url, 8);
+
+        if ($html === null) {
+            return [];
+        }
+
+        $results = [];
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        $dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+        $nodes = $xpath->query('//a[h3]');
+
+        foreach ($nodes as $node) {
+            $title_node = $xpath->query('.//h3', $node)->item(0);
+            $href = $node->getAttribute('href');
+            $title = $title_node ? $this->clean_search_text($title_node->textContent) : '';
+            $snippet = $this->find_nearby_search_snippet($xpath, $node);
+
+            if (strpos($href, '/url?') === 0) {
+                parse_str(parse_url($href, PHP_URL_QUERY), $params);
+                $href = isset($params['q']) ? $params['q'] : $href;
+            }
+
+            $results[] = [
+                'title' => $title,
+                'snippet' => $snippet !== '' ? $snippet : $title,
+                'url' => $href,
+            ];
+
+            if (count($results) >= 3) {
+                break;
+            }
+        }
+
+        libxml_clear_errors();
+        return $this->filter_search_results($results);
+    }
+
+    private function bing_search_results($query)
+    {
+        $url = 'https://www.bing.com/search?format=rss&q=' . rawurlencode($query);
+        $xml_body = $this->http_get($url, 8);
+
+        if ($xml_body === null || !function_exists('simplexml_load_string')) {
+            return [];
+        }
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($xml_body);
+
+        if (!$xml || empty($xml->channel->item)) {
+            libxml_clear_errors();
+            return [];
+        }
+
+        $results = [];
+        foreach ($xml->channel->item as $item) {
+            $results[] = [
+                'title' => $this->clean_search_text((string) $item->title),
+                'snippet' => $this->clean_search_text((string) $item->description),
+                'url' => trim((string) $item->link),
+            ];
+
+            if (count($results) >= 3) {
+                break;
+            }
+        }
+
+        libxml_clear_errors();
+        return $this->filter_search_results($results);
+    }
+
+    private function find_nearby_search_snippet(DOMXPath $xpath, DOMNode $node)
+    {
+        $container = $node->parentNode;
+
+        for ($i = 0; $i < 4 && $container; $i++) {
+            $text = $this->clean_search_text($container->textContent);
+            if (strlen($text) > 80) {
+                return substr($text, 0, 260);
+            }
+
+            $container = $container->parentNode;
+        }
+
+        return '';
+    }
+
+    private function filter_search_results(array $results)
+    {
+        $filtered = [];
+
+        foreach ($results as $result) {
+            $snippet = isset($result['snippet']) ? $this->clean_search_text($result['snippet']) : '';
+            $url = isset($result['url']) ? trim($result['url']) : '';
+
+            if ($snippet === '' || $url === '' || strpos($url, 'http') !== 0) {
+                continue;
+            }
+
+            $filtered[] = [
+                'title' => isset($result['title']) ? $this->clean_search_text($result['title']) : '',
+                'snippet' => $snippet,
+                'url' => $url,
+            ];
+        }
+
+        return array_slice($filtered, 0, 3);
+    }
+
+    private function clean_search_text($text)
+    {
+        $text = html_entity_decode((string) $text, ENT_QUOTES, 'UTF-8');
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return trim($text);
+    }
+
+    private function http_get($url, $timeout = 8)
+    {
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+            CURLOPT_HTTPHEADER => [
+                'Accept-Language: id-ID,id;q=0.9,en;q=0.8',
+            ],
+        ]);
+
+        $body = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($body === false || $status < 200 || $status >= 300) {
+            return null;
+        }
+
+        return $body;
     }
 
     private function is_cancel_command($normalized)
