@@ -1292,6 +1292,7 @@ class Api extends CI_Controller
         curl_close($ch);
 
         if ($body === false || $status < 200 || $status >= 300) {
+            log_message('error', 'Google AI Studio request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
             return null;
         }
 
@@ -1534,7 +1535,7 @@ class Api extends CI_Controller
         $best = $results[0];
         $lines = [];
         $lines[] = 'Saya cari dari web, ini jawaban yang paling nyambung:';
-        $lines[] = $this->trim_answer_text($best['snippet']);
+        $lines[] = $this->friendly_web_snippet($best['snippet']);
         $lines[] = '';
         $lines[] = 'Sumber yang saya pakai: ' . ($best['title'] ?: $best['url']);
         $lines[] = $best['url'];
@@ -1549,6 +1550,36 @@ class Api extends CI_Controller
         }
 
         return implode("\n", $lines);
+    }
+
+    private function friendly_web_snippet($snippet)
+    {
+        $snippet = $this->trim_answer_text($snippet);
+
+        if (preg_match('/^The\s+(.+?)\s+is\s+(an?|the)\s+(.+)/i', $snippet, $matches) === 1) {
+            return $matches[1] . ' adalah ' . $this->lowercase_first($matches[3]);
+        }
+
+        if (preg_match('/^(.+?)\s+is\s+(an?|the)\s+(.+)/i', $snippet, $matches) === 1) {
+            return $matches[1] . ' adalah ' . $this->lowercase_first($matches[3]);
+        }
+
+        if (preg_match('/\b(is|are|represents|organization|scientific|professional|United States)\b/i', $snippet) === 1) {
+            return 'Dari sumber yang saya temukan: ' . $snippet;
+        }
+
+        return $snippet;
+    }
+
+    private function lowercase_first($text)
+    {
+        $text = trim((string) $text);
+
+        if ($text === '') {
+            return $text;
+        }
+
+        return strtolower(substr($text, 0, 1)) . substr($text, 1);
     }
 
     private function is_lyrics_request($query)
