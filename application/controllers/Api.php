@@ -1380,6 +1380,14 @@ class Api extends CI_Controller
             return null;
         }
 
+        if (($response['__error'] ?? '') === 'limit') {
+            return 'Gemini sedang kena limit/quota untuk sementara. Coba lagi nanti, atau ganti model ke Groq dari tombol model AI di bawah chat.';
+        }
+
+        if (($response['__error'] ?? '') === 'auth') {
+            return 'API key Gemini belum valid atau belum terbaca benar. Cek file `ai_studio_key.php`, lalu coba `cek ai studio` lagi.';
+        }
+
         $answer = $this->extract_google_ai_text($response);
 
         return $answer !== '' ? $answer : null;
@@ -1424,6 +1432,14 @@ class Api extends CI_Controller
 
         if ($response === null) {
             return null;
+        }
+
+        if (($response['__error'] ?? '') === 'limit') {
+            return 'Groq sedang kena limit/quota untuk sementara. Coba lagi nanti, atau ganti model ke Gemini dari tombol model AI di bawah chat.';
+        }
+
+        if (($response['__error'] ?? '') === 'auth') {
+            return 'API key Groq belum valid atau belum terbaca benar. Cek file `groq_key.php`, lalu coba `cek groq` lagi.';
         }
 
         $answer = trim((string) ($response['choices'][0]['message']['content'] ?? ''));
@@ -1491,6 +1507,12 @@ class Api extends CI_Controller
 
         if ($body === false || $status < 200 || $status >= 300) {
             log_message('error', 'Groq request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
+            if ($status === 429) {
+                return ['__error' => 'limit'];
+            }
+            if ($status === 401 || $status === 403) {
+                return ['__error' => 'auth'];
+            }
             return null;
         }
 
@@ -1593,6 +1615,12 @@ class Api extends CI_Controller
 
         if ($body === false || $status < 200 || $status >= 300) {
             log_message('error', 'Google AI Studio request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
+            if ($status === 429) {
+                return ['__error' => 'limit'];
+            }
+            if ($status === 401 || $status === 403) {
+                return ['__error' => 'auth'];
+            }
             return null;
         }
 
