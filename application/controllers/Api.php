@@ -753,6 +753,15 @@ class Api extends CI_Controller
             ];
         }
 
+        $introduced_name = $this->extract_user_introduced_name($normalized);
+        if ($introduced_name !== null) {
+            return $this->chat_user_name_intro_response($introduced_name);
+        }
+
+        if ($this->is_user_name_question($normalized)) {
+            return $this->chat_user_name_question_response($conversation_id);
+        }
+
         if ($this->is_feature_list_command($normalized)) {
             return $this->chat_feature_list_response();
         }
@@ -874,6 +883,8 @@ class Api extends CI_Controller
             'siapa kamu',
             'nama kamu siapa',
             'siapa nama kamu',
+            'nama saya siapa',
+            'siapa nama saya',
             'terima kasih',
             'makasih',
             'thanks',
@@ -896,6 +907,118 @@ class Api extends CI_Controller
         }
 
         return false;
+    }
+
+    private function extract_user_introduced_name($normalized)
+    {
+        $patterns = [
+            '/(?:halo|hai|hi|hallo|hello)?\s*nama saya\s+([a-z0-9 ._-]{2,40})$/i',
+            '/(?:halo|hai|hi|hallo|hello)?\s*namaku\s+([a-z0-9 ._-]{2,40})$/i',
+            '/(?:halo|hai|hi|hallo|hello)?\s*saya bernama\s+([a-z0-9 ._-]{2,40})$/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $normalized, $matches) !== 1) {
+                continue;
+            }
+
+            $name = trim($matches[1]);
+            if ($this->looks_like_name_value($name)) {
+                return $this->format_user_name($name);
+            }
+        }
+
+        return null;
+    }
+
+    private function is_user_name_question($normalized)
+    {
+        return in_array($normalized, [
+            'nama saya siapa',
+            'siapa nama saya',
+            'kamu ingat nama saya',
+            'ingat nama saya',
+        ], true);
+    }
+
+    private function chat_user_name_intro_response($name)
+    {
+        return [
+            'content' => 'Halo ' . $name . ', saya ingat. Ada yang bisa saya bantu?',
+            'summary' => 'Mengingat nama user',
+            'command' => 'remember_user_name',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['user_name' => $name],
+        ];
+    }
+
+    private function chat_user_name_question_response($conversation_id)
+    {
+        $name = $this->find_user_name_from_conversation($conversation_id);
+
+        if ($name === null) {
+            $content = 'Saya belum tahu nama kamu. Coba ketik: nama saya Viryo';
+            $metadata = [];
+        } else {
+            $content = 'Nama kamu ' . $name . '.';
+            $metadata = ['user_name' => $name];
+        }
+
+        return [
+            'content' => $content,
+            'summary' => 'Menjawab nama user',
+            'command' => 'user_name_question',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => $metadata,
+        ];
+    }
+
+    private function find_user_name_from_conversation($conversation_id)
+    {
+        $messages = $this->db
+            ->where('conversation_id', (int) $conversation_id)
+            ->where('role', 'user')
+            ->order_by('id', 'DESC')
+            ->limit(20)
+            ->get('chat_ai_messages')
+            ->result();
+
+        foreach ($messages as $message) {
+            $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $message->content)));
+            $normalized = trim(preg_replace('/[?!.,;:]+$/', '', $normalized));
+            $name = $this->extract_user_introduced_name($normalized);
+
+            if ($name !== null) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    private function looks_like_name_value($name)
+    {
+        $blocked = [
+            'siapa', 'apa', 'kabar', 'baik', 'buruk', 'admin', 'user', 'akun',
+            'password', 'stok', 'stock', 'lirik', 'lagu', 'tolong', 'bantu',
+        ];
+
+        $name = strtolower(trim($name));
+
+        if ($name === '' || in_array($name, $blocked, true)) {
+            return false;
+        }
+
+        return preg_match('/^[a-z][a-z0-9 ._-]{1,39}$/i', $name) === 1;
+    }
+
+    private function format_user_name($name)
+    {
+        $name = strtolower(trim(preg_replace('/\s+/', ' ', $name)));
+
+        return ucwords($name);
     }
 
     private function chat_basic_response($normalized)
@@ -1574,7 +1697,9 @@ class Api extends CI_Controller
 
     private function is_use_account_command($normalized)
     {
-        return strpos($normalized, 'use ') === 0
+        return $normalized === 'use'
+            || $normalized === '/use'
+            || strpos($normalized, 'use ') === 0
             || strpos($normalized, '/use ') === 0;
     }
 
@@ -1599,19 +1724,34 @@ class Api extends CI_Controller
         $keyword = trim(preg_replace('/^\/?use\s*/i', '', (string) $content));
 
         if ($keyword === '') {
+            $accounts = $this->search_accounts_for_chat('', 10);
+
             return [
-                'content' => 'Tulis username setelah use. Contoh: use email@gmail.com',
-                'summary' => 'Use akun tanpa username',
+                'content' => $this->format_account_search_results($accounts, 'Pilih akun yang mau di-use:', 'use'),
+                'summary' => 'Menampilkan pilihan akun untuk use',
                 'command' => 'use_account',
-                'status' => 'failed',
-                'error' => 'Username kosong',
-                'metadata' => [],
+                'status' => 'waiting',
+                'error' => null,
+                'metadata' => ['mode' => 'use_account_search', 'count' => count($accounts)],
             ];
         }
 
         $account = $this->find_single_account_for_use($keyword);
 
         if (!$account) {
+            $accounts = $this->search_accounts_for_chat($keyword, 10);
+
+            if (!empty($accounts)) {
+                return [
+                    'content' => $this->format_account_search_results($accounts, 'Akun yang mirip dengan "' . $keyword . '":', 'use'),
+                    'summary' => 'Menampilkan hasil search akun untuk use',
+                    'command' => 'use_account',
+                    'status' => 'waiting',
+                    'error' => null,
+                    'metadata' => ['mode' => 'use_account_search', 'keyword' => $keyword, 'count' => count($accounts)],
+                ];
+            }
+
             return [
                 'content' => 'Akun tidak ditemukan untuk: ' . $keyword,
                 'summary' => 'Use akun gagal',
@@ -1816,13 +1956,15 @@ class Api extends CI_Controller
         $keyword = trim(preg_replace('/^\/?detail\s*/i', '', (string) $content));
 
         if ($keyword === '') {
+            $accounts = $this->search_accounts_for_chat('', 10);
+
             return [
-                'content' => 'Silakan kirim username atau kata yang ada di catatan akun.',
-                'summary' => 'Menunggu keyword detail akun',
+                'content' => $this->format_account_search_results($accounts, 'Pilih akun untuk lihat detail:', 'detail'),
+                'summary' => 'Menampilkan pilihan detail akun',
                 'command' => 'detail',
                 'status' => 'waiting',
                 'error' => null,
-                'metadata' => ['mode' => 'detail_account'],
+                'metadata' => ['mode' => 'detail_account', 'count' => count($accounts)],
             ];
         }
 
@@ -1881,16 +2023,7 @@ class Api extends CI_Controller
             return [];
         }
 
-        return $this->db
-            ->group_start()
-                ->where('username', $keyword)
-                ->or_like('username', $keyword)
-                ->or_like('note', $keyword)
-            ->group_end()
-            ->order_by('id_akun', 'DESC')
-            ->limit(5)
-            ->get('akun')
-            ->result();
+        return $this->search_accounts_for_chat($keyword, 5);
     }
 
     private function find_single_account_for_use($keyword)
@@ -1910,15 +2043,71 @@ class Api extends CI_Controller
             return $exact;
         }
 
+        $accounts = $this->search_accounts_for_chat($keyword, 2);
+
+        if (count($accounts) === 1) {
+            return $accounts[0];
+        }
+
+        return null;
+    }
+
+    private function search_accounts_for_chat($keyword = '', $limit = 10)
+    {
+        $keyword = trim((string) $keyword);
+
+        $this->db->from('akun');
+
+        if ($keyword !== '') {
+            if (preg_match('/^#?\d+$/', $keyword) === 1) {
+                $this->db->where('id_akun', (int) ltrim($keyword, '#'));
+            } else {
+                $this->db
+                    ->group_start()
+                        ->like('username', $keyword)
+                        ->or_like('nama_akun', $keyword)
+                        ->or_like('note', $keyword)
+                        ->or_like('website', $keyword)
+                        ->or_like('kategori', $keyword)
+                        ->or_like('status', $keyword)
+                    ->group_end();
+            }
+        }
+
         return $this->db
-            ->group_start()
-                ->like('username', $keyword)
-                ->or_like('note', $keyword)
-            ->group_end()
             ->order_by('id_akun', 'DESC')
-            ->limit(1)
-            ->get('akun')
-            ->row();
+            ->limit((int) $limit)
+            ->get()
+            ->result();
+    }
+
+    private function format_account_search_results(array $accounts, $heading, $command)
+    {
+        if (empty($accounts)) {
+            return 'Tidak ada akun yang bisa ditampilkan.';
+        }
+
+        $lines = [$heading];
+
+        foreach ($accounts as $account) {
+            $id = isset($account->id_akun) ? '#' . $account->id_akun : '#-';
+            $name = !empty($account->nama_akun) ? $account->nama_akun : '-';
+            $username = !empty($account->username) ? $account->username : '-';
+            $status = !empty($account->status) ? $account->status : '-';
+            $category = !empty($account->kategori) ? $account->kategori : '-';
+
+            $lines[] = $id . ' | ' . $name . ' | ' . $username . ' | ' . $category . ' | ' . $status;
+        }
+
+        $lines[] = '';
+
+        if ($command === 'use') {
+            $lines[] = 'Ketik: use username atau use #ID';
+        } else {
+            $lines[] = 'Ketik: detail username atau detail #ID';
+        }
+
+        return implode("\n", $lines);
     }
 
     private function selected_account_from_conversation($conversation_id)
