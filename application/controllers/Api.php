@@ -992,11 +992,20 @@ class Api extends CI_Controller
 
     private function chat_ai_studio_status_response()
     {
-        $api_key = trim((string) $this->config->item('google_ai_studio_api_key'));
+        $api_key = $this->google_ai_studio_api_key();
 
         if ($api_key === '') {
             return [
-                'content' => 'AI Studio belum aktif. API key belum terbaca oleh backend.',
+                'content' => implode("\n", [
+                    'AI Studio belum aktif. API key belum terbaca oleh backend.',
+                    '',
+                    'Saya sudah cek lokasi ini:',
+                    '- ' . FCPATH . 'ai_studio_key.php: ' . (file_exists(FCPATH . 'ai_studio_key.php') ? 'ada' : 'tidak ada'),
+                    '- ' . APPPATH . 'config/local.php: ' . (file_exists(APPPATH . 'config/local.php') ? 'ada' : 'tidak ada'),
+                    '- environment GOOGLE_AI_STUDIO_API_KEY: ' . (getenv('GOOGLE_AI_STUDIO_API_KEY') ? 'ada' : 'tidak ada'),
+                    '',
+                    'Buat salah satu file di atas, lalu isi API key di sana.',
+                ]),
                 'summary' => 'AI Studio belum aktif',
                 'command' => 'ai_studio_status',
                 'status' => 'failed',
@@ -1250,7 +1259,7 @@ class Api extends CI_Controller
 
     private function google_ai_studio_answer($query)
     {
-        $api_key = trim((string) $this->config->item('google_ai_studio_api_key'));
+        $api_key = $this->google_ai_studio_api_key();
         $token = trim((string) $this->config->item('google_ai_studio_token'));
 
         if ($api_key === '' && $token === '') {
@@ -1308,6 +1317,64 @@ class Api extends CI_Controller
         $answer = $this->extract_google_ai_text($response);
 
         return $answer !== '' ? $answer : null;
+    }
+
+    private function google_ai_studio_api_key()
+    {
+        $api_key = trim((string) $this->config->item('google_ai_studio_api_key'));
+
+        if ($api_key !== '') {
+            return $api_key;
+        }
+
+        $root_key = $this->read_ai_studio_key_file(FCPATH . 'ai_studio_key.php');
+        if ($root_key !== '') {
+            return $root_key;
+        }
+
+        $local_key = $this->read_ai_studio_local_config(APPPATH . 'config/local.php');
+        if ($local_key !== '') {
+            return $local_key;
+        }
+
+        return '';
+    }
+
+    private function read_ai_studio_local_config($path)
+    {
+        if (!file_exists($path)) {
+            return '';
+        }
+
+        $config = include $path;
+        if (is_array($config) && !empty($config['google_ai_studio_api_key'])) {
+            return trim((string) $config['google_ai_studio_api_key']);
+        }
+
+        return $this->extract_ai_studio_key_from_text((string) file_get_contents($path));
+    }
+
+    private function read_ai_studio_key_file($path)
+    {
+        if (!file_exists($path)) {
+            return '';
+        }
+
+        $key = include $path;
+        if (is_string($key) && trim($key) !== '') {
+            return trim($key);
+        }
+
+        return $this->extract_ai_studio_key_from_text((string) file_get_contents($path));
+    }
+
+    private function extract_ai_studio_key_from_text($text)
+    {
+        if (preg_match('/(AQ\.[A-Za-z0-9_\-]+|AIza[A-Za-z0-9_\-]+)/', $text, $matches) !== 1) {
+            return '';
+        }
+
+        return trim($matches[1]);
     }
 
     private function google_ai_studio_generate_content($model, $api_key, $token, array $payload)
