@@ -21,7 +21,6 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 application/config/local.php
 ai_studio_key.php
 groq_key.php
-openrouter_key.php
 
 # IDE Files
 #-------------------------

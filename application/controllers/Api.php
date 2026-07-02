@@ -1683,7 +1683,7 @@ class Api extends CI_Controller
     {
         $api_key = trim((string) $this->config->item('openrouter_api_key'));
 
-        if ($api_key !== '') {
+        if (preg_match('/^sk-or-v1-[A-Za-z0-9_\-]+$/', $api_key) === 1) {
             return $api_key;
         }
 
