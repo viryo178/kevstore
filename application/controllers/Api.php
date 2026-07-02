@@ -701,7 +701,7 @@ class Api extends CI_Controller
 
         if ($this->is_disable_ai_command($normalized)) {
             return [
-                'content' => 'Oke, mode AI saya nonaktifkan. Pertanyaan umum tidak akan memakai Gemini atau Groq sampai kamu ketik `aktifkan ai` lagi.',
+                'content' => 'Oke, mode AI saya nonaktifkan. Pertanyaan umum tidak akan memakai Gemini, Groq, atau OpenRouter sampai kamu ketik `aktifkan ai` lagi.',
                 'summary' => 'AI nonaktif',
                 'command' => 'disable_ai',
                 'status' => 'success',
@@ -851,6 +851,10 @@ class Api extends CI_Controller
 
         if (in_array($model, ['groq', 'llama', 'llama-3.3'], true)) {
             return 'groq';
+        }
+
+        if (in_array($model, ['openrouter', 'router', 'or'], true)) {
+            return 'openrouter';
         }
 
         return 'gemini';
@@ -1084,9 +1088,11 @@ class Api extends CI_Controller
             'cek ai studio',
             'cek gemini',
             'cek groq',
+            'cek openrouter',
             'test ai',
             'test gemini',
             'test groq',
+            'test openrouter',
         ], true);
     }
 
@@ -1095,6 +1101,11 @@ class Api extends CI_Controller
         $groq_requested = in_array($normalized, ['cek groq', 'test groq'], true);
         if ($groq_requested) {
             return $this->chat_groq_status_response();
+        }
+
+        $openrouter_requested = in_array($normalized, ['cek openrouter', 'test openrouter'], true);
+        if ($openrouter_requested) {
+            return $this->chat_openrouter_status_response();
         }
 
         $api_key = $this->google_ai_studio_api_key();
@@ -1181,6 +1192,51 @@ class Api extends CI_Controller
             'content' => "Groq sudah aktif dan bisa dipakai.\n\nTes Groq: " . $answer,
             'summary' => 'Groq aktif',
             'command' => 'groq_status',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => ['configured' => true],
+        ];
+    }
+
+    private function chat_openrouter_status_response()
+    {
+        $api_key = $this->openrouter_api_key();
+
+        if ($api_key === '') {
+            return [
+                'content' => implode("\n", [
+                    'OpenRouter belum aktif. API key belum terbaca oleh backend.',
+                    '',
+                    'Saya sudah cek lokasi ini:',
+                    '- ' . FCPATH . 'openrouter_key.php: ' . (file_exists(FCPATH . 'openrouter_key.php') ? 'ada' : 'tidak ada'),
+                    '- ' . APPPATH . 'config/local.php: ' . (file_exists(APPPATH . 'config/local.php') ? 'ada' : 'tidak ada'),
+                    '- environment OPENROUTER_API_KEY: ' . (getenv('OPENROUTER_API_KEY') ? 'ada' : 'tidak ada'),
+                ]),
+                'summary' => 'OpenRouter belum aktif',
+                'command' => 'openrouter_status',
+                'status' => 'failed',
+                'error' => 'API key kosong',
+                'metadata' => ['configured' => false],
+            ];
+        }
+
+        $answer = $this->openrouter_answer('Jawab singkat: koneksi Violence AI ke OpenRouter sudah aktif.');
+
+        if ($answer === null) {
+            return [
+                'content' => 'API key OpenRouter sudah terbaca, tapi OpenRouter belum berhasil menjawab. Cek quota/key/model OpenRouter kamu, lalu coba lagi.',
+                'summary' => 'OpenRouter gagal menjawab',
+                'command' => 'openrouter_status',
+                'status' => 'failed',
+                'error' => 'OpenRouter tidak merespons',
+                'metadata' => ['configured' => true],
+            ];
+        }
+
+        return [
+            'content' => "OpenRouter sudah aktif dan bisa dipakai.\n\nTes OpenRouter: " . $answer,
+            'summary' => 'OpenRouter aktif',
+            'command' => 'openrouter_status',
             'status' => 'success',
             'error' => null,
             'metadata' => ['configured' => true],
@@ -1328,19 +1384,39 @@ class Api extends CI_Controller
             return $this->chat_lyrics_search_response($query, $search, $google_url);
         }
 
-        $ai_answer = $ai_model === 'groq'
-            ? $this->groq_answer($query)
-            : $this->google_ai_studio_answer($query);
+        if ($ai_model === 'groq') {
+            $ai_answer = $this->groq_answer($query);
+        } elseif ($ai_model === 'openrouter') {
+            $ai_answer = $this->openrouter_answer($query);
+        } else {
+            $ai_answer = $this->google_ai_studio_answer($query);
+        }
         if ($ai_answer !== null) {
+            $summaries = [
+                'groq' => 'Jawaban Groq',
+                'openrouter' => 'Jawaban OpenRouter',
+                'gemini' => 'Jawaban Google AI Studio',
+            ];
+            $commands = [
+                'groq' => 'groq_ai',
+                'openrouter' => 'openrouter_ai',
+                'gemini' => 'google_ai_studio',
+            ];
+            $providers = [
+                'groq' => 'groq',
+                'openrouter' => 'openrouter',
+                'gemini' => 'google_ai_studio',
+            ];
+
             return [
                 'content' => $ai_answer,
-                'summary' => $ai_model === 'groq' ? 'Jawaban Groq' : 'Jawaban Google AI Studio',
-                'command' => $ai_model === 'groq' ? 'groq_ai' : 'google_ai_studio',
+                'summary' => $summaries[$ai_model] ?? $summaries['gemini'],
+                'command' => $commands[$ai_model] ?? $commands['gemini'],
                 'status' => 'success',
                 'error' => null,
                 'metadata' => [
                     'query' => $query,
-                    'provider' => $ai_model === 'groq' ? 'groq' : 'google_ai_studio',
+                    'provider' => $providers[$ai_model] ?? $providers['gemini'],
                 ],
             ];
         }
@@ -1533,6 +1609,60 @@ class Api extends CI_Controller
         return $answer !== '' ? $answer : null;
     }
 
+    private function openrouter_answer($query)
+    {
+        $api_key = $this->openrouter_api_key();
+
+        if ($api_key === '') {
+            return null;
+        }
+
+        $model = trim((string) $this->config->item('openrouter_model'));
+        if ($model === '') {
+            $model = 'openai/gpt-4o-mini';
+        }
+
+        $payload = [
+            'model' => $model,
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => implode("\n", [
+                        'Kamu adalah Violence AI, asisten ramah untuk Kevstore.',
+                        'Jawab dalam bahasa Indonesia yang santai, jelas, dan membantu.',
+                        'Kalau pertanyaan tentang akun Kevstore, arahkan user memakai command: stok, detail, use, tambah, atau bantuan.',
+                        'Jangan berikan lirik lagu lengkap atau teks berhak cipta panjang.',
+                        'Jawaban jangan setengah-setengah, tapi tetap ringkas dan mudah dibaca.',
+                    ]),
+                ],
+                [
+                    'role' => 'user',
+                    'content' => (string) $query,
+                ],
+            ],
+            'temperature' => 0.45,
+            'max_tokens' => 1800,
+        ];
+
+        $response = $this->openrouter_chat_completion($api_key, $payload);
+
+        if ($response === null) {
+            return null;
+        }
+
+        if (($response['__error'] ?? '') === 'limit') {
+            return 'OpenRouter sedang kena limit/quota untuk sementara. Coba lagi nanti, atau ganti model ke Gemini/Groq dari tombol model AI di bawah chat.';
+        }
+
+        if (($response['__error'] ?? '') === 'auth') {
+            return 'API key OpenRouter belum valid atau belum terbaca benar. Cek file `openrouter_key.php` atau `application/config/local.php`, lalu coba `cek openrouter` lagi.';
+        }
+
+        $answer = trim((string) ($response['choices'][0]['message']['content'] ?? ''));
+
+        return $answer !== '' ? $answer : null;
+    }
+
     private function groq_api_key()
     {
         $api_key = trim((string) $this->config->item('groq_api_key'));
@@ -1542,6 +1672,22 @@ class Api extends CI_Controller
         }
 
         $root_key = $this->read_plain_secret_file(FCPATH . 'groq_key.php', '/(gsk_[A-Za-z0-9_\-]+)/');
+        if ($root_key !== '') {
+            return $root_key;
+        }
+
+        return '';
+    }
+
+    private function openrouter_api_key()
+    {
+        $api_key = trim((string) $this->config->item('openrouter_api_key'));
+
+        if ($api_key !== '') {
+            return $api_key;
+        }
+
+        $root_key = $this->read_plain_secret_file(FCPATH . 'openrouter_key.php', '/(sk-or-v1-[A-Za-z0-9_\-]+)/');
         if ($root_key !== '') {
             return $root_key;
         }
@@ -1593,6 +1739,47 @@ class Api extends CI_Controller
 
         if ($body === false || $status < 200 || $status >= 300) {
             log_message('error', 'Groq request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
+            if ($status === 429) {
+                return ['__error' => 'limit'];
+            }
+            if ($status === 401 || $status === 403) {
+                return ['__error' => 'auth'];
+            }
+            return null;
+        }
+
+        $json = json_decode($body, true);
+
+        return is_array($json) ? $json : null;
+    }
+
+    private function openrouter_chat_completion($api_key, array $payload)
+    {
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
+        $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $api_key,
+                'HTTP-Referer: ' . base_url(),
+                'X-Title: Kevstore Violence AI',
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload),
+        ]);
+
+        $body = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($body === false || $status < 200 || $status >= 300) {
+            log_message('error', 'OpenRouter request failed. HTTP status: ' . $status . '. Body: ' . substr((string) $body, 0, 300));
             if ($status === 429) {
                 return ['__error' => 'limit'];
             }

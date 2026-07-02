@@ -565,6 +565,12 @@ if (file_exists($root_groq_key_path)) {
 	$root_groq_key = trim((string) include $root_groq_key_path);
 }
 
+$root_openrouter_key = '';
+$root_openrouter_key_path = FCPATH . 'openrouter_key.php';
+if (file_exists($root_openrouter_key_path)) {
+	$root_openrouter_key = trim((string) include $root_openrouter_key_path);
+}
+
 $config['google_ai_studio_api_key'] =
 	getenv('GOOGLE_AI_STUDIO_API_KEY')
 	?: getenv('GEMINI_API_KEY')
@@ -589,3 +595,12 @@ $config['groq_model'] =
 	getenv('GROQ_MODEL')
 	?: (isset($local_config['groq_model']) ? $local_config['groq_model'] : '')
 	?: (isset($_SERVER['GROQ_MODEL']) ? $_SERVER['GROQ_MODEL'] : 'llama-3.3-70b-versatile');
+$config['openrouter_api_key'] =
+	getenv('OPENROUTER_API_KEY')
+	?: (isset($local_config['openrouter_api_key']) ? $local_config['openrouter_api_key'] : '')
+	?: $root_openrouter_key
+	?: (isset($_SERVER['OPENROUTER_API_KEY']) ? $_SERVER['OPENROUTER_API_KEY'] : '');
+$config['openrouter_model'] =
+	getenv('OPENROUTER_MODEL')
+	?: (isset($local_config['openrouter_model']) ? $local_config['openrouter_model'] : '')
+	?: (isset($_SERVER['OPENROUTER_MODEL']) ? $_SERVER['OPENROUTER_MODEL'] : 'openai/gpt-4o-mini');

@@ -79,7 +79,7 @@ interface CommandSuggestion {
   prefix: string;
 }
 
-type AiModelChoice = "gemini" | "groq";
+type AiModelChoice = "gemini" | "groq" | "openrouter";
 
 const AI_MODEL_KEY = "violence:selectedAiModel";
 const AI_ENABLED_KEY = "violence:aiEnabled";
@@ -88,6 +88,7 @@ const AI_USAGE_KEY_PREFIX = "violence:aiUsage:";
 const AI_MODEL_OPTIONS: Array<{ id: AiModelChoice; label: string; caption: string; accent: string; softLimit: number }> = [
   { id: "gemini", label: "Gemini", caption: "Google AI Studio", accent: "from-sky-400 to-violet-400", softLimit: 100 },
   { id: "groq", label: "Groq", caption: "Llama 3.3 70B", accent: "from-emerald-300 to-cyan-300", softLimit: 100 },
+  { id: "openrouter", label: "OpenRouter", caption: "GPT-4o Mini", accent: "from-amber-300 to-rose-300", softLimit: 100 },
 ];
 
 function todayUsageKey() {
@@ -97,15 +98,15 @@ function todayUsageKey() {
 function readAiUsage(): Record<AiModelChoice, number> {
   try {
     const parsed = JSON.parse(window.localStorage.getItem(todayUsageKey()) || "{}") as Partial<Record<AiModelChoice, number>>;
-    return { gemini: Number(parsed.gemini || 0), groq: Number(parsed.groq || 0) };
+    return { gemini: Number(parsed.gemini || 0), groq: Number(parsed.groq || 0), openrouter: Number(parsed.openrouter || 0) };
   } catch {
-    return { gemini: 0, groq: 0 };
+    return { gemini: 0, groq: 0, openrouter: 0 };
   }
 }
 
 function initialAiModel(): AiModelChoice {
   const saved = window.localStorage.getItem(AI_MODEL_KEY);
-  return saved === "groq" ? "groq" : "gemini";
+  return saved === "groq" || saved === "openrouter" ? saved : "gemini";
 }
 
 function initialAiEnabled() {
@@ -372,7 +373,9 @@ export function AnimatedAIChat({
       ? "groq"
       : content.includes("gemini sedang kena limit/quota")
         ? "gemini"
-        : null;
+        : content.includes("openrouter sedang kena limit/quota")
+          ? "openrouter"
+          : null;
 
     if (!limitedModel) return;
 

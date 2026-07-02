@@ -37,7 +37,7 @@ export type ActiveView =
   | "profile"
   | "settings"
   | "help";
-type AiModelChoice = "gemini" | "groq";
+type AiModelChoice = "gemini" | "groq" | "openrouter";
 const SELECTED_CHAT_KEY = "zap:selectedConversationId";
 const ACTIVE_VIEW_KEY = "zap:activeView";
 const THEME_COLOR_KEY = "zap:themeColor";
