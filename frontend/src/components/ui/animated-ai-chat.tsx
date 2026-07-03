@@ -13,6 +13,7 @@ import {
   Eye,
   FileText,
   FolderKanban,
+  ImageIcon,
   LoaderIcon,
   Mail,
   MessageSquare,
@@ -262,7 +263,7 @@ interface AnimatedAIChatProps {
   isSending: boolean;
   isLoadingMessages: boolean;
   sidebarCollapsed: boolean;
-  onSendMessage: (content: string, aiModel?: AiModelChoice) => Promise<void>;
+  onSendMessage: (content: string, aiModel?: AiModelChoice, attachment?: File | null) => Promise<void>;
   onUsePrompt: (prompt: PromptTemplate) => void;
 }
 
@@ -280,7 +281,7 @@ export function AnimatedAIChat({
   onUsePrompt,
 }: AnimatedAIChatProps) {
   const [value, setValue] = useState("");
-  const [attachments, setAttachments] = useState<string[]>([]);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
@@ -295,6 +296,7 @@ export function AnimatedAIChat({
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 44, maxHeight: 120 });
   const commandPaletteRef = useRef<HTMLDivElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isTyping = inputFocused && value.trim().length > 0 && !isSending;
   const selectedAiModelInfo = AI_MODEL_OPTIONS.find((model) => model.id === selectedAiModel) ?? AI_MODEL_OPTIONS[0];
@@ -449,10 +451,13 @@ export function AnimatedAIChat({
 
   const handleSendMessage = async () => {
     const content = value.trim();
-    if (!content || isSending) return;
+    if ((!content && !attachment) || isSending) return;
+
+    const nextAttachment = attachment;
 
     setValue("");
-    setAttachments([]);
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     adjustHeight(true);
 
     if (isEnableAiCommand(content)) {
@@ -463,7 +468,7 @@ export function AnimatedAIChat({
       incrementAiUsage(selectedAiModel);
     }
 
-    await onSendMessage(content, selectedAiModel);
+    await onSendMessage(content, selectedAiModel, nextAttachment);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -654,23 +659,33 @@ export function AnimatedAIChat({
       </div>
 
       <AnimatePresence>
-        {attachments.length > 0 && (
+        {attachment && (
           <motion.div className="flex flex-wrap gap-2 px-4 pb-3" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            {attachments.map((file, index) => (
-              <motion.div key={file} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-1.5 text-xs text-white/70">
-                <span>{file}</span>
-                <button type="button" onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))} className="text-white/40 transition-colors hover:text-white" aria-label="Remove attachment">
-                  <XIcon className="h-3 w-3" />
-                </button>
-              </motion.div>
-            ))}
+            <motion.div key={attachment.name} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-1.5 text-xs text-white/70">
+              <ImageIcon className="h-3.5 w-3.5 text-white/45" />
+              <span className="max-w-64 truncate">{attachment.name}</span>
+              <button type="button" onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-white/40 transition-colors hover:text-white" aria-label="Remove attachment">
+                <XIcon className="h-3 w-3" />
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="flex items-center justify-between gap-4 border-t border-white/[0.05] p-4">
         <div className="flex items-center gap-3">
-          <motion.button type="button" onClick={() => setAttachments((prev) => [...prev, `file-${Math.floor(Math.random() * 1000)}.pdf`])} whileTap={{ scale: 0.94 }} className="group relative rounded-lg p-2 text-white/40 transition-colors hover:text-white/90" aria-label="Attach file">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              if (!file) return;
+              setAttachment(file);
+            }}
+          />
+          <motion.button type="button" onClick={() => fileInputRef.current?.click()} whileTap={{ scale: 0.94 }} className={cn("group relative rounded-lg p-2 transition-colors hover:text-white/90", attachment ? "bg-white/10 text-white/90" : "text-white/40")} aria-label="Attach image">
             <Paperclip className="h-4 w-4" />
             <span className="absolute inset-0 rounded-lg bg-white/[0.05] opacity-0 transition-opacity group-hover:opacity-100" />
           </motion.button>
@@ -681,7 +696,7 @@ export function AnimatedAIChat({
           {modelSelector}
         </div>
 
-        <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || !value.trim()} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>
+        <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || (!value.trim() && !attachment)} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() || attachment ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>
           {isSending ? <LoaderIcon className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
           <span>Send</span>
         </motion.button>
@@ -855,23 +870,22 @@ export function AnimatedAIChat({
             </div>
 
             <AnimatePresence>
-              {attachments.length > 0 && (
+              {attachment && (
                 <motion.div className="flex flex-wrap gap-2 px-4 pb-3" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-                  {attachments.map((file, index) => (
-                    <motion.div key={file} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-1.5 text-xs text-white/70">
-                      <span>{file}</span>
-                      <button type="button" onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))} className="text-white/40 transition-colors hover:text-white" aria-label="Remove attachment">
-                        <XIcon className="h-3 w-3" />
-                      </button>
-                    </motion.div>
-                  ))}
+                  <motion.div key={attachment.name} className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-1.5 text-xs text-white/70">
+                    <ImageIcon className="h-3.5 w-3.5 text-white/45" />
+                    <span className="max-w-64 truncate">{attachment.name}</span>
+                    <button type="button" onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-white/40 transition-colors hover:text-white" aria-label="Remove attachment">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <div className="flex items-center justify-between gap-4 border-t border-white/[0.05] p-4">
               <div className="flex items-center gap-3">
-                <motion.button type="button" onClick={() => setAttachments((prev) => [...prev, `file-${Math.floor(Math.random() * 1000)}.pdf`])} whileTap={{ scale: 0.94 }} className="group relative rounded-lg p-2 text-white/40 transition-colors hover:text-white/90" aria-label="Attach file">
+                <motion.button type="button" onClick={() => fileInputRef.current?.click()} whileTap={{ scale: 0.94 }} className={cn("group relative rounded-lg p-2 transition-colors hover:text-white/90", attachment ? "bg-white/10 text-white/90" : "text-white/40")} aria-label="Attach image">
                   <Paperclip className="h-4 w-4" />
                   <span className="absolute inset-0 rounded-lg bg-white/[0.05] opacity-0 transition-opacity group-hover:opacity-100" />
                 </motion.button>
@@ -882,7 +896,7 @@ export function AnimatedAIChat({
                 {modelSelector}
               </div>
 
-              <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || !value.trim()} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>
+              <motion.button type="button" onClick={() => void handleSendMessage()} disabled={isSending || (!value.trim() && !attachment)} className={cn("theme-hover-fill flex items-center gap-2 rounded-lg px-5 py-3 text-xl font-medium transition-all", value.trim() || attachment ? "bg-white text-[#0A0A0B] shadow-lg shadow-white/10" : "bg-white/[0.05] text-white/40")}>
                 {isSending ? <LoaderIcon className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
                 <span>Send</span>
               </motion.button>

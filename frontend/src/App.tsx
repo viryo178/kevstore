@@ -38,6 +38,7 @@ export type ActiveView =
   | "settings"
   | "help";
 type AiModelChoice = "gemini" | "groq" | "openrouter";
+type ChatAttachment = File;
 const SELECTED_CHAT_KEY = "zap:selectedConversationId";
 const ACTIVE_VIEW_KEY = "zap:activeView";
 const THEME_COLOR_KEY = "zap:themeColor";
@@ -244,8 +245,8 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content: string, aiModel: AiModelChoice = "gemini") => {
-    if (isDeleteCurrentChatCommand(content)) {
+  const handleSendMessage = async (content: string, aiModel: AiModelChoice = "gemini", attachment?: ChatAttachment | null) => {
+    if (!attachment && isDeleteCurrentChatCommand(content)) {
       if (!selectedConversationId) {
         window.localStorage.setItem(SELECTED_CHAT_KEY, "draft");
         setMessages([]);
@@ -284,13 +285,13 @@ function App() {
       conversation_id: selectedConversationId ?? "new",
       user_id: user?.id ?? null,
       role: "user",
-      content,
+      content: attachment ? `${content || "Jelaskan foto ini."}\n\n[Foto: ${attachment.name}]` : content,
       created_at: new Date().toISOString(),
     };
 
     setMessages((current) => [...current, tempUserMessage]);
 
-    const passwordExpiry = passwordExpiryCommand(content);
+    const passwordExpiry = attachment ? null : passwordExpiryCommand(content);
     if (passwordExpiry) {
       setIsSending(true);
       try {
@@ -326,7 +327,7 @@ function App() {
       return;
     }
 
-    const statusFilter = statusFilterFromMessage(content);
+    const statusFilter = attachment ? null : statusFilterFromMessage(content);
     if (statusFilter) {
       setIsSending(true);
       try {
@@ -362,7 +363,7 @@ function App() {
       return;
     }
 
-    const availableCategory = availableCategoryFromMessage(content);
+    const availableCategory = attachment ? null : availableCategoryFromMessage(content);
     if (availableCategory) {
       setIsSending(true);
       try {
@@ -408,11 +409,18 @@ function App() {
     setIsSending(true);
     try {
       const [data] = await Promise.all([
-        apiPost<SendMessageResponse>("api/chat/send", {
-          conversation_id: selectedConversationId,
-          content,
-          ai_model: aiModel,
-        }),
+        attachment
+          ? apiPostForm<SendMessageResponse>("api/chat/send", {
+              conversation_id: selectedConversationId,
+              content,
+              ai_model: aiModel,
+              image: attachment,
+            })
+          : apiPost<SendMessageResponse>("api/chat/send", {
+              conversation_id: selectedConversationId,
+              content,
+              ai_model: aiModel,
+            }),
         delay(1000),
       ]);
 
@@ -1319,6 +1327,26 @@ async function apiPost<T = { message?: string }>(path: string, body: unknown): P
     credentials: "include",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+  return handleJson<T>(response);
+}
+
+async function apiPostForm<T = { message?: string }>(path: string, body: Record<string, unknown>): Promise<T> {
+  const formData = new FormData();
+  Object.entries(body).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (value instanceof File) {
+      formData.append(key, value);
+      return;
+    }
+    formData.append(key, String(value));
+  });
+
+  const response = await fetch(apiUrl(path), {
+    method: "POST",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+    body: formData,
   });
   return handleJson<T>(response);
 }

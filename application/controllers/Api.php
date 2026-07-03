@@ -365,12 +365,21 @@ class Api extends CI_Controller
         $this->ensure_chat_tables();
 
         $payload = $this->payload();
+        $image = $this->chat_uploaded_image();
+        if (isset($image['error'])) {
+            return $this->json_error($image['error'], 422);
+        }
+
         $content = trim((string) ($payload['content'] ?? $payload['message'] ?? ''));
         $conversation_id = (int) ($payload['conversation_id'] ?? 0);
         $ai_model = $this->normalize_ai_model($payload['ai_model'] ?? $payload['model'] ?? 'gemini');
 
-        if ($content === '') {
+        if ($content === '' && $image === null) {
             return $this->json_error('Pesan wajib diisi', 422);
+        }
+
+        if ($content === '' && $image !== null) {
+            $content = 'Jelaskan foto ini.';
         }
 
         if ($this->is_delete_current_chat_command($content)) {
@@ -393,8 +402,17 @@ class Api extends CI_Controller
             $conversation_id = $this->create_chat_conversation($content);
         }
 
-        $user_message = $this->insert_chat_ai_message($conversation_id, 'user', $content);
-        $assistant = $this->build_chat_ai_response($content, $conversation_id, $ai_model);
+        $user_metadata = $image === null ? [] : [
+            'attachment' => [
+                'type' => 'image',
+                'name' => $image['name'],
+                'mime_type' => $image['mime_type'],
+                'size' => $image['size'],
+            ],
+        ];
+
+        $user_message = $this->insert_chat_ai_message($conversation_id, 'user', $content, $user_metadata);
+        $assistant = $this->build_chat_ai_response($content, $conversation_id, $ai_model, $image);
         $assistant_message = $this->insert_chat_ai_message($conversation_id, 'assistant', $assistant['content'], $assistant['metadata']);
 
         $title = $this->conversation_title($content);
@@ -672,7 +690,7 @@ class Api extends CI_Controller
         return $this->db->get_where('chat_ai_messages', ['id' => $this->db->insert_id()])->row();
     }
 
-    private function build_chat_ai_response($content, $conversation_id, $ai_model = 'gemini')
+    private function build_chat_ai_response($content, $conversation_id, $ai_model = 'gemini', array $image = null)
     {
         $normalized = strtolower(trim(preg_replace('/\s+/', ' ', (string) $content)));
         $normalized = trim(preg_replace('/[?!.,;:]+$/', '', $normalized));
@@ -712,6 +730,10 @@ class Api extends CI_Controller
 
         if ($this->is_order_number_copy_command($normalized)) {
             return $this->chat_order_numbers_response($content);
+        }
+
+        if ($this->is_order_number_count_question($normalized)) {
+            return $this->chat_order_numbers_count_response($conversation_id);
         }
 
         if ($this->conversation_is_waiting_for_order_numbers($conversation_id) && $this->contains_order_number_label($content)) {
@@ -821,7 +843,7 @@ class Api extends CI_Controller
             return $this->chat_basic_response($normalized);
         }
 
-        if (!$this->conversation_ai_is_enabled($conversation_id)) {
+        if ($image === null && !$this->conversation_ai_is_enabled($conversation_id)) {
             return [
                 'content' => 'maaf ya cuy fitur pembahasaan ini belum di tambahkan oleh developer minta developer untuk membuatkna fitur ini atau aktifkan mode ai dengan mengetik " aktifkan ai " kalau sudah selesai menggunakan model ai mohon ketik nonaktifkan ai biar limitnya tetap awet ya :3',
                 'summary' => 'AI belum aktif',
@@ -835,7 +857,7 @@ class Api extends CI_Controller
             ];
         }
 
-        return $this->chat_google_search_response($content, $ai_model);
+        return $this->chat_google_search_response($content, $ai_model, $image);
     }
 
     private function is_stock_question($normalized)
@@ -1374,17 +1396,20 @@ class Api extends CI_Controller
         return rtrim(rtrim(number_format($result, 6, '.', ''), '0'), '.');
     }
 
-    private function chat_google_search_response($content, $ai_model = 'gemini')
+    private function chat_google_search_response($content, $ai_model = 'gemini', array $image = null)
     {
         $query = trim((string) $content);
         $google_url = 'https://www.google.com/search?q=' . rawurlencode($query);
-        $search = $this->search_web_for_answer($query);
+        $search = $image === null ? $this->search_web_for_answer($query) : ['source' => 'none', 'results' => []];
 
-        if ($this->is_lyrics_request($query)) {
+        if ($image === null && $this->is_lyrics_request($query)) {
             return $this->chat_lyrics_search_response($query, $search, $google_url);
         }
 
-        if ($ai_model === 'groq') {
+        if ($image !== null) {
+            $ai_answer = $this->google_ai_studio_answer($query, $image);
+            $ai_model = 'gemini';
+        } elseif ($ai_model === 'groq') {
             $ai_answer = $this->groq_answer($query);
         } elseif ($ai_model === 'openrouter') {
             $ai_answer = $this->openrouter_answer($query);
@@ -1417,6 +1442,12 @@ class Api extends CI_Controller
                 'metadata' => [
                     'query' => $query,
                     'provider' => $providers[$ai_model] ?? $providers['gemini'],
+                    'attachment' => $image === null ? null : [
+                        'type' => 'image',
+                        'name' => $image['name'],
+                        'mime_type' => $image['mime_type'],
+                        'size' => $image['size'],
+                    ],
                 ],
             ];
         }
@@ -1485,7 +1516,7 @@ class Api extends CI_Controller
         ];
     }
 
-    private function google_ai_studio_answer($query)
+    private function google_ai_studio_answer($query, array $image = null)
     {
         $api_key = $this->google_ai_studio_api_key();
         $token = trim((string) $this->config->item('google_ai_studio_token'));
@@ -1508,6 +1539,19 @@ class Api extends CI_Controller
             'Jawaban maksimal 5 paragraf pendek.',
         ]);
 
+        $parts = [
+            ['text' => $query],
+        ];
+
+        if ($image !== null) {
+            $parts[] = [
+                'inline_data' => [
+                    'mime_type' => $image['mime_type'],
+                    'data' => $image['data'],
+                ],
+            ];
+        }
+
         $payload = [
             'systemInstruction' => [
                 'parts' => [
@@ -1517,19 +1561,20 @@ class Api extends CI_Controller
             'contents' => [
                 [
                     'role' => 'user',
-                    'parts' => [
-                        ['text' => $query],
-                    ],
+                    'parts' => $parts,
                 ],
-            ],
-            'tools' => [
-                ['google_search' => new stdClass()],
             ],
             'generationConfig' => [
                 'temperature' => 0.45,
                 'maxOutputTokens' => 1800,
             ],
         ];
+
+        if ($image === null) {
+            $payload['tools'] = [
+                ['google_search' => new stdClass()],
+            ];
+        }
 
         $response = $this->google_ai_studio_generate_content($model, $api_key, $token, $payload);
 
@@ -3128,12 +3173,63 @@ class Api extends CI_Controller
         }
 
         return [
-            'content' => implode("\n", $order_numbers),
+            'content' => implode("\n", [
+                'Jumlah no pesanan: ' . count($order_numbers),
+                'No pesanan:',
+                implode("\n", $order_numbers),
+            ]),
             'summary' => 'Menyalin ' . count($order_numbers) . ' nomor pesanan',
             'command' => 'salin_no_pesanan',
             'status' => 'success',
             'error' => null,
-            'metadata' => ['order_numbers' => $order_numbers],
+            'metadata' => [
+                'order_numbers' => $order_numbers,
+                'order_number_count' => count($order_numbers),
+                'copy_text' => implode("\n", $order_numbers),
+            ],
+        ];
+    }
+
+    private function is_order_number_count_question($normalized)
+    {
+        return strpos($normalized, 'pesanan') !== false
+            && (
+                strpos($normalized, 'berapa') !== false
+                || strpos($normalized, 'jumlah') !== false
+                || strpos($normalized, 'total') !== false
+            );
+    }
+
+    private function chat_order_numbers_count_response($conversation_id)
+    {
+        $order_numbers = $this->last_order_numbers_from_conversation($conversation_id);
+
+        if (empty($order_numbers)) {
+            return [
+                'content' => 'Belum ada daftar no pesanan di chat ini. Kirim teks order dulu dengan command `salin no pesanan saja`.',
+                'summary' => 'Jumlah nomor pesanan belum tersedia',
+                'command' => 'jumlah_no_pesanan',
+                'status' => 'waiting',
+                'error' => null,
+                'metadata' => ['mode' => 'order_numbers'],
+            ];
+        }
+
+        return [
+            'content' => implode("\n", [
+                'Jumlah no pesanan: ' . count($order_numbers),
+                'No pesanan:',
+                implode("\n", $order_numbers),
+            ]),
+            'summary' => 'Jumlah ' . count($order_numbers) . ' nomor pesanan',
+            'command' => 'jumlah_no_pesanan',
+            'status' => 'success',
+            'error' => null,
+            'metadata' => [
+                'order_numbers' => $order_numbers,
+                'order_number_count' => count($order_numbers),
+                'copy_text' => implode("\n", $order_numbers),
+            ],
         ];
     }
 
@@ -3207,6 +3303,37 @@ class Api extends CI_Controller
 
         $metadata = json_decode($last->metadata_json, true);
         return is_array($metadata) && ($metadata['mode'] ?? '') === 'order_numbers';
+    }
+
+    private function last_order_numbers_from_conversation($conversation_id)
+    {
+        $rows = $this->db
+            ->where('conversation_id', (int) $conversation_id)
+            ->where('role', 'assistant')
+            ->where('metadata_json IS NOT NULL', null, false)
+            ->order_by('id', 'DESC')
+            ->limit(20)
+            ->get('chat_ai_messages')
+            ->result();
+
+        foreach ($rows as $row) {
+            $metadata = json_decode($row->metadata_json, true);
+            if (!is_array($metadata) || empty($metadata['order_numbers']) || !is_array($metadata['order_numbers'])) {
+                continue;
+            }
+
+            $numbers = [];
+            foreach ($metadata['order_numbers'] as $number) {
+                $number = strtoupper(trim((string) $number));
+                if ($number !== '' && !in_array($number, $numbers, true)) {
+                    $numbers[] = $number;
+                }
+            }
+
+            return $numbers;
+        }
+
+        return [];
     }
 
     private function conversation_is_waiting_for_detail($conversation_id)
@@ -3954,6 +4081,77 @@ class Api extends CI_Controller
         }
 
         return $this->input->post(NULL, true) ?: [];
+    }
+
+    private function chat_uploaded_image()
+    {
+        if (empty($_FILES)) {
+            return null;
+        }
+
+        $field = null;
+        foreach (['image', 'attachment', 'file'] as $candidate) {
+            if (isset($_FILES[$candidate]) && is_array($_FILES[$candidate])) {
+                $field = $candidate;
+                break;
+            }
+        }
+
+        if ($field === null) {
+            return null;
+        }
+
+        $file = $_FILES[$field];
+        if (is_array($file['error'])) {
+            return ['error' => 'Upload satu foto saja dulu ya.'];
+        }
+
+        if ((int) $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        if ((int) $file['error'] !== UPLOAD_ERR_OK) {
+            return ['error' => 'Foto gagal diupload. Coba pilih foto lain.'];
+        }
+
+        $max_size = 6 * 1024 * 1024;
+        if ((int) $file['size'] <= 0 || (int) $file['size'] > $max_size) {
+            return ['error' => 'Ukuran foto maksimal 6 MB.'];
+        }
+
+        if (!is_uploaded_file($file['tmp_name'])) {
+            return ['error' => 'File upload tidak valid.'];
+        }
+
+        $mime_type = '';
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime_type = (string) finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
+            }
+        }
+
+        if ($mime_type === '') {
+            $mime_type = (string) ($file['type'] ?? '');
+        }
+
+        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!in_array($mime_type, $allowed, true)) {
+            return ['error' => 'Format foto harus JPG, PNG, WEBP, atau GIF.'];
+        }
+
+        $binary = file_get_contents($file['tmp_name']);
+        if ($binary === false || $binary === '') {
+            return ['error' => 'Foto tidak bisa dibaca server.'];
+        }
+
+        return [
+            'name' => basename((string) $file['name']),
+            'mime_type' => $mime_type,
+            'size' => (int) $file['size'],
+            'data' => base64_encode($binary),
+        ];
     }
 
     private function normalize_date($value)
