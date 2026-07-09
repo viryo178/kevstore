@@ -138,6 +138,51 @@
     text-align: center;
   }
 
+  #tableAkun {
+    table-layout: fixed;
+    min-width: 980px;
+  }
+
+  #tableAkun th:nth-child(2),
+  #tableAkun td:nth-child(2) {
+    width: 96px;
+  }
+
+  #tableAkun th:nth-child(3),
+  #tableAkun td:nth-child(3) {
+    width: 260px;
+    max-width: 260px;
+  }
+
+  #tableAkun th:nth-child(4),
+  #tableAkun td:nth-child(4) {
+    width: 150px;
+  }
+
+  #tableAkun th:nth-child(5),
+  #tableAkun td:nth-child(5),
+  #tableAkun th:nth-child(6),
+  #tableAkun td:nth-child(6) {
+    width: 125px;
+  }
+
+  #tableAkun th:nth-child(7),
+  #tableAkun td:nth-child(7) {
+    width: 130px;
+  }
+
+  #tableAkun th:nth-child(8),
+  #tableAkun td:nth-child(8) {
+    width: 150px;
+  }
+
+  .username-cell {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .bulk-edit-row {
     background: rgba(15, 23, 42, .55);
     border: 1px solid rgba(148, 163, 184, .22);
@@ -995,12 +1040,12 @@
             <form class="kelola-date-filter" method="get" action="<?= base_url('user/kelola_akun') ?>">
               <div>
                 <label class="form-label" for="kelola_tanggal_mulai">Dari tanggal</label>
-                <input type="date" class="form-control" id="kelola_tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                <input type="date" class="form-control" id="kelola_tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
               </div>
 
               <div>
                 <label class="form-label" for="kelola_tanggal_selesai">Sampai tanggal</label>
-                <input type="date" class="form-control" id="kelola_tanggal_selesai" name="tanggal_selesai" value="<?= htmlspecialchars($tanggal_selesai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                <input type="date" class="form-control" id="kelola_tanggal_selesai" name="tanggal_selesai" value="<?= htmlspecialchars($tanggal_selesai ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
               </div>
 
               <button type="submit" class="btn btn-sm kelola-filter-btn kelola-filter-blue">
@@ -1090,8 +1135,8 @@
                         </strong>
                       </td>
 
-                      <td>
-                        <?= $a->username ?>
+                      <td class="username-cell" title="<?= htmlspecialchars($a->username ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <?= htmlspecialchars($a->username ?? '', ENT_QUOTES, 'UTF-8') ?>
                       </td>
 
                       <td>

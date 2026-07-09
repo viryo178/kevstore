@@ -435,12 +435,13 @@ private function get_notification_data()
                 ->group_end();
         }
 
-        if ($tanggal_mulai) {
-            $this->db->where('DATE(last_edited_at) >=', $tanggal_mulai);
-        }
-
-        if ($tanggal_selesai) {
-            $this->db->where('DATE(last_edited_at) <=', $tanggal_selesai);
+        if ($tanggal_mulai && $tanggal_selesai) {
+            $this->db->where('expired_password >=', $tanggal_mulai);
+            $this->db->where('expired_password <=', $tanggal_selesai);
+        } elseif ($tanggal_mulai) {
+            $this->db->where('expired_password', $tanggal_mulai);
+        } elseif ($tanggal_selesai) {
+            $this->db->where('expired_password', $tanggal_selesai);
         }
 
         $data['akun'] = $this->db
