@@ -150,8 +150,8 @@
 
   #tableAkun th:nth-child(3),
   #tableAkun td:nth-child(3) {
-    width: 260px;
-    max-width: 260px;
+    width: 280px;
+    max-width: 280px;
   }
 
   #tableAkun th:nth-child(4),
@@ -177,10 +177,11 @@
   }
 
   .username-cell {
-    max-width: 260px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 280px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
   }
 
   .bulk-edit-row {
