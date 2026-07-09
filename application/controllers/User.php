@@ -135,6 +135,104 @@ class User extends CI_Controller
         if (!$this->db->field_exists('akun_username_snapshot', 'activity_log')) {
             $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_snapshot` VARCHAR(191) NULL AFTER `akun_nama_snapshot`");
         }
+
+        if (!$this->db->field_exists('akun_username_before', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_before` VARCHAR(191) NULL AFTER `akun_username_snapshot`");
+        }
+
+        if (!$this->db->field_exists('akun_username_after', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_after` VARCHAR(191) NULL AFTER `akun_username_before`");
+        }
+
+        if (!$this->db->field_exists('akun_before_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_before_snapshot` TEXT NULL AFTER `akun_username_after`");
+        }
+
+        if (!$this->db->field_exists('akun_after_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_after_snapshot` TEXT NULL AFTER `akun_before_snapshot`");
+        }
+    }
+
+    private function account_activity_snapshot($account)
+    {
+        if (!$account) {
+            return [];
+        }
+
+        $account = (array) $account;
+        $fields = [
+            'id_akun',
+            'nama_akun',
+            'kategori',
+            'status',
+            'username',
+            'password',
+            'website',
+            'note',
+            'max_user',
+            'expired_password',
+            'created_by',
+            'last_edited_by',
+            'last_edited_at',
+        ];
+
+        $snapshot = [];
+
+        foreach ($fields as $field) {
+            $snapshot[$field] = $account[$field] ?? null;
+        }
+
+        return $snapshot;
+    }
+
+    private function build_activity_changes($activity)
+    {
+        $before = json_decode((string) ($activity->akun_before_snapshot ?? ''), true);
+        $after = json_decode((string) ($activity->akun_after_snapshot ?? ''), true);
+
+        $before = is_array($before) ? $before : [];
+        $after = is_array($after) ? $after : [];
+
+        if (empty($before) && stripos((string) $activity->action, 'edit') !== false) {
+            $before['username'] = $activity->akun_username_before ?? $activity->akun_username_snapshot ?? null;
+        }
+
+        if (empty($after) && stripos((string) $activity->action, 'edit') !== false) {
+            $after['username'] = $activity->akun_username_after ?? $activity->akun_username ?? null;
+        }
+
+        $labels = [
+            'nama_akun' => 'Akun',
+            'kategori' => 'Kategori',
+            'status' => 'Status',
+            'username' => 'Email / Username',
+            'password' => 'Password',
+            'website' => 'Website',
+            'note' => 'Note',
+            'max_user' => 'Max User',
+            'expired_password' => 'Expired Password',
+            'created_by' => 'Dibuat Oleh',
+            'last_edited_by' => 'Terakhir Diedit Oleh',
+            'last_edited_at' => 'Waktu Edit Akun',
+        ];
+
+        $changes = [];
+
+        foreach ($labels as $field => $label) {
+            $old = $before[$field] ?? null;
+            $new = $after[$field] ?? null;
+
+            if ((string) $old !== (string) $new) {
+                $changes[] = [
+                    'field' => $field,
+                    'label' => $label,
+                    'before' => $old,
+                    'after' => $new,
+                ];
+            }
+        }
+
+        return $changes;
     }
 
 private function get_notification_data()
@@ -620,6 +718,7 @@ private function get_notification_data()
         $seen_usernames = [];
         $now = date('Y-m-d H:i:s');
         $changed_by = $this->session->userdata('nama_user');
+        $this->ensure_activity_snapshot_columns();
 
         foreach ($accounts as $id => $row) {
             $id = (int) $id;
@@ -675,10 +774,16 @@ private function get_notification_data()
             $this->db->update('akun', $update);
 
             $this->db->insert('activity_log', [
-                'akun_id'    => $id,
-                'action'     => 'bulk edit akun',
-                'changed_by' => $changed_by,
-                'created_at' => $now
+                'akun_id'                => $id,
+                'akun_nama_snapshot'     => $akun->nama_akun,
+                'akun_username_snapshot' => $akun->username,
+                'akun_username_before'   => $akun->username,
+                'akun_username_after'    => $row_username,
+                'akun_before_snapshot'   => json_encode($this->account_activity_snapshot($akun)),
+                'akun_after_snapshot'    => json_encode($this->account_activity_snapshot(array_merge((array) $akun, $update))),
+                'action'                 => 'bulk edit akun',
+                'changed_by'             => $changed_by,
+                'created_at'             => $now
             ]);
 
             $updated++;
@@ -1169,9 +1274,21 @@ private function get_notification_data()
             return;
         }
 
+        $akun_old = $this->db->get_where('akun', ['id_akun' => $id])->row();
+
+        if (!$akun_old) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Akun tidak ditemukan'
+            ]);
+
+            return;
+        }
+
         $kategori = $this->input->post('kategori');
         $max_user = $this->input->post('max_user');
         $note = $this->input->post('note');
+        $username = trim((string) $this->input->post('username'));
         $status = $this->resolve_status_from_note(
             $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
             $note
@@ -1181,7 +1298,7 @@ private function get_notification_data()
             'nama_akun'        => $this->input->post('nama_akun'),
             'kategori'         => $kategori,
             'status'           => $status,
-            'username'         => $this->input->post('username'),
+            'username'         => $username,
             'password'         => $this->input->post('password'),
             'website'          => $this->input->post('website'),
             'note'             => $note,
@@ -1191,11 +1308,19 @@ private function get_notification_data()
             'last_edited_at'   => date('Y-m-d H:i:s')
         ];
 
+        $this->ensure_activity_snapshot_columns();
+
         $this->db->insert('activity_log', [
-            'akun_id'    => $id,
-            'action'     => 'edit akun',
-            'changed_by' => $this->session->userdata('nama_user'),
-            'created_at' => date('Y-m-d H:i:s')
+            'akun_id'                => $id,
+            'akun_nama_snapshot'     => $akun_old->nama_akun,
+            'akun_username_snapshot' => $akun_old->username,
+            'akun_username_before'   => $akun_old->username,
+            'akun_username_after'    => $username,
+            'akun_before_snapshot'   => json_encode($this->account_activity_snapshot($akun_old)),
+            'akun_after_snapshot'    => json_encode($this->account_activity_snapshot(array_merge((array) $akun_old, $data))),
+            'action'                 => 'edit akun',
+            'changed_by'             => $this->session->userdata('nama_user'),
+            'created_at'             => date('Y-m-d H:i:s')
         ]);
         $this->db->where('id_akun', $id);
         $this->db->update('akun', $data);
@@ -1270,11 +1395,19 @@ private function get_notification_data()
 
             ];
 
+            $this->ensure_activity_snapshot_columns();
+
             $this->db->insert('activity_log', [
-                'akun_id'    => $id,
-                'action'     => 'edit akun',
-                'changed_by' => $this->session->userdata('nama_user'),
-                'created_at' => date('Y-m-d H:i:s')
+                'akun_id'                => $id,
+                'akun_nama_snapshot'     => $data['akun']->nama_akun,
+                'akun_username_snapshot' => $data['akun']->username,
+                'akun_username_before'   => $data['akun']->username,
+                'akun_username_after'    => $username,
+                'akun_before_snapshot'   => json_encode($this->account_activity_snapshot($data['akun'])),
+                'akun_after_snapshot'    => json_encode($this->account_activity_snapshot(array_merge((array) $data['akun'], $update))),
+                'action'                 => 'edit akun',
+                'changed_by'             => $this->session->userdata('nama_user'),
+                'created_at'             => date('Y-m-d H:i:s')
             ]);
 
             // update database
@@ -1363,14 +1496,36 @@ private function get_notification_data()
     {
         $this->ensure_activity_snapshot_columns();
 
-        $data['activity'] = $this->db
-            ->select('activity_log.*, COALESCE(akun.nama_akun, activity_log.akun_nama_snapshot) AS nama_akun, COALESCE(akun.username, activity_log.akun_username_snapshot) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
+        $tanggal_mulai = $this->normalize_date($this->input->get('tanggal_mulai'));
+        $tanggal_selesai = $this->normalize_date($this->input->get('tanggal_selesai'));
+
+        if ($tanggal_mulai && $tanggal_selesai && $tanggal_mulai > $tanggal_selesai) {
+            $temp = $tanggal_mulai;
+            $tanggal_mulai = $tanggal_selesai;
+            $tanggal_selesai = $temp;
+        }
+
+        $this->db
+            ->select('activity_log.*, COALESCE(activity_log.akun_nama_snapshot, akun.nama_akun) AS nama_akun, COALESCE(activity_log.akun_username_after, activity_log.akun_username_snapshot, akun.username) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
-            ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
+            ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left');
+
+        if ($tanggal_mulai) {
+            $this->db->where('DATE(activity_log.created_at) >=', $tanggal_mulai);
+        }
+
+        if ($tanggal_selesai) {
+            $this->db->where('DATE(activity_log.created_at) <=', $tanggal_selesai);
+        }
+
+        $data['activity'] = $this->db
             ->order_by('activity_log.created_at', 'DESC')
             ->get()
             ->result();
+
+        $data['tanggal_mulai'] = $tanggal_mulai;
+        $data['tanggal_selesai'] = $tanggal_selesai;
 
         $data = array_merge($data, $this->get_notification_data());
 
@@ -1378,6 +1533,34 @@ private function get_notification_data()
         $this->load->view('templates/topbar', $data);
         $this->load->view('templates/sidebar');
         $this->load->view('user/aktivitas', $data);
+        $this->load->view('templates/footer');
+    }
+
+    public function detail_activity($id)
+    {
+        $this->ensure_activity_snapshot_columns();
+
+        $activity = $this->db
+            ->select('activity_log.*, COALESCE(activity_log.akun_nama_snapshot, akun.nama_akun) AS nama_akun, COALESCE(activity_log.akun_username_after, activity_log.akun_username_snapshot, akun.username) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
+            ->from('activity_log')
+            ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
+            ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
+            ->where('activity_log.id', (int) $id)
+            ->get()
+            ->row();
+
+        if (!$activity) {
+            show_404();
+        }
+
+        $data['activity'] = $activity;
+        $data['changes'] = $this->build_activity_changes($activity);
+        $data = array_merge($data, $this->get_notification_data());
+
+        $this->load->view('templates/header');
+        $this->load->view('templates/topbar', $data);
+        $this->load->view('templates/sidebar');
+        $this->load->view('user/detail_activity', $data);
         $this->load->view('templates/footer');
     }
 

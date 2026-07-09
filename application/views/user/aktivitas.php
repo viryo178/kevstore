@@ -62,6 +62,52 @@ $adminBadgeClass = function ($name) {
     color: #cbd5e1 !important;
     border: 1.5px solid #475569 !important;
   }
+
+  .activity-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    margin: 8px 0 18px;
+  }
+
+  .activity-filter .form-control {
+    min-width: 180px;
+  }
+
+  .activity-change {
+    min-width: 220px;
+    line-height: 1.45;
+  }
+
+  .activity-change-label {
+    display: inline-block;
+    min-width: 64px;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .activity-email {
+    word-break: break-all;
+  }
+
+  .activity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn-activity-delete {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+  }
+
+  .btn-activity-delete:hover {
+    background: #b91c1c !important;
+    border-color: #b91c1c !important;
+  }
 </style>
 
 <main id="main" class="main">
@@ -90,11 +136,32 @@ $adminBadgeClass = function ($name) {
       <div class="card-body">
         <h5 class="card-title">Aktivitas Sistem</h5>
 
+        <form class="activity-filter" method="get" action="<?= base_url('user/aktivitas') ?>">
+          <div>
+            <label class="form-label text-white" for="tanggal_mulai">Dari tanggal</label>
+            <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+          </div>
+
+          <div>
+            <label class="form-label text-white" for="tanggal_selesai">Sampai tanggal</label>
+            <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" value="<?= htmlspecialchars($tanggal_selesai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-funnel"></i> Terapkan
+          </button>
+
+          <a href="<?= base_url('user/aktivitas') ?>" class="btn btn-secondary">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </a>
+        </form>
+
         <table class="table table-borderless datatable">
           <thead>
             <tr>
               <th>Akun</th>
               <th>Username</th>
+              <th>Perubahan Email</th>
               <th>Action</th>
               <th>By</th>
               <th>Waktu</th>
@@ -104,9 +171,36 @@ $adminBadgeClass = function ($name) {
 
           <tbody>
             <?php foreach ($activity as $a): ?>
+              <?php
+                $emailBefore = $a->akun_username_before ?? '';
+                $emailAfter = $a->akun_username_after ?? '';
+                $isEditAction = stripos((string) $a->action, 'edit') !== false;
+
+                if ($emailBefore === '' && $isEditAction) {
+                  $emailBefore = $a->akun_username_snapshot ?? '';
+                }
+
+                if ($emailAfter === '') {
+                  $emailAfter = $a->akun_username ?? '';
+                }
+              ?>
               <tr>
                 <td><?= htmlspecialchars($a->nama_akun ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= htmlspecialchars($a->akun_username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
+                <td class="activity-change">
+                  <?php if ($isEditAction): ?>
+                    <div>
+                      <span class="activity-change-label">Sebelum</span>
+                      <span class="activity-email"><?= htmlspecialchars($emailBefore !== '' ? $emailBefore : '-', ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <div>
+                      <span class="activity-change-label">Sesudah</span>
+                      <span class="activity-email"><?= htmlspecialchars($emailAfter !== '' ? $emailAfter : '-', ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                  <?php else: ?>
+                    -
+                  <?php endif; ?>
+                </td>
                 <td><?= htmlspecialchars($a->action, ENT_QUOTES, 'UTF-8') ?></td>
                 <?php $changedBy = $a->changed_by_name ?? $a->changed_by; ?>
                 <td>
@@ -116,9 +210,15 @@ $adminBadgeClass = function ($name) {
                 </td>
                 <td><?= htmlspecialchars($a->created_at, ENT_QUOTES, 'UTF-8') ?></td>
                 <td>
-                  <a href="<?= base_url('user/hapus_activity/' . $a->id) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus log aktivitas ini?')">
-                    <i class="bi bi-trash"></i> Hapus
-                  </a>
+                  <div class="activity-actions">
+                    <a href="<?= base_url('user/detail_activity/' . $a->id) ?>" class="btn btn-info btn-sm text-white">
+                      <i class="bi bi-eye"></i> Detail
+                    </a>
+
+                    <a href="<?= base_url('user/hapus_activity/' . $a->id) ?>" class="btn btn-danger btn-sm btn-activity-delete" onclick="return confirm('Apakah Anda yakin ingin menghapus log aktivitas ini?')">
+                      <i class="bi bi-trash"></i> Hapus
+                    </a>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

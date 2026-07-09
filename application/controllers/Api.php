@@ -4309,6 +4309,22 @@ class Api extends CI_Controller
         if (!$this->db->field_exists('akun_username_snapshot', 'activity_log')) {
             $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_snapshot` VARCHAR(191) NULL AFTER `akun_nama_snapshot`");
         }
+
+        if (!$this->db->field_exists('akun_username_before', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_before` VARCHAR(191) NULL AFTER `akun_username_snapshot`");
+        }
+
+        if (!$this->db->field_exists('akun_username_after', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_username_after` VARCHAR(191) NULL AFTER `akun_username_before`");
+        }
+
+        if (!$this->db->field_exists('akun_before_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_before_snapshot` TEXT NULL AFTER `akun_username_after`");
+        }
+
+        if (!$this->db->field_exists('akun_after_snapshot', 'activity_log')) {
+            $this->db->query("ALTER TABLE `activity_log` ADD `akun_after_snapshot` TEXT NULL AFTER `akun_before_snapshot`");
+        }
     }
 
     private function log_activity($akun_id, $action, $akun = null)
