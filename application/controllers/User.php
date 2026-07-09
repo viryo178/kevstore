@@ -410,6 +410,14 @@ private function get_notification_data()
     public function kelola_akun()
     {
         $keyword = trim((string) $this->input->get('search_akun'));
+        $tanggal_mulai = $this->normalize_date($this->input->get('tanggal_mulai'));
+        $tanggal_selesai = $this->normalize_date($this->input->get('tanggal_selesai'));
+
+        if ($tanggal_mulai && $tanggal_selesai && $tanggal_mulai > $tanggal_selesai) {
+            $temp = $tanggal_mulai;
+            $tanggal_mulai = $tanggal_selesai;
+            $tanggal_selesai = $temp;
+        }
 
         $this->db->from('akun');
 
@@ -427,10 +435,21 @@ private function get_notification_data()
                 ->group_end();
         }
 
+        if ($tanggal_mulai) {
+            $this->db->where('DATE(last_edited_at) >=', $tanggal_mulai);
+        }
+
+        if ($tanggal_selesai) {
+            $this->db->where('DATE(last_edited_at) <=', $tanggal_selesai);
+        }
+
         $data['akun'] = $this->db
             ->order_by('id_akun', 'DESC')
             ->get()
             ->result();
+
+        $data['tanggal_mulai'] = $tanggal_mulai;
+        $data['tanggal_selesai'] = $tanggal_selesai;
 
         $data = array_merge($data, $this->get_notification_data());
 

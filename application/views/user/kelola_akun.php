@@ -200,6 +200,59 @@
     text-decoration: none;
   }
 
+  .kelola-date-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    margin: 14px 0 16px;
+  }
+
+  .kelola-date-filter .form-label {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .kelola-date-filter .form-control {
+    min-width: 180px;
+    background: #081225 !important;
+    color: #ffffff !important;
+    border: 1px solid #16366f !important;
+    border-radius: 7px !important;
+  }
+
+  .kelola-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, .35) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    text-decoration: none !important;
+    white-space: nowrap;
+  }
+
+  .kelola-filter-blue {
+    color: #60a5fa !important;
+    border: 1.5px solid #3b82f6 !important;
+  }
+
+  .kelola-filter-muted {
+    color: #cbd5e1 !important;
+    border: 1.5px solid #64748b !important;
+  }
+
+  .kelola-filter-btn:hover {
+    background: rgba(30, 41, 59, .85) !important;
+  }
+
   .password-text {
     color: #67e8f9;
     font-weight: 600;
@@ -938,6 +991,26 @@
               </div>
 
             </div>
+
+            <form class="kelola-date-filter" method="get" action="<?= base_url('user/kelola_akun') ?>">
+              <div>
+                <label class="form-label" for="kelola_tanggal_mulai">Dari tanggal</label>
+                <input type="date" class="form-control" id="kelola_tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+              </div>
+
+              <div>
+                <label class="form-label" for="kelola_tanggal_selesai">Sampai tanggal</label>
+                <input type="date" class="form-control" id="kelola_tanggal_selesai" name="tanggal_selesai" value="<?= htmlspecialchars($tanggal_selesai ?? '', ENT_QUOTES, 'UTF-8') ?>">
+              </div>
+
+              <button type="submit" class="btn btn-sm kelola-filter-btn kelola-filter-blue">
+                <i class="bi bi-funnel"></i> Terapkan
+              </button>
+
+              <a href="<?= base_url('user/kelola_akun') ?>" class="btn btn-sm kelola-filter-btn kelola-filter-muted">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+              </a>
+            </form>
 
             <div class="datatable-top kelola-manual-table-top">
               <div class="datatable-dropdown">

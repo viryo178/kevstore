@@ -94,19 +94,48 @@ $adminBadgeClass = function ($name) {
 
   .activity-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 142px;
   }
 
-  .btn-activity-delete {
-    background: #dc2626 !important;
-    border-color: #dc2626 !important;
-    color: #ffffff !important;
+  .activity-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, 0.35) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    text-decoration: none !important;
+    white-space: nowrap;
   }
 
-  .btn-activity-delete:hover {
-    background: #b91c1c !important;
-    border-color: #b91c1c !important;
+  .activity-badge-btn i {
+    font-size: 13px;
+  }
+
+  .activity-badge-blue {
+    color: #60a5fa !important;
+    border: 1.5px solid #3b82f6 !important;
+  }
+
+  .activity-badge-red {
+    color: #f87171 !important;
+    border: 1.5px solid #ef4444 !important;
+  }
+
+  .activity-badge-muted {
+    color: #cbd5e1 !important;
+    border: 1.5px solid #64748b !important;
+  }
+
+  .activity-badge-btn:hover {
+    background: rgba(30, 41, 59, 0.85) !important;
   }
 </style>
 
@@ -147,11 +176,11 @@ $adminBadgeClass = function ($name) {
             <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" value="<?= htmlspecialchars($tanggal_selesai ?? '', ENT_QUOTES, 'UTF-8') ?>">
           </div>
 
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-sm activity-badge-btn activity-badge-blue">
             <i class="bi bi-funnel"></i> Terapkan
           </button>
 
-          <a href="<?= base_url('admin/aktivitas') ?>" class="btn btn-secondary">
+          <a href="<?= base_url('admin/aktivitas') ?>" class="btn btn-sm activity-badge-btn activity-badge-muted">
             <i class="bi bi-arrow-counterclockwise"></i> Reset
           </a>
         </form>
@@ -211,11 +240,11 @@ $adminBadgeClass = function ($name) {
                 <td><?= htmlspecialchars($a->created_at, ENT_QUOTES, 'UTF-8') ?></td>
                 <td>
                   <div class="activity-actions">
-                    <a href="<?= base_url('admin/detail_activity/' . $a->id) ?>" class="btn btn-info btn-sm text-white">
+                    <a href="<?= base_url('admin/detail_activity/' . $a->id) ?>" class="btn btn-sm activity-badge-btn activity-badge-blue">
                       <i class="bi bi-eye"></i> Detail
                     </a>
 
-                    <a href="<?= base_url('admin/hapus_activity/' . $a->id) ?>" class="btn btn-danger btn-sm btn-activity-delete" onclick="return confirm('Apakah Anda yakin ingin menghapus log aktivitas ini?')">
+                    <a href="<?= base_url('admin/hapus_activity/' . $a->id) ?>" class="btn btn-sm activity-badge-btn activity-badge-red" onclick="return confirm('Apakah Anda yakin ingin menghapus log aktivitas ini?')">
                       <i class="bi bi-trash"></i> Hapus
                     </a>
                   </div>
