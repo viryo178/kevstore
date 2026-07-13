@@ -153,6 +153,16 @@ class User extends CI_Controller
         }
     }
 
+    private function cleanup_old_activity_logs()
+    {
+        if (!$this->db->table_exists('activity_log')) {
+            return;
+        }
+
+        $cutoff = date('Y-m-d 00:00:00', strtotime('-6 days'));
+        $this->db->where('created_at <', $cutoff)->delete('activity_log');
+    }
+
     private function account_activity_snapshot($account)
     {
         if (!$account) {
@@ -1515,6 +1525,7 @@ private function get_notification_data()
     public function aktivitas()
     {
         $this->ensure_activity_snapshot_columns();
+        $this->cleanup_old_activity_logs();
 
         $tanggal_mulai = $this->normalize_date($this->input->get('tanggal_mulai'));
         $tanggal_selesai = $this->normalize_date($this->input->get('tanggal_selesai'));
@@ -1525,10 +1536,7 @@ private function get_notification_data()
             $tanggal_selesai = $temp;
         }
 
-        $activity_min_date = date('Y-m-d', strtotime('-6 days'));
-        if (!$tanggal_mulai || $tanggal_mulai < $activity_min_date) {
-            $tanggal_mulai = $activity_min_date;
-        }
+        $activity_min_datetime = date('Y-m-d 00:00:00', strtotime('-6 days'));
 
         $this->db
             ->select('activity_log.*, COALESCE(activity_log.akun_nama_snapshot, akun.nama_akun) AS nama_akun, COALESCE(activity_log.akun_username_after, activity_log.akun_username_snapshot, akun.username) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
@@ -1536,7 +1544,11 @@ private function get_notification_data()
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left');
 
-        $this->db->where('activity_log.created_at >=', $tanggal_mulai . ' 00:00:00');
+        $this->db->where('activity_log.created_at >=', $activity_min_datetime);
+
+        if ($tanggal_mulai) {
+            $this->db->where('activity_log.created_at >=', $tanggal_mulai . ' 00:00:00');
+        }
 
         if ($tanggal_selesai) {
             $this->db->where('DATE(activity_log.created_at) <=', $tanggal_selesai);

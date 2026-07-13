@@ -229,6 +229,7 @@ class Api extends CI_Controller
     {
         $this->require_login();
         $this->ensure_activity_snapshot_columns();
+        $this->cleanup_old_activity_logs();
 
         $activity_min_datetime = date('Y-m-d 00:00:00', strtotime('-6 days'));
 
@@ -4328,6 +4329,16 @@ class Api extends CI_Controller
         if (!$this->db->field_exists('akun_after_snapshot', 'activity_log')) {
             $this->db->query("ALTER TABLE `activity_log` ADD `akun_after_snapshot` TEXT NULL AFTER `akun_before_snapshot`");
         }
+    }
+
+    private function cleanup_old_activity_logs()
+    {
+        if (!$this->db->table_exists('activity_log')) {
+            return;
+        }
+
+        $cutoff = date('Y-m-d 00:00:00', strtotime('-6 days'));
+        $this->db->where('created_at <', $cutoff)->delete('activity_log');
     }
 
     private function log_activity($akun_id, $action, $akun = null)
