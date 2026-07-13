@@ -230,11 +230,14 @@ class Api extends CI_Controller
         $this->require_login();
         $this->ensure_activity_snapshot_columns();
 
+        $activity_min_datetime = date('Y-m-d 00:00:00', strtotime('-6 days'));
+
         $activity = $this->db
             ->select('activity_log.*, COALESCE(akun.nama_akun, activity_log.akun_nama_snapshot) AS nama_akun, COALESCE(akun.username, activity_log.akun_username_snapshot) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left')
+            ->where('activity_log.created_at >=', $activity_min_datetime)
             ->order_by('activity_log.created_at', 'DESC')
             ->get()
             ->result();

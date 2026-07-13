@@ -1535,15 +1535,18 @@ $data['akun_belum_penuh'] = $this->db
             $tanggal_selesai = $temp;
         }
 
+        $activity_min_date = date('Y-m-d', strtotime('-6 days'));
+        if (!$tanggal_mulai || $tanggal_mulai < $activity_min_date) {
+            $tanggal_mulai = $activity_min_date;
+        }
+
         $this->db
             ->select('activity_log.*, COALESCE(activity_log.akun_nama_snapshot, akun.nama_akun) AS nama_akun, COALESCE(activity_log.akun_username_after, activity_log.akun_username_snapshot, akun.username) AS akun_username, COALESCE(users.nama_user, activity_log.changed_by) AS changed_by_name', false)
             ->from('activity_log')
             ->join('akun', 'akun.id_akun = activity_log.akun_id', 'left')
             ->join('users', 'users.username = activity_log.changed_by OR users.nama_user = activity_log.changed_by', 'left');
 
-        if ($tanggal_mulai) {
-            $this->db->where('DATE(activity_log.created_at) >=', $tanggal_mulai);
-        }
+        $this->db->where('activity_log.created_at >=', $tanggal_mulai . ' 00:00:00');
 
         if ($tanggal_selesai) {
             $this->db->where('DATE(activity_log.created_at) <=', $tanggal_selesai);
