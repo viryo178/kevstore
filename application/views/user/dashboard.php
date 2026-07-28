@@ -680,9 +680,16 @@
           </div>
 
           <!-- PRODUK BELUM TERJUAL -->
+          <?php
+            $produk_visual = [
+              'SPOTIFY' => ['icon' => 'bi-music-note-beamed', 'class' => 'product-card-spotify'],
+              'GROK' => ['icon' => 'bi-robot', 'class' => 'product-card-grok'],
+              'LEONARDO' => ['icon' => 'bi-palette', 'class' => 'product-card-leonardo'],
+            ];
+          ?>
           <?php foreach ($produk_belum_terjual as $nama_produk => $jumlah_produk): ?>
             <div class="col-xxl-4 col-md-6">
-              <button type="button" class="card info-card customers-card w-100 text-start product-filter-card"
+              <button type="button" class="card info-card customers-card w-100 text-start product-filter-card <?= $produk_visual[$nama_produk]['class'] ?>"
                 data-product-filter="<?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="card-body">
                   <h5 class="card-title">
@@ -690,7 +697,7 @@
                   </h5>
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="bi bi-box-seam"></i>
+                      <i class="bi <?= $produk_visual[$nama_produk]['icon'] ?>"></i>
                     </div>
                     <div class="ps-3">
                       <h6><?= $jumlah_produk ?></h6>
@@ -1217,6 +1224,20 @@ $limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO'], t
     z-index: 1;
     margin-bottom: 20px;
   }
+</style>
+
+<style>
+  .product-filter-card { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  .product-filter-card:hover { transform: translateY(-3px); }
+  .product-card-spotify { border-color: rgba(34, 197, 94, .35) !important; }
+  .product-card-spotify .card-icon { color: #4ade80 !important; background: rgba(34, 197, 94, .16) !important; box-shadow: 0 0 22px rgba(34, 197, 94, .3); }
+  .product-card-spotify:hover { box-shadow: 0 0 24px rgba(34, 197, 94, .22); }
+  .product-card-grok { border-color: rgba(168, 85, 247, .4) !important; }
+  .product-card-grok .card-icon { color: #c084fc !important; background: rgba(168, 85, 247, .16) !important; box-shadow: 0 0 22px rgba(168, 85, 247, .3); }
+  .product-card-grok:hover { box-shadow: 0 0 24px rgba(168, 85, 247, .22); }
+  .product-card-leonardo { border-color: rgba(249, 115, 22, .4) !important; }
+  .product-card-leonardo .card-icon { color: #fb923c !important; background: rgba(249, 115, 22, .16) !important; box-shadow: 0 0 22px rgba(249, 115, 22, .3); }
+  .product-card-leonardo:hover { box-shadow: 0 0 24px rgba(249, 115, 22, .22); }
 </style>
 
 <script>
