@@ -511,7 +511,7 @@
             $aktif++;
           }
 
-          if ($a->kategori == 'belum_terjual') {
+          if ($a->kategori == 'belum_terjual' && $status_akun == 'aktif') {
             $belum_terjual++;
             $nama_produk = strtoupper(trim((string) ($a->nama_akun ?? '')));
             if (isset($produk_belum_terjual[$nama_produk])) {
@@ -803,7 +803,9 @@
 <td>
 
 <?php
-$limit = ($a->kategori == 'private') ? 1 : 4;
+$limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO'], true)
+  ? 1
+  : (($a->kategori == 'private') ? 1 : 4);
 ?>
 
 <span class="<?= $a->max_user >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>">
@@ -1481,7 +1483,8 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK
       .replace(/'/g, '&#039;');
   }
 
-  function getAkunLimit(kategori) {
+  function getAkunLimit(kategori, namaAkun) {
+    if (['SPOTIFY', 'LEONARDO'].includes(String(namaAkun || '').toUpperCase())) return 1;
     return kategori === 'private' ? 1 : 4;
   }
 
@@ -1518,7 +1521,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK
     }
 
     const maxUser = Number(akun.max_user || 0);
-    const limit = getAkunLimit(akun.kategori);
+    const limit = getAkunLimit(akun.kategori, akun.nama_akun);
     const cells = row.querySelectorAll('td');
     const copyButton = row.querySelector('.btn-tambah-max');
 

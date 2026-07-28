@@ -626,7 +626,7 @@ private function get_notification_data()
         $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GROK'], true)
             ? $bulk_product
             : 'GROK';
-        $bulk_max_user = in_array($bulk_product, ['SPOTIFY', 'LEONARDO'], true) ? 1 : 0;
+        $bulk_max_user = 0;
         $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
 
         $created = 0;
@@ -987,7 +987,8 @@ private function get_notification_data()
         }
 
         // limit berdasarkan kategori
-        $max_limit = ($akun->kategori == 'private') ? 1 : 4;
+        $is_single_use_product = in_array(strtoupper((string) $akun->nama_akun), ['SPOTIFY', 'LEONARDO'], true);
+        $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         // cek limit
         if ($akun->max_user >= $max_limit) {
@@ -1003,7 +1004,9 @@ private function get_notification_data()
         }
 
         $new_max = $akun->max_user + 1;
-        $status = $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
+        $status = ($is_single_use_product && $new_max >= $max_limit)
+            ? 'terjual'
+            : $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
 
         // increment
         $this->db->set('max_user', 'max_user+1', FALSE);
@@ -1053,7 +1056,8 @@ private function get_notification_data()
             return;
         }
 
-        $limit = ($akun->kategori == 'private') ? 1 : 4;
+        $is_single_use_product = in_array(strtoupper((string) $akun->nama_akun), ['SPOTIFY', 'LEONARDO'], true);
+        $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         if ($akun->max_user >= $limit) {
 
@@ -1066,7 +1070,9 @@ private function get_notification_data()
 
         $new_max = $akun->max_user + 1;
 
-        $status = $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
+        $status = ($is_single_use_product && $new_max >= $limit)
+            ? 'terjual'
+            : $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
 
         $this->db
             ->where('id_akun', $id)
