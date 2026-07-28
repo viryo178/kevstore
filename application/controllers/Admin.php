@@ -385,10 +385,18 @@ private function get_notification_data()
     public function index()
     {
         $data['akun'] = $this->db->get('akun')->result();
+        $dashboard_product = strtoupper(trim((string) $this->input->get('produk')));
+        $dashboard_product = in_array($dashboard_product, ['SPOTIFY', 'GROK', 'LEONARDO'], true)
+            ? $dashboard_product
+            : '';
+        $data['dashboard_product'] = $dashboard_product;
 
         // akun yang masih bisa dipakai di dashboard
-$data['akun_belum_penuh'] = $this->db
-    ->from('akun')
+$available_accounts_query = $this->db->from('akun');
+if ($dashboard_product !== '') {
+    $available_accounts_query->where('nama_akun', $dashboard_product);
+}
+$data['akun_belum_penuh'] = $available_accounts_query
 
     ->group_start()
 

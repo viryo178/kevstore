@@ -745,7 +745,7 @@
               <div class="card-body">
 
                 <h5 class="card-title">
-                  <span id="availableAccountsTitle">Akun Tersedia</span>
+                  <span id="availableAccountsTitle">Akun Tersedia<?= !empty($dashboard_product) ? ' - ' . htmlspecialchars($dashboard_product, ENT_QUOTES, 'UTF-8') : '' ?></span>
                   <span>| Max User < 4</span>
                 </h5>
 
@@ -1256,14 +1256,7 @@ $limit = ($a->kategori == 'private') ? 1 : 4;
 <script>
   document.querySelectorAll('.product-filter-card').forEach(function (card) {
     card.addEventListener('click', function () {
-      const product = String(card.dataset.productFilter || '').toLowerCase();
-      document.querySelectorAll('#tableAkun tbody tr').forEach(function (row) {
-        const accountName = String(row.querySelector('td')?.textContent || '').trim().toLowerCase();
-        row.style.display = accountName === product ? '' : 'none';
-      });
-      const title = document.getElementById('availableAccountsTitle');
-      if (title) title.textContent = 'Akun Tersedia - ' + card.dataset.productFilter;
-      document.getElementById('tableAkun')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.location.href = '?produk=' + encodeURIComponent(card.dataset.productFilter || '');
     });
   });
 </script>
