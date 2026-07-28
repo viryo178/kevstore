@@ -3176,6 +3176,11 @@ class Api extends CI_Controller
             ];
         }
 
+        $order_copy_text = implode("\n", [
+            'Ubah status no pesanan ini jadi dikirim',
+            implode("\n", $order_numbers),
+        ]);
+
         return [
             'content' => implode("\n", [
                 'Jumlah no pesanan: ' . count($order_numbers),
@@ -3189,7 +3194,7 @@ class Api extends CI_Controller
             'metadata' => [
                 'order_numbers' => $order_numbers,
                 'order_number_count' => count($order_numbers),
-                'copy_text' => implode("\n", $order_numbers),
+                'copy_text' => $order_copy_text,
             ],
         ];
     }

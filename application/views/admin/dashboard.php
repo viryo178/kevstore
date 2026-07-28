@@ -497,6 +497,11 @@
         'GROK' => 0,
         'LEONARDO' => 0,
       ];
+      $produk_akun_belum_terjual = [
+        'SPOTIFY' => [],
+        'GROK' => [],
+        'LEONARDO' => [],
+      ];
       $inactive_statuses = ['deactived', 'disable_x', 'disable_email', 'ban'];
 
       if (!empty($akun)) {
@@ -516,6 +521,7 @@
             $nama_produk = strtoupper(trim((string) ($a->nama_akun ?? '')));
             if (isset($produk_belum_terjual[$nama_produk])) {
               $produk_belum_terjual[$nama_produk]++;
+              $produk_akun_belum_terjual[$nama_produk][] = $a;
             }
           }
         }
@@ -717,11 +723,14 @@
           <!-- PRODUK BELUM TERJUAL -->
           <?php foreach ($produk_belum_terjual as $nama_produk => $jumlah_produk): ?>
             <div class="col-xxl-4 col-md-6">
-              <a href="<?= base_url('admin/kelola_akun?search_akun=' . rawurlencode($nama_produk) . '&product=' . rawurlencode($nama_produk)) ?>" class="text-decoration-none">
-                <div class="card info-card customers-card">
-                  <div class="card-body">
-                    <h5 class="card-title">
+              <?php $dropdown_id = 'dashboardProduk' . strtolower($nama_produk); ?>
+              <div class="card info-card customers-card">
+                <div class="card-body">
+                  <button type="button" class="btn btn-link p-0 w-100 text-start text-decoration-none"
+                    data-bs-toggle="collapse" data-bs-target="#<?= $dropdown_id ?>" aria-expanded="false">
+                    <h5 class="card-title d-flex align-items-center">
                       <?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?> <span>| Belum Terjual</span>
+                      <i class="bi bi-chevron-down ms-auto"></i>
                     </h5>
                     <div class="d-flex align-items-center">
                       <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
@@ -732,9 +741,24 @@
                         <span class="text-warning small pt-1 fw-bold">Akun belum terjual</span>
                       </div>
                     </div>
+                  </button>
+                  <div id="<?= $dropdown_id ?>" class="collapse mt-3">
+                    <?php if (!empty($produk_akun_belum_terjual[$nama_produk])): ?>
+                      <div class="list-group list-group-flush">
+                        <?php foreach ($produk_akun_belum_terjual[$nama_produk] as $akun_produk): ?>
+                          <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
+                            <span><?= htmlspecialchars((string) ($akun_produk->username ?? '-'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <small class="text-warning">Belum Terjual</small>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php else: ?>
+                      <small class="text-muted">Belum ada akun.</small>
+                    <?php endif; ?>
+                    <a href="<?= base_url('admin/kelola_akun?search_akun=' . rawurlencode($nama_produk) . '&product=' . rawurlencode($nama_produk)) ?>" class="btn btn-sm btn-outline-primary mt-2">Lihat semua</a>
                   </div>
                 </div>
-              </a>
+              </div>
             </div>
           <?php endforeach; ?>
 
