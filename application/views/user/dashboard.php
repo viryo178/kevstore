@@ -497,11 +497,6 @@
         'GROK' => 0,
         'LEONARDO' => 0,
       ];
-      $produk_akun_belum_terjual = [
-        'SPOTIFY' => [],
-        'GROK' => [],
-        'LEONARDO' => [],
-      ];
       $inactive_statuses = ['deactived', 'disable_x', 'disable_email', 'ban'];
 
       if (!empty($akun)) {
@@ -521,7 +516,6 @@
             $nama_produk = strtoupper(trim((string) ($a->nama_akun ?? '')));
             if (isset($produk_belum_terjual[$nama_produk])) {
               $produk_belum_terjual[$nama_produk]++;
-              $produk_akun_belum_terjual[$nama_produk][] = $a;
             }
           }
         }
@@ -688,42 +682,23 @@
           <!-- PRODUK BELUM TERJUAL -->
           <?php foreach ($produk_belum_terjual as $nama_produk => $jumlah_produk): ?>
             <div class="col-xxl-4 col-md-6">
-              <?php $dropdown_id = 'dashboardProduk' . strtolower($nama_produk); ?>
-              <div class="card info-card customers-card">
+              <button type="button" class="card info-card customers-card w-100 text-start product-filter-card"
+                data-product-filter="<?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="card-body">
-                  <button type="button" class="btn btn-link p-0 w-100 text-start text-decoration-none"
-                    data-bs-toggle="collapse" data-bs-target="#<?= $dropdown_id ?>" aria-expanded="false">
-                    <h5 class="card-title d-flex align-items-center">
-                      <?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?> <span>| Belum Terjual</span>
-                      <i class="bi bi-chevron-down ms-auto"></i>
-                    </h5>
-                    <div class="d-flex align-items-center">
-                      <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="bi bi-box-seam"></i>
-                      </div>
-                      <div class="ps-3">
-                        <h6><?= $jumlah_produk ?></h6>
-                        <span class="text-warning small pt-1 fw-bold">Akun belum terjual</span>
-                      </div>
+                  <h5 class="card-title">
+                    <?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?> <span>| Belum Terjual</span>
+                  </h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="bi bi-box-seam"></i>
                     </div>
-                  </button>
-                  <div id="<?= $dropdown_id ?>" class="collapse mt-3">
-                    <?php if (!empty($produk_akun_belum_terjual[$nama_produk])): ?>
-                      <div class="list-group list-group-flush">
-                        <?php foreach ($produk_akun_belum_terjual[$nama_produk] as $akun_produk): ?>
-                          <div class="list-group-item bg-transparent text-white px-0 d-flex justify-content-between align-items-center">
-                            <span><?= htmlspecialchars((string) ($akun_produk->username ?? '-'), ENT_QUOTES, 'UTF-8') ?></span>
-                            <small class="text-warning">Belum Terjual</small>
-                          </div>
-                        <?php endforeach; ?>
-                      </div>
-                    <?php else: ?>
-                      <small class="text-muted">Belum ada akun.</small>
-                    <?php endif; ?>
-                    <a href="<?= base_url('user/kelola_akun?search_akun=' . rawurlencode($nama_produk) . '&product=' . rawurlencode($nama_produk)) ?>" class="btn btn-sm btn-outline-primary mt-2">Lihat semua</a>
+                    <div class="ps-3">
+                      <h6><?= $jumlah_produk ?></h6>
+                      <span class="text-warning small pt-1 fw-bold">Klik untuk lihat akun tersedia</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
           <?php endforeach; ?>
 
@@ -735,7 +710,7 @@
               <div class="card-body">
 
                 <h5 class="card-title">
-                  Akun Tersedia
+                  <span id="availableAccountsTitle">Akun Tersedia</span>
                   <span>| Max User < 4</span>
                 </h5>
 
@@ -1241,6 +1216,21 @@ $limit = ($a->kategori == 'private') ? 1 : 4;
     margin-bottom: 20px;
   }
 </style>
+
+<script>
+  document.querySelectorAll('.product-filter-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      const product = String(card.dataset.productFilter || '').toLowerCase();
+      document.querySelectorAll('#tableAkun tbody tr').forEach(function (row) {
+        const accountName = String(row.querySelector('td')?.textContent || '').trim().toLowerCase();
+        row.style.display = accountName === product ? '' : 'none';
+      });
+      const title = document.getElementById('availableAccountsTitle');
+      if (title) title.textContent = 'Akun Tersedia - ' + card.dataset.productFilter;
+      document.getElementById('tableAkun')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
 
 <script>
   // SEARCH
