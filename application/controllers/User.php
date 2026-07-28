@@ -600,6 +600,10 @@ private function get_notification_data()
     {
         if (!$this->input->post()) {
             $data = $this->get_notification_data();
+            $bulk_product = strtoupper(trim((string) $this->input->get('product')));
+            $data['bulk_product'] = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GROK'], true)
+                ? $bulk_product
+                : 'GROK';
 
             $this->load->view('templates/header');
             $this->load->view('templates/topbar', $data);
@@ -610,6 +614,11 @@ private function get_notification_data()
         }
 
         $bulk_accounts = (string) $this->input->post('bulk_accounts');
+        $bulk_product = strtoupper(trim((string) $this->input->post('product')));
+        $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GROK'], true)
+            ? $bulk_product
+            : 'GROK';
+        $bulk_max_user = in_array($bulk_product, ['SPOTIFY', 'LEONARDO'], true) ? 1 : 0;
         $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
 
         $created = 0;
@@ -643,13 +652,13 @@ private function get_notification_data()
             $seen_usernames[$username_key] = true;
 
             $data = [
-                'nama_akun'        => 'Grok',
+                'nama_akun'        => $bulk_product,
                 'kategori'         => 'belum_terjual',
                 'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
                 'username'         => $row_username,
                 'password'         => $row_password,
                 'website'          => '',
-                'max_user'         => 0,
+                'max_user'         => $bulk_max_user,
                 'expired_password' => null,
                 'note'             => $row_note,
                 'created_by'       => $this->session->userdata('nama_user'),

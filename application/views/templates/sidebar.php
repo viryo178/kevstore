@@ -91,21 +91,21 @@
 
       <ul id="kelola-akun-nav" class="nav-content collapse <?= $is_kelola ? 'show' : '' ?>">
         <li>
-          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Leonardo') ?>"
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Leonardo&product=LEONARDO') ?>"
             class="<?= $akun_produk === 'leonardo' ? 'active' : '' ?>">
             <i class="bi bi-circle"></i>
             <span>Leonardo</span>
           </a>
         </li>
         <li>
-          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Spotify') ?>"
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Spotify&product=SPOTIFY') ?>"
             class="<?= $akun_produk === 'spotify' ? 'active' : '' ?>">
             <i class="bi bi-circle"></i>
             <span>Spotify</span>
           </a>
         </li>
         <li>
-          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Grok') ?>"
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Grok&product=GROK') ?>"
             class="<?= $akun_produk === 'grok' ? 'active' : '' ?>">
             <i class="bi bi-circle"></i>
             <span>Grok</span>

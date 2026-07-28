@@ -633,6 +633,8 @@
   }
 
   $is_password_exp_page = (($page_title ?? '') === 'Ganti Password Exp');
+  $bulk_product = strtoupper(trim((string) $this->input->get('product')));
+  $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GROK'], true) ? $bulk_product : 'GROK';
   ?>
   <!-- kelola-akun-table-fix-v3-manual-controls -->
 
@@ -1007,7 +1009,7 @@
                 <form id="bulkEditSelectForm" action="<?= base_url('admin/bulk_edit_akun') ?>" method="GET"></form>
 
                 <a
-                  href="<?= base_url('admin/bulk_tambah_akun') ?>"
+                  href="<?= base_url('admin/bulk_tambah_akun?product=' . rawurlencode($bulk_product)) ?>"
                   class="btn-tambah text-decoration-none">
 
                   <i class="bi bi-list-plus"></i>
