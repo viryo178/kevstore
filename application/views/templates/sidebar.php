@@ -29,6 +29,8 @@
     'detail_akun'
   ]);
 
+  $akun_produk = strtolower(trim((string) $this->input->get('search_akun')));
+
   // GANTI PASSWORD EXP ACTIVE
   $is_ganti_password_exp = ($method == 'ganti_password_exp');
 
@@ -77,12 +79,39 @@
     <li class="nav-item">
 
       <a class="nav-link <?= $is_kelola ? '' : 'collapsed' ?>"
-        href="<?= base_url($role_prefix . '/kelola_akun') ?>">
+        data-bs-toggle="collapse"
+        href="#kelola-akun-nav"
+        aria-expanded="<?= $is_kelola ? 'true' : 'false' ?>">
 
         <i class="bi bi-menu-button-wide"></i>
         <span>Kelola Akun</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
 
       </a>
+
+      <ul id="kelola-akun-nav" class="nav-content collapse <?= $is_kelola ? 'show' : '' ?>">
+        <li>
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Leonardo') ?>"
+            class="<?= $akun_produk === 'leonardo' ? 'active' : '' ?>">
+            <i class="bi bi-circle"></i>
+            <span>Leonardo</span>
+          </a>
+        </li>
+        <li>
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Spotify') ?>"
+            class="<?= $akun_produk === 'spotify' ? 'active' : '' ?>">
+            <i class="bi bi-circle"></i>
+            <span>Spotify</span>
+          </a>
+        </li>
+        <li>
+          <a href="<?= base_url($role_prefix . '/kelola_akun?search_akun=Grok') ?>"
+            class="<?= $akun_produk === 'grok' ? 'active' : '' ?>">
+            <i class="bi bi-circle"></i>
+            <span>Grok</span>
+          </a>
+        </li>
+      </ul>
 
     </li>
 
