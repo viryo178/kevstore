@@ -492,6 +492,11 @@
       $verif = 0;
       $aktif = 0;
       $belum_terjual = 0;
+      $produk_belum_terjual = [
+        'SPOTIFY' => 0,
+        'GROK' => 0,
+        'LEONARDO' => 0,
+      ];
       $inactive_statuses = ['deactived', 'disable_x', 'disable_email', 'ban'];
 
       if (!empty($akun)) {
@@ -508,6 +513,10 @@
 
           if ($a->kategori == 'belum_terjual') {
             $belum_terjual++;
+            $nama_produk = strtoupper(trim((string) ($a->nama_akun ?? '')));
+            if (isset($produk_belum_terjual[$nama_produk])) {
+              $produk_belum_terjual[$nama_produk]++;
+            }
           }
         }
       }
@@ -704,6 +713,30 @@
             </div>
 
           </div>
+
+          <!-- PRODUK BELUM TERJUAL -->
+          <?php foreach ($produk_belum_terjual as $nama_produk => $jumlah_produk): ?>
+            <div class="col-xxl-4 col-md-6">
+              <a href="<?= base_url('admin/kelola_akun?search_akun=' . rawurlencode($nama_produk) . '&product=' . rawurlencode($nama_produk)) ?>" class="text-decoration-none">
+                <div class="card info-card customers-card">
+                  <div class="card-body">
+                    <h5 class="card-title">
+                      <?= htmlspecialchars($nama_produk, ENT_QUOTES, 'UTF-8') ?> <span>| Belum Terjual</span>
+                    </h5>
+                    <div class="d-flex align-items-center">
+                      <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="bi bi-box-seam"></i>
+                      </div>
+                      <div class="ps-3">
+                        <h6><?= $jumlah_produk ?></h6>
+                        <span class="text-warning small pt-1 fw-bold">Akun belum terjual</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          <?php endforeach; ?>
 
           <!-- TABLE -->
           <div class="col-12">

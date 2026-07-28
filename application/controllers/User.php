@@ -689,7 +689,7 @@ private function get_notification_data()
             $this->session->set_flashdata('error', 'Tidak ada akun yang berhasil ditambahkan.');
         }
 
-        redirect('user/kelola_akun');
+        redirect('user/kelola_akun?search_akun=' . rawurlencode($bulk_product) . '&product=' . rawurlencode($bulk_product));
     }
 
     public function bulk_edit_akun()

@@ -699,7 +699,7 @@ $data['akun_belum_penuh'] = $this->db
             $this->session->set_flashdata('error', 'Tidak ada akun yang berhasil ditambahkan.');
         }
 
-        redirect('admin/kelola_akun');
+        redirect('admin/kelola_akun?search_akun=' . rawurlencode($bulk_product) . '&product=' . rawurlencode($bulk_product));
     }
 
     public function bulk_edit_akun()
