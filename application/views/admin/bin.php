@@ -1,0 +1,30 @@
+<style>
+.bin-info{display:flex;gap:12px;align-items:flex-start;padding:15px 17px;margin-bottom:18px;border:1px solid rgba(96,165,250,.25);border-radius:13px;background:rgba(59,130,246,.08);color:#a9c6f5}.bin-info i{font-size:21px;color:#60a5fa}.bin-card{margin:0!important}.bin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.bin-controls{display:flex;gap:10px;flex-wrap:wrap}.bin-controls input,.bin-controls select{background:#081225!important;color:#fff!important;border:1px solid #16366f!important;border-radius:9px;padding:8px 10px}.bin-controls input{min-width:220px}.bin-countdown{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24;font-size:12px;font-weight:700}.bin-empty{text-align:center;padding:55px 15px;color:#8fa5cf}.bin-empty i{display:block;font-size:42px;color:#60a5fa;margin-bottom:10px}.bin-pagination{display:flex;align-items:center;justify-content:space-between;color:#8fa5cf;font-size:12px;margin-top:14px}.bin-pagination button{background:#12234a;color:#cfe0ff;border:1px solid #244783;border-radius:7px;padding:6px 10px;margin-left:5px}.bin-pagination button:disabled{opacity:.4}@media(max-width:575px){.bin-controls,.bin-controls input,.bin-controls select{width:100%}}
+</style>
+<main id="main" class="main">
+  <div class="pagetitle"><h1>Bin</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Bin</li></ol></nav></div>
+
+  <?php if ($this->session->flashdata('success')): ?><div class="alert alert-success alert-dismissible fade show"><?= htmlspecialchars($this->session->flashdata('success'), ENT_QUOTES, 'UTF-8') ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
+  <?php if ($this->session->flashdata('error')): ?><div class="alert alert-danger alert-dismissible fade show"><?= htmlspecialchars($this->session->flashdata('error'), ENT_QUOTES, 'UTF-8') ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
+
+  <div class="bin-info"><i class="bi bi-info-circle"></i><div>Akun Spotify, Leonardo, dan Zoom yang berstatus terjual selama 7 hari dipindahkan ke sini. Data di Bin akan dihapus permanen setelah 7 hari jika tidak dipulihkan.</div></div>
+  <section class="section"><div class="card bin-card"><div class="card-body">
+    <div class="bin-toolbar"><h5 class="card-title">Data Akun di Bin</h5><div class="bin-controls"><select id="binProduct"><option value="">Semua jenis akun</option><option value="SPOTIFY">Spotify</option><option value="LEONARDO">Leonardo</option><option value="ZOOM">Zoom</option></select><select id="binPerPage"><option value="5">5 per page</option><option value="10" selected>10 per page</option><option value="25">25 per page</option></select><input type="search" id="binSearch" placeholder="Cari akun..."></div></div>
+
+    <?php if (!empty($bin_accounts)): ?>
+      <div class="table-responsive"><table class="table table-borderless align-middle" id="binTable"><thead><tr><th>Jenis Akun</th><th>Username</th><th>Terjual Sejak</th><th>Masuk Bin</th><th>Dihapus Otomatis</th><th>Aksi</th></tr></thead><tbody>
+      <?php foreach ($bin_accounts as $item):
+        $seconds_left = max(0, strtotime($item->purge_at) - time());
+        $days_left = max(1, (int) ceil($seconds_left / 86400));
+        $search_text = strtolower(implode(' ', [$item->nama_akun, $item->username])); ?>
+        <tr data-product="<?= htmlspecialchars(strtoupper($item->nama_akun), ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars($search_text, ENT_QUOTES, 'UTF-8') ?>">
+          <td><strong><?= htmlspecialchars($item->nama_akun, ENT_QUOTES, 'UTF-8') ?></strong></td><td><?= htmlspecialchars($item->username ?: '-', ENT_QUOTES, 'UTF-8') ?></td><td><?= $item->sold_at ? date('d-m-Y H:i', strtotime($item->sold_at)) : '-' ?></td><td><?= date('d-m-Y H:i', strtotime($item->binned_at)) ?></td><td><span class="bin-countdown"><i class="bi bi-clock"></i><?= $days_left ?> hari lagi</span></td>
+          <td><form method="post" action="<?= base_url('admin/bin/pulihkan/' . (int) $item->id) ?>" onsubmit="return confirm('Pulihkan akun ini dari Bin?')"><button class="btn btn-sm btn-outline-success" type="submit"><i class="bi bi-arrow-counterclockwise me-1"></i>Pulihkan</button></form></td>
+        </tr>
+      <?php endforeach; ?></tbody></table></div><div class="bin-pagination"><span id="binInfo"></span><div><button id="binPrev">Sebelumnya</button><button id="binNext">Berikutnya</button></div></div>
+    <?php else: ?><div class="bin-empty"><i class="bi bi-trash3"></i>Bin masih kosong.</div><?php endif; ?>
+  </div></div></section>
+</main>
+<?php if (!empty($bin_accounts)): ?><script>
+document.addEventListener('DOMContentLoaded',function(){const rows=Array.from(document.querySelectorAll('#binTable tbody tr')),search=document.getElementById('binSearch'),product=document.getElementById('binProduct'),perPage=document.getElementById('binPerPage'),info=document.getElementById('binInfo'),prev=document.getElementById('binPrev'),next=document.getElementById('binNext');let page=1;function render(){const q=search.value.toLowerCase().trim(),p=product.value,filtered=rows.filter(r=>(!q||r.dataset.search.includes(q))&&(!p||r.dataset.product===p)),size=Number(perPage.value),pages=Math.max(1,Math.ceil(filtered.length/size));page=Math.min(page,pages);rows.forEach(r=>r.style.display='none');filtered.slice((page-1)*size,page*size).forEach(r=>r.style.display='');info.textContent=filtered.length?`Menampilkan ${(page-1)*size+1}-${Math.min(page*size,filtered.length)} dari ${filtered.length} data`:'Tidak ada data';prev.disabled=page<=1;next.disabled=page>=pages}[search,product,perPage].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{page=1;render()}));prev.addEventListener('click',()=>{page--;render()});next.addEventListener('click',()=>{page++;render()});render()});
+</script><?php endif; ?>

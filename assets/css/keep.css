@@ -1,0 +1,114 @@
+.keep-bg {
+    background: #0b1220;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* GRID KEEP */
+.keep-grid {
+    column-count: 3;
+    column-gap: 16px;
+}
+
+/* CARD */
+.keep-card {
+    background: #111827;
+    border: 1px solid rgba(255,255,255,.06);
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    break-inside: avoid;
+    cursor: pointer;
+    transition: .15s ease;
+    color: #fff;
+}
+
+.keep-card:hover {
+    transform: scale(1.02);
+}
+
+/* TITLE */
+.keep-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+/* CONTENT */
+.keep-content {
+    font-size: 13px;
+    color: #cbd5e1;
+
+    /* biar kayak keep ada ... */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+/* MODAL OVERLAY */
+.keep-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 80px;
+    z-index: 9999;
+}
+
+/* BOX BESAR */
+.keep-modal-box {
+    width: min(900px, 92vw);
+    min-height: 500px;
+    background: #111827;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+
+/* INPUT STYLE KEEP (tanpa border) */
+.keep-title-input {
+    width: 100%;
+    font-size: 22px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.keep-content-input {
+    width: 100%;
+    min-height: 380px;
+    font-size: 15px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #cbd5e1;
+    resize: none;
+}
+
+.keep-title-input,
+.keep-content-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.keep-title-input:focus,
+.keep-content-input:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.keep-title-input,
+.keep-content-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
