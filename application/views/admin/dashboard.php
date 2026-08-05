@@ -16,7 +16,7 @@ foreach (($akun ?? []) as $account) {
 
 $totalAccounts = max(1, (int) $stats['total']);
 $metricCards = [
-    ['Total Seluruh Akun', $stats['total'], 'bi-collection', 'sales-card', base_url('admin/kelola_akun'), '100%', 'Semua akun'],
+    ['Total Seluruh Akun', $stats['total'], 'bi-box', 'sales-card', base_url('admin/kelola_akun'), '100%', 'Semua akun'],
     ['Akun Aktif', $stats['aktif'], 'bi-check-circle', 'revenue-card', base_url('admin/kelola_akun?search_akun=aktif'), round(($stats['aktif'] / $totalAccounts) * 100) . '%', 'Status aktif'],
     ['Akun Bermasalah', $stats['bermasalah'], 'bi-exclamation-octagon', 'customers-card', base_url('admin/akun_bermasalah'), round(($stats['bermasalah'] / $totalAccounts) * 100) . '%', 'Perlu dicek'],
 ];
