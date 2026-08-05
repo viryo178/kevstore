@@ -56,6 +56,9 @@ foreach ($products as $product) {
 <style>
 .dashboard .metric-summary .card-icon i{font-size:22px!important;color:inherit!important;display:flex!important;align-items:center!important;justify-content:center!important;width:22px!important;height:22px!important}.dashboard .metric-summary .card-icon i::before{display:block!important;width:22px!important;height:22px!important;line-height:22px!important;margin:0!important;text-align:center!important;vertical-align:0!important}.dashboard .metric-summary .sales-card .card-icon i{color:#6366f1!important}.dashboard .metric-summary .revenue-card .card-icon i{color:#22c55e!important}.dashboard .metric-summary .customers-card .card-icon i{color:#f97316!important}
 </style>
+<style>
+.dashboard .metric-summary .card-icon{position:relative!important;width:56px!important;height:56px!important;flex:0 0 56px!important;border-radius:16px!important;overflow:hidden!important;display:block!important}.dashboard .metric-summary .card-icon i{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:grid!important;place-items:center!important;font-size:30px!important;line-height:1!important;margin:0!important}.dashboard .metric-summary .card-icon i::before{display:block!important;width:auto!important;height:auto!important;line-height:1!important;margin:0!important;text-align:center!important;vertical-align:0!important}.metric-summary .metric-card .d-flex.align-items-center{grid-template-columns:56px minmax(0,1fr)!important}
+</style>
 
 <main id="main" class="main">
 <div class="pagetitle"><h1>Dashboard</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Dashboard</li></ol></nav></div>
