@@ -66,7 +66,7 @@ foreach ($products as $product) {
 .dashboard-main-grid .metric-summary .metric-card .card-body{gap:2px!important}.dashboard-main-grid .metric-summary .metric-card .d-flex.align-items-center{margin-top:-2px!important}
 </style>
 <style>
-.dashboard-main-grid .metric-summary .metric-card .card-body{align-content:start!important;padding-top:50px!important}
+.dashboard-main-grid .metric-summary .metric-card .card-body{align-content:start!important;padding-top:7px!important}
 </style>
 
 <main id="main" class="main">
