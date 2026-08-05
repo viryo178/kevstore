@@ -65,6 +65,9 @@ foreach ($products as $product) {
 <style>
 .dashboard-main-grid .metric-summary .metric-card .card-body{gap:2px!important}.dashboard-main-grid .metric-summary .metric-card .d-flex.align-items-center{margin-top:-2px!important}
 </style>
+<style>
+.dashboard-main-grid .metric-summary .metric-card .card-body{align-content:start!important;padding-top:14px!important}
+</style>
 
 <main id="main" class="main">
 <div class="pagetitle"><h1>Dashboard</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Dashboard</li></ol></nav></div>
