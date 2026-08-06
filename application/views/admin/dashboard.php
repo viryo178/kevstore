@@ -276,6 +276,51 @@ function dashboardFallbackCopy(text) {
   });
 }
 
+function getSpotifyCopyText(username, password) {
+  return `Username : ${username}
+Password : ${password}
+Di ketik ulang ka jangan di salin
+❗️Dilarang ganti username & email
+❗️Melanggar peraturan diatas nogaransi
+❗️Disarankan 1-2 device saja loginya
+❗️Garansi 25 hari selama durasi
+❗️Tidak boleh mengganti nama/foto profile selama berlangganan (rawan terdeteksi sistem)
+
+TIPS:
+sebelum login disarankan Clear Data dulu untuk pengguna android dan Install ulang app spotify untuk pengguna iOS, agar terhindari dari incorrect password padahal sudah benar`;
+}
+
+function getZoomCopyText(username, password) {
+  return `Mohon dibaca
+Username : ${username}
+Password : ${password}
+Buka zoom.com.
+Pilih Sign In with Email.
+WAJIB: Ketik ulang email dan password secara manual. Jangan menggunakan copy-paste.
+Jika muncul permintaan verifikasi, silakan klik Skip saja.`;
+}
+
+function getLeonardoCopyText(username, password) {
+  return `Mohon untuk dibaca
+Username : ${username}
+Password : ${password}
+1. Buka *Leonardo*.
+2. Pilih *Sign In with Email*.
+3. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*`;
+}
+
+function getAdobeCopyText(username, password) {
+  return `Mohon untuk dibaca
+Username : ${username}
+Password : ${password}
+1. Buka *Adobe*.
+2. Pilih *Sign In*.
+3. Masukkan email yang telah diberikan, lalu klik *Continue*.
+4. Masukkan password akun.
+5. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*
+6. Jika muncul permintaan *kode verifikasi*, segera hubungi kami untuk meminta kodenya.`;
+}
+
 document.addEventListener('click', function (event) {
   const button = event.target.closest('.dashboard-copy-btn');
   if (!button || button.disabled || button.dataset.processing === '1') return;
@@ -286,7 +331,15 @@ document.addEventListener('click', function (event) {
   const password = String(button.dataset.password || '');
   const copyText = product === 'GEMINI'
     ? twoFa
-    : `Username: ${username}\nPassword: ${password}`;
+    : (product === 'SPOTIFY'
+      ? getSpotifyCopyText(username, password)
+      : (product === 'ZOOM'
+        ? getZoomCopyText(username, password)
+        : (product === 'LEONARDO'
+          ? getLeonardoCopyText(username, password)
+          : (product === 'ADOBE'
+            ? getAdobeCopyText(username, password)
+            : `Username: ${username}\nPassword: ${password}`))));
 
   if (product === 'GEMINI' && twoFa === '') {
     alert('Data 2FA Gemini masih kosong. Isi 2FA terlebih dahulu.');

@@ -1435,6 +1435,51 @@ dilarang Mengganti Email & Password & MENDISABLE email dan X
 MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
   }
 
+  function getSpotifyCopyText(username, password) {
+    return `Username : ${username}
+Password : ${password}
+Di ketik ulang ka jangan di salin
+❗️Dilarang ganti username & email
+❗️Melanggar peraturan diatas nogaransi
+❗️Disarankan 1-2 device saja loginya
+❗️Garansi 25 hari selama durasi
+❗️Tidak boleh mengganti nama/foto profile selama berlangganan (rawan terdeteksi sistem)
+
+TIPS:
+sebelum login disarankan Clear Data dulu untuk pengguna android dan Install ulang app spotify untuk pengguna iOS, agar terhindari dari incorrect password padahal sudah benar`;
+  }
+
+  function getZoomCopyText(username, password) {
+    return `Mohon dibaca
+Username : ${username}
+Password : ${password}
+Buka zoom.com.
+Pilih Sign In with Email.
+WAJIB: Ketik ulang email dan password secara manual. Jangan menggunakan copy-paste.
+Jika muncul permintaan verifikasi, silakan klik Skip saja.`;
+  }
+
+  function getLeonardoCopyText(username, password) {
+    return `Mohon untuk dibaca
+Username : ${username}
+Password : ${password}
+1. Buka *Leonardo*.
+2. Pilih *Sign In with Email*.
+3. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*`;
+  }
+
+  function getAdobeCopyText(username, password) {
+    return `Mohon untuk dibaca
+Username : ${username}
+Password : ${password}
+1. Buka *Adobe*.
+2. Pilih *Sign In*.
+3. Masukkan email yang telah diberikan, lalu klik *Continue*.
+4. Masukkan password akun.
+5. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*
+6. Jika muncul permintaan *kode verifikasi*, segera hubungi kami untuk meminta kodenya.`;
+  }
+
   function copyToClipboard(text) {
     const fallbackCopy = () => new Promise((resolve, reject) => {
       const textarea = document.createElement('textarea');
@@ -1565,7 +1610,15 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
     const username = target.dataset.username || '';
     const password = target.dataset.password || '';
     const twoFa = target.dataset.twoFa || '';
-    const copyText = product === 'GEMINI' ? twoFa : getLoginText(kategori, username, password);
+    const copyText = product === 'GEMINI'
+      ? twoFa
+      : (product === 'SPOTIFY'
+        ? getSpotifyCopyText(username, password)
+        : (product === 'ZOOM'
+          ? getZoomCopyText(username, password)
+          : (product === 'LEONARDO'
+            ? getLeonardoCopyText(username, password)
+            : (product === 'ADOBE' ? getAdobeCopyText(username, password) : getLoginText(kategori, username, password)))));
 
     if (product === 'GEMINI' && copyText === '') {
       alert('Data 2FA Gemini masih kosong');
