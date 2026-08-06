@@ -305,16 +305,47 @@
   }
 
   .kelola-layout-row > .col-xxl-3 { display: none; }
-  .account-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
-  .account-summary-grid .card { margin: 0; min-height: 122px; }
-  .account-summary-grid .card-body { padding: 19px; }
-  .account-summary-label { color: #9fb3dc; font-size: 13px; font-weight: 600; margin-bottom: 15px; }
-  .account-summary-value { color: #fff; font-size: 27px; font-weight: 800; }
-  .account-summary-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; background: rgba(59,130,246,.13); color: #60a5fa; font-size: 20px; }
-  .account-summary-icon.danger { background: rgba(239,68,68,.12); color: #f87171; }
-  .account-summary-icon.success { background: rgba(34,197,94,.12); color: #4ade80; }
-  @media (max-width: 991px) { .account-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 575px) { .account-summary-grid { grid-template-columns: 1fr; } }
+  .kelola-metric-grid { display:grid; grid-template-columns:repeat(15,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
+  .kelola-metric-link { text-decoration:none!important; min-width:0; }
+  .kelola-metric-link.summary { grid-column:span 5; }
+  .kelola-metric-link.product { grid-column:span 3; }
+  .kelola-metric-card { height:156px; min-height:156px; margin:0!important; transition:.2s; }
+  .kelola-metric-card:hover { transform:translateY(-3px); border-color:rgba(96,165,250,.38)!important; }
+  .kelola-metric-card .card-body { height:100%; display:grid; grid-template-rows:max-content max-content; align-content:center; gap:16px; padding:18px 20px!important; }
+  .kelola-metric-title { margin:0!important; color:#fff; font-size:14px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kelola-metric-title span { color:#94a3b8!important; font-size:12px; font-weight:500; }
+  .kelola-metric-content { display:grid!important; grid-template-columns:56px minmax(0,1fr); gap:12px; align-items:center!important; }
+  .kelola-metric-icon { position:relative; width:56px; height:56px; display:grid; place-items:center; border-radius:16px; font-size:28px; }
+  .kelola-metric-copy { min-width:0; }
+  .kelola-metric-copy h6 { color:#fff!important; font-size:26px!important; line-height:1; margin:0 0 5px!important; font-weight:800; }
+  .kelola-metric-copy span { font-size:11px; line-height:1.35; }
+  .kelola-metric-copy .metric-note { color:#94a3b8!important; margin-left:7px; }
+  .kelola-metric-link.product .kelola-metric-copy span { display:block; }
+  .kelola-metric-link.product .kelola-metric-copy .metric-note { margin:2px 0 0; }
+  .kelola-metric-total .kelola-metric-icon { color:#6366f1; background:rgba(99,102,241,.14); }
+  .kelola-metric-active .kelola-metric-icon { color:#22c55e; background:rgba(34,197,94,.14); }
+  .kelola-metric-problem .kelola-metric-icon { color:#f97316; background:rgba(249,115,22,.14); }
+  .kelola-product-spotify { border-color:rgba(34,197,94,.42)!important; }
+  .kelola-product-spotify .kelola-metric-icon { color:#4ade80; background:rgba(34,197,94,.14); }
+  .kelola-product-leonardo { border-color:rgba(239,68,68,.42)!important; }
+  .kelola-product-leonardo .kelola-metric-icon { color:#f87171; background:rgba(239,68,68,.14); }
+  .kelola-product-gemini { border-color:rgba(234,179,8,.44)!important; }
+  .kelola-product-gemini .kelola-metric-icon { color:#facc15; background:rgba(234,179,8,.14); }
+  .kelola-product-zoom { border-color:rgba(59,130,246,.44)!important; }
+  .kelola-product-zoom .kelola-metric-icon { color:#60a5fa; background:rgba(59,130,246,.14); }
+  .kelola-product-adobe { border-color:rgba(168,85,247,.44)!important; }
+  .kelola-product-adobe .kelola-metric-icon { color:#c084fc; background:rgba(168,85,247,.14); }
+  @media (max-width:1199px) {
+    .kelola-metric-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
+    .kelola-metric-link.summary,.kelola-metric-link.product { grid-column:span 2; }
+  }
+  @media (max-width:767px) {
+    .kelola-metric-link.summary,.kelola-metric-link.product { grid-column:span 3; }
+  }
+  @media (max-width:575px) {
+    .kelola-metric-grid { grid-template-columns:1fr; }
+    .kelola-metric-link.summary,.kelola-metric-link.product { grid-column:1/-1; }
+  }
 
   .modal-content {
     background: #0f172a !important;
@@ -707,34 +738,53 @@
 
       $summary_accounts = $stat_akun ?? $akun;
       $summary = ['total' => count($summary_accounts), 'aktif' => 0, 'bermasalah' => 0];
-      $summary_products = array_fill_keys(['LEONARDO', 'GEMINI', 'ZOOM', 'SPOTIFY', 'ADOBE'], 0);
+      $summary_products = array_fill_keys(['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], 0);
       foreach ($summary_accounts as $summary_account) {
         $summary_status = kevstore_effective_akun_status($summary_account->status ?? '', $summary_account->note ?? '');
         if ($summary_status === 'aktif') $summary['aktif']++;
         if (in_array($summary_status, ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif'], true)) $summary['bermasalah']++;
         $summary_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
         if (preg_match('/^ZOOM(?:\s|$)/', $summary_product)) $summary_product = 'ZOOM';
-        if (isset($summary_products[$summary_product])) $summary_products[$summary_product]++;
+        if (
+          isset($summary_products[$summary_product])
+          && ($summary_account->kategori ?? '') === 'belum_terjual'
+          && $summary_status === 'aktif'
+        ) {
+          $summary_products[$summary_product]++;
+        }
       }
+      $summary_total = max(1, (int) $summary['total']);
       $summary_cards = [
-        ['Total Akun', $summary['total'], 'bi-collection', ''],
-        ['Akun Bermasalah', $summary['bermasalah'], 'bi-exclamation-octagon', 'danger'],
-        ['Akun Aktif', $summary['aktif'], 'bi-check-circle', 'success'],
-        ['Leonardo Total Akun', $summary_products['LEONARDO'], 'bi-box', ''],
-        ['Gemini Total Akun', $summary_products['GEMINI'], 'bi-box', ''],
-        ['Zoom Total Akun', $summary_products['ZOOM'], 'bi-box', ''],
-        ['Spotify Total Akun', $summary_products['SPOTIFY'], 'bi-box', ''],
-        ['Adobe Total Akun', $summary_products['ADOBE'], 'bi-box', ''],
+        ['Total Seluruh Akun', $summary['total'], 'bi-box', 'summary', 'kelola-metric-total', base_url('admin/kelola_akun'), '100%', 'Semua akun', 'text-warning'],
+        ['Akun Aktif', $summary['aktif'], 'bi-check-circle', 'summary', 'kelola-metric-active', base_url('admin/kelola_akun?search_akun=aktif'), round(($summary['aktif'] / $summary_total) * 100) . '%', 'Status aktif', 'text-success'],
+        ['Akun Bermasalah', $summary['bermasalah'], 'bi-exclamation-octagon', 'summary', 'kelola-metric-problem', base_url('admin/akun_bermasalah'), round(($summary['bermasalah'] / $summary_total) * 100) . '%', 'Perlu dicek', 'text-danger'],
+        ['Spotify', $summary_products['SPOTIFY'], 'bi-music-note-beamed', 'product', 'kelola-product-spotify', base_url('admin/kelola_akun?product=SPOTIFY&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
+        ['Leonardo', $summary_products['LEONARDO'], 'bi-palette', 'product', 'kelola-product-leonardo', base_url('admin/kelola_akun?product=LEONARDO&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
+        ['Gemini', $summary_products['GEMINI'], 'bi-stars', 'product', 'kelola-product-gemini', base_url('admin/kelola_akun?product=GEMINI&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
+        ['Zoom', $summary_products['ZOOM'], 'bi-camera-video', 'product', 'kelola-product-zoom', base_url('admin/kelola_akun?product=ZOOM&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
+        ['Adobe', $summary_products['ADOBE'], 'bi-brush', 'product', 'kelola-product-adobe', base_url('admin/kelola_akun?product=ADOBE&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
       ];
       ?>
 
       <div class="col-12">
-        <div class="account-summary-grid">
+        <div class="kelola-metric-grid">
           <?php foreach ($summary_cards as $summary_card): ?>
-            <div class="card"><div class="card-body">
-              <div class="account-summary-label"><?= htmlspecialchars($summary_card[0], ENT_QUOTES, 'UTF-8') ?></div>
-              <div class="d-flex align-items-center justify-content-between"><span class="account-summary-value"><?= (int) $summary_card[1] ?></span><span class="account-summary-icon <?= $summary_card[3] ?>"><i class="bi <?= $summary_card[2] ?>"></i></span></div>
-            </div></div>
+            <a class="kelola-metric-link <?= $summary_card[3] ?>" href="<?= htmlspecialchars($summary_card[5], ENT_QUOTES, 'UTF-8') ?>">
+              <div class="card kelola-metric-card <?= $summary_card[4] ?>"><div class="card-body">
+                <h5 class="kelola-metric-title">
+                  <?= htmlspecialchars($summary_card[0], ENT_QUOTES, 'UTF-8') ?>
+                  <span>| <?= $summary_card[3] === 'summary' ? 'Total' : 'Produk' ?></span>
+                </h5>
+                <div class="kelola-metric-content">
+                  <div class="kelola-metric-icon"><i class="bi <?= $summary_card[2] ?>"></i></div>
+                  <div class="kelola-metric-copy">
+                    <h6><?= (int) $summary_card[1] ?></h6>
+                    <span class="<?= $summary_card[8] ?> fw-bold"><?= htmlspecialchars($summary_card[6], ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="metric-note"><?= htmlspecialchars($summary_card[7], ENT_QUOTES, 'UTF-8') ?></span>
+                  </div>
+                </div>
+              </div></div>
+            </a>
           <?php endforeach; ?>
         </div>
       </div>
