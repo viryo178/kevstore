@@ -6,7 +6,6 @@
         <meta name="csrf-name" content="<?= $this->security->get_csrf_token_name() ?>">
         <meta name="csrf-hash" content="<?= $this->security->get_csrf_hash() ?>">
     <?php endif; ?>
-</head>
 <style>
 
 :root{
@@ -889,7 +888,6 @@ input[type="month"]::-webkit-calendar-picker-indicator{
 
 </style>
 
-<head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
