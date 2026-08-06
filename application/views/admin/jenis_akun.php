@@ -5,10 +5,11 @@
   .account-type-card .form-control:focus, .account-type-card .form-select:focus { background:#081225; color:#fff; border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,.18); }
   .account-type-table { color:#dbe7ff; }
   .account-type-table > :not(caption) > * > * { background:transparent; color:inherit; border-color:rgba(148,163,184,.14); }
-  .account-type-status { display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; line-height:1.2; }
-  .account-type-status.is-active { color:#4ade80; background:rgba(34,197,94,.1); border:1px solid #22c55e; box-shadow:0 0 14px rgba(34,197,94,.12); }
-  .account-type-status.is-inactive { color:#94a3b8; background:rgba(148,163,184,.09); border:1px solid #64748b; }
+  .account-type-status { display:inline-flex!important; align-items:center!important; justify-content:center!important; padding:4px 10px!important; border-radius:999px!important; font-size:11px!important; font-weight:700!important; line-height:1.2!important; }
+  .account-type-status.is-active { color:#4ade80!important; background:rgba(34,197,94,.1)!important; border:1px solid #22c55e!important; box-shadow:0 0 14px rgba(34,197,94,.12)!important; }
+  .account-type-status.is-inactive { color:#94a3b8!important; background:rgba(148,163,184,.09)!important; border:1px solid #64748b!important; }
   .account-type-delete { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; padding:0; color:#f87171; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.55); border-radius:9px; }
+  .account-type-delete i { color:inherit!important; }
   .account-type-delete:hover { color:#fff; background:#dc3545; border-color:#dc3545; }
 </style>
 

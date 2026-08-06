@@ -77,8 +77,13 @@ foreach ($products as $product) {
   .metric-link.metric-product{grid-column:span 3!important}
 }
 .dashboard .metric-product .metric-card .d-flex.align-items-center{
-  grid-template-columns:56px minmax(0,1fr)!important;
+  grid-template-columns:56px max-content!important;
   gap:12px!important;
+  width:max-content!important;
+  max-width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  justify-content:center!important;
 }
 .dashboard .metric-product .card-icon{
   position:relative!important;
@@ -92,19 +97,39 @@ foreach ($products as $product) {
   box-shadow:none!important;
 }
 .dashboard .metric-product .card-icon i{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  display:grid!important;
+  place-items:center!important;
   font-size:28px!important;
   line-height:1!important;
+  margin:0!important;
+}
+.dashboard .metric-product .card-icon i::before{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  line-height:1!important;
+  margin:0!important;
+  text-align:center!important;
 }
 .product-card-spotify{border-color:rgba(34,197,94,.42)!important}
 .dashboard .product-card-spotify .card-icon{color:#4ade80!important;background:rgba(34,197,94,.14)!important}
+.dashboard .product-card-spotify .card-icon i{color:#4ade80!important}
 .product-card-leonardo{border-color:rgba(239,68,68,.42)!important}
 .dashboard .product-card-leonardo .card-icon{color:#f87171!important;background:rgba(239,68,68,.14)!important}
+.dashboard .product-card-leonardo .card-icon i{color:#f87171!important}
 .product-card-gemini{border-color:rgba(234,179,8,.44)!important}
 .dashboard .product-card-gemini .card-icon{color:#facc15!important;background:rgba(234,179,8,.14)!important}
+.dashboard .product-card-gemini .card-icon i{color:#facc15!important}
 .product-card-zoom{border-color:rgba(59,130,246,.44)!important}
 .dashboard .product-card-zoom .card-icon{color:#60a5fa!important;background:rgba(59,130,246,.14)!important}
+.dashboard .product-card-zoom .card-icon i{color:#60a5fa!important}
 .product-card-adobe{border-color:rgba(168,85,247,.44)!important}
 .dashboard .product-card-adobe .card-icon{color:#c084fc!important;background:rgba(168,85,247,.14)!important}
+.dashboard .product-card-adobe .card-icon i{color:#c084fc!important}
 @media(max-width:1199px){
   .dashboard-main-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
   .metric-link.metric-summary,.metric-link.metric-product{grid-column:span 2!important}
