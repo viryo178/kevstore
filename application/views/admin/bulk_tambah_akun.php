@@ -81,7 +81,7 @@
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
               <?= $bulk_product === 'ADOBE'
-                ? 'Format Adobe: Email dan Password, lalu gunakan ➞Akses atau Emailakses. Nilainya disimpan ke kolom Akses.'
+                ? 'Adobe mendukung 3 format: format Akses, format Emailakses, atau tiga baris email, password, dan URL Akses.'
                 : ($bulk_product === 'GEMINI'
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
@@ -115,7 +115,7 @@
               name="bulk_accounts"
               class="form-control"
               placeholder="<?= $bulk_product === 'ADOBE'
-                ? 'Email : user@outlook.com&#10;Password : Premium123@&#10;➞Akses https://outlook.live.com/mail/&#10;➞Email sama|Password : Dvvsj796'
+                ? 'maskunahh@zecloud.online&#10;Frisz72727$@@3&#10;https://tokopremium.biz.id'
                 : ($bulk_product === 'GEMINI'
                   ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret'
                   : ($bulk_product === 'SPOTIFY'
@@ -165,14 +165,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
-      ? 'Format Adobe: Email dan Password, lalu gunakan ➞Akses atau Emailakses. Nilainya disimpan ke kolom Akses.'
+      ? 'Adobe mendukung 3 format: format Akses, format Emailakses, atau tiga baris email, password, dan URL Akses.'
       : (isGemini
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify
           ? 'Format Spotify: username|password atau format Email dan Password.'
           : 'Format: username|password. Satu akun ditulis dalam satu baris.'));
     accountsInput.placeholder = isAdobe
-      ? 'Email : user@outlook.com\nPassword : Premium123@\n➞Akses https://outlook.live.com/mail/\n➞Email sama|Password : Dvvsj796'
+      ? 'maskunahh@zecloud.online\nFrisz72727$@@3\nhttps://tokopremium.biz.id'
       : (isGemini
         ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret'
         : (isSpotify

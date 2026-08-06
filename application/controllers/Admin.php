@@ -1259,6 +1259,41 @@ $data['akun_belum_penuh'] = $available_accounts_query
             }
         }
 
+        // Format Adobe ketiga: email, password, dan URL akses pada tiga baris berurutan.
+        if ($bulk_product === 'ADOBE') {
+            $plain_lines = array_values(array_filter(
+                array_map('trim', preg_split('/\r\n|\r|\n/', $bulk_accounts)),
+                static function ($line) { return $line !== ''; }
+            ));
+
+            for ($index = 0; $index + 2 < count($plain_lines); $index += 3) {
+                $username = $plain_lines[$index];
+                $password = $plain_lines[$index + 1];
+                $website = $plain_lines[$index + 2];
+
+                if (
+                    strpos($username, '@') === false
+                    || $password === ''
+                    || !preg_match('/^https?:\/\/\S+$/iu', $website)
+                ) {
+                    $rows = [];
+                    break;
+                }
+
+                $rows[] = [
+                    'username' => $username,
+                    'password' => $password,
+                    'note' => '',
+                    'two_fa' => '',
+                    'website' => $website,
+                ];
+            }
+
+            if (!empty($rows)) {
+                return $rows;
+            }
+        }
+
         // Format lama tetap didukung. Kolom keempat dipakai untuk Gemini/Adobe.
         $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
 
