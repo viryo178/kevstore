@@ -1049,6 +1049,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $row_password = $row['password'];
             $row_note = $row['note'];
             $row_two_fa = $row['two_fa'];
+            $row_website = $row['website'] ?? '';
 
             if ($row_username === '' || $row_password === '') {
                 $invalid++;
@@ -1073,7 +1074,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'username'         => $row_username,
                 'password'         => $row_password,
                 'two_fa'           => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) && $row_two_fa !== '' ? $row_two_fa : null,
-                'website'          => '',
+                'website'          => $row_website,
                 'max_user'         => $bulk_max_user,
                 'expired_password' => null,
                 'note'             => $row_note,
@@ -1208,21 +1209,36 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         $rows = [];
 
-        // Format khusus Gemini dan Adobe:
-        // 1. Email: user@gmail.com
-        // - Password: password 2fa : https://contoh.test/secret
-        if (in_array($bulk_product, ['GEMINI', 'ADOBE'], true)) {
+        // Format berlabel untuk Gemini, Adobe, dan Spotify:
+        // Email: user@example.com
+        // Password: password
+        // ➞Akses https://contoh.test/ (khusus Adobe, disimpan ke website)
+        if (in_array($bulk_product, ['GEMINI', 'ADOBE', 'SPOTIFY'], true)) {
             preg_match_all(
-                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:-\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*(.*?)(?=(?:\R\s*(?:\d+\.\s*)?Email\s*:)|\z)/isu',
                 $bulk_accounts,
                 $matches,
                 PREG_SET_ORDER
             );
 
             foreach ($matches as $match) {
-                $password_and_two_fa = trim((string) ($match[2] ?? ''));
+                $details = (string) ($match[2] ?? '');
+                if (!preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?Password\s*:\s*([^\r\n]*)/iu', $details, $password_match)) {
+                    continue;
+                }
+
+                $password_and_two_fa = trim((string) ($password_match[1] ?? ''));
                 $password_parts = preg_split('/\s+2fa\s*:\s*/iu', $password_and_two_fa, 2);
                 $two_fa = trim((string) ($password_parts[1] ?? ''));
+                $website = '';
+
+                if (preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?Akses\s*:?[ \t]*(\S+)/iu', $details, $access_match)) {
+                    $website = trim((string) ($access_match[1] ?? ''));
+                }
+
+                if ($two_fa === '' && preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?2fa\s*:\s*([^\r\n]*)/iu', $details, $two_fa_match)) {
+                    $two_fa = trim((string) ($two_fa_match[1] ?? ''));
+                }
 
                 // Format Markdown [URL](URL) disimpan sebagai URL saja.
                 if (preg_match('/\[[^\]]*\]\((https?:\/\/[^)]+)\)/iu', $two_fa, $url_match)) {
@@ -1233,7 +1249,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
                     'username' => trim((string) ($match[1] ?? '')),
                     'password' => trim((string) ($password_parts[0] ?? '')),
                     'note' => '',
-                    'two_fa' => $two_fa,
+                    'two_fa' => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? $two_fa : '',
+                    'website' => $bulk_product === 'ADOBE' ? $website : '',
                 ];
             }
 
@@ -1258,6 +1275,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'password' => trim($parts[1] ?? ''),
                 'note' => trim($parts[2] ?? ''),
                 'two_fa' => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? trim($parts[3] ?? '') : '',
+                'website' => '',
             ];
         }
 

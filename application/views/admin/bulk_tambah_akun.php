@@ -80,9 +80,13 @@
           <div class="mb-4">
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
-              <?= in_array($bulk_product, ['GEMINI', 'ADOBE'], true)
-                ? 'Format ' . htmlspecialchars(ucfirst(strtolower($bulk_product)), ENT_QUOTES, 'UTF-8') . ': tempel daftar bernomor Email, Password, dan 2FA.'
-                : 'Format: username|password. Satu akun ditulis dalam satu baris.' ?>
+              <?= $bulk_product === 'ADOBE'
+                ? 'Format Adobe: Email, Password, lalu ➞Akses. Nilai Akses disimpan ke kolom Akses.'
+                : ($bulk_product === 'GEMINI'
+                  ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
+                  : ($bulk_product === 'SPOTIFY'
+                    ? 'Format Spotify: username|password atau format Email dan Password.'
+                    : 'Format: username|password. Satu akun ditulis dalam satu baris.')) ?>
             </div>
           </div>
 
@@ -110,9 +114,13 @@
               id="bulkAccounts"
               name="bulk_accounts"
               class="form-control"
-              placeholder="<?= in_array($bulk_product, ['GEMINI', 'ADOBE'], true)
-                ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret&#10;&#10;2. Email: user2@gmail.com&#10;- Password: password456 2fa :'
-                : 'username1|password1&#10;username2|password2' ?>"
+              placeholder="<?= $bulk_product === 'ADOBE'
+                ? 'Email : user@outlook.com&#10;Password : Premium123@&#10;➞Akses https://outlook.live.com/mail/&#10;➞Email sama|Password : Dvvsj796'
+                : ($bulk_product === 'GEMINI'
+                  ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret'
+                  : ($bulk_product === 'SPOTIFY'
+                    ? 'username1|password1&#10;&#10;atau&#10;&#10;Email : user@outlook.com&#10;Password : Premium123@'
+                    : 'username1|password1&#10;username2|password2')) ?>"
               required></textarea>
           </div>
 
@@ -149,18 +157,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const product = String(productSelect.value || '').trim().toUpperCase();
     const isGemini = product === 'GEMINI';
     const isAdobe = product === 'ADOBE';
+    const isSpotify = product === 'SPOTIFY';
     const isZoom = product === 'ZOOM';
     const usesEmailFormat = isGemini || isAdobe;
     zoomDurationField.hidden = !isZoom;
     zoomDuration.required = isZoom;
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
-    formatHelp.textContent = usesEmailFormat
-      ? 'Format ' + (isGemini ? 'Gemini' : 'Adobe') + ': tempel daftar bernomor Email, Password, dan 2FA.'
-      : 'Format: username|password. Satu akun ditulis dalam satu baris.';
-    accountsInput.placeholder = usesEmailFormat
-      ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret\n\n2. Email: user2@gmail.com\n- Password: password456 2fa :'
-      : 'username1|password1\nusername2|password2';
+    formatHelp.textContent = isAdobe
+      ? 'Format Adobe: Email, Password, lalu ➞Akses. Nilai Akses disimpan ke kolom Akses.'
+      : (isGemini
+        ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
+        : (isSpotify
+          ? 'Format Spotify: username|password atau format Email dan Password.'
+          : 'Format: username|password. Satu akun ditulis dalam satu baris.'));
+    accountsInput.placeholder = isAdobe
+      ? 'Email : user@outlook.com\nPassword : Premium123@\n➞Akses https://outlook.live.com/mail/\n➞Email sama|Password : Dvvsj796'
+      : (isGemini
+        ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret'
+        : (isSpotify
+          ? 'username1|password1\n\natau\n\nEmail : user@outlook.com\nPassword : Premium123@'
+          : 'username1|password1\nusername2|password2'));
     defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
       + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '')
       + (isZoom ? ' Pilih variasi Zoom 14 Hari atau 1 Bulan.' : '');

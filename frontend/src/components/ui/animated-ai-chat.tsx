@@ -1298,7 +1298,7 @@ function DashboardView({ historyCount }: { historyCount: number }) {
 interface StoreAccount {
   id_akun: number | string;
   nama_akun: string;
-  kategori: "private" | "sharing" | "belum_terjual";
+  kategori: "private" | "sharing" | "belum_terjual" | "done" | "1bulan" | "2bulan" | "3bulan" | "4bulan" | "1tahun";
   status: string;
   username: string;
   password: string;
@@ -1610,7 +1610,7 @@ function AccountForm({ form, onChange, onSave, onCancel }: { form: typeof emptyA
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-2xl">
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Nama Akun" value={form.nama_akun} onChange={(value) => set("nama_akun", value)} />
-        <SelectField label="Kategori" value={form.kategori} onChange={(value) => set("kategori", value)} options={[["private", "Private"], ["sharing", "Sharing"], ["belum_terjual", "Belum Terjual"]]} />
+        <SelectField label="Kategori" value={form.kategori} onChange={(value) => set("kategori", value)} options={[["private", "Private"], ["sharing", "Sharing"], ["belum_terjual", "Belum Terjual"], ["done", "Done"], ["1bulan", "1 Bulan"], ["2bulan", "2 Bulan"], ["3bulan", "3 Bulan"], ["4bulan", "4 Bulan"], ["1tahun", "1 Tahun"]]} />
         <SelectField label="Status" value={form.status} onChange={(value) => set("status", value)} options={[["aktif", "Aktif"], ["verif", "Verif"], ["deactived", "Deactived"], ["umur", "Disable X"], ["terjual", "Terjual"]]} />
         <Field label="Username" value={form.username} onChange={(value) => set("username", value)} />
         <Field label="Password" value={form.password} onChange={(value) => set("password", value)} />
@@ -1676,7 +1676,7 @@ function BulkEditForm({
       </div>
       <p className="mb-5 text-sm text-violet-100/70">Isi hanya field yang ingin diubah untuk semua akun terpilih.</p>
       <div className="grid gap-4 md:grid-cols-2">
-        <SelectField label="Kategori" value={form.kategori} onChange={(value) => set("kategori", value)} options={[["", "Tidak diubah"], ["private", "Private"], ["sharing", "Sharing"], ["belum_terjual", "Belum Terjual"]]} />
+        <SelectField label="Kategori" value={form.kategori} onChange={(value) => set("kategori", value)} options={[["", "Tidak diubah"], ["private", "Private"], ["sharing", "Sharing"], ["belum_terjual", "Belum Terjual"], ["done", "Done"], ["1bulan", "1 Bulan"], ["2bulan", "2 Bulan"], ["3bulan", "3 Bulan"], ["4bulan", "4 Bulan"], ["1tahun", "1 Tahun"]]} />
         <SelectField label="Status" value={form.status} onChange={(value) => set("status", value)} options={[["", "Tidak diubah"], ["aktif", "Aktif"], ["verif", "Verif"], ["deactived", "Deactived"], ["umur", "Disable X"], ["terjual", "Terjual"]]} />
         <Field label="Max User" value={form.max_user} onChange={(value) => set("max_user", value)} type="number" />
         <Field label="Expired Password" value={form.expired_password} onChange={(value) => set("expired_password", value)} type="date" />
@@ -1714,7 +1714,18 @@ function SelectField({ label, value, onChange, options }: { label: string; value
 }
 
 function CategoryBadge({ value }: { value: string }) {
-  const label = value === "belum_terjual" ? "Belum Terjual" : value === "sharing" ? "Sharing" : "Private";
+  const labels: Record<string, string> = {
+    private: "Private",
+    sharing: "Sharing",
+    belum_terjual: "Belum Terjual",
+    done: "Done",
+    "1bulan": "1 Bulan",
+    "2bulan": "2 Bulan",
+    "3bulan": "3 Bulan",
+    "4bulan": "4 Bulan",
+    "1tahun": "1 Tahun",
+  };
+  const label = labels[value] ?? value;
   return <span className="rounded-lg border border-yellow-300 px-3 py-1 text-xs font-bold text-yellow-300">{label}</span>;
 }
 

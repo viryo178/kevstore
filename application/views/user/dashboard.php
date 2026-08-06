@@ -1054,6 +1054,11 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
     <option value="private">Private</option>
     <option value="belum_terjual">Belum Terjual</option>
     <option value="done">Done</option>
+    <option value="1bulan">1 Bulan</option>
+    <option value="2bulan">2 Bulan</option>
+    <option value="3bulan">3 Bulan</option>
+    <option value="4bulan">4 Bulan</option>
+    <option value="1tahun">1 Tahun</option>
 </select>
 
             </div>
@@ -1106,7 +1111,7 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
 
             <div class="col-md-6 mb-3 edit-extra-field">
 
-              <label class="text-light">
+              <label class="text-light" id="edit_access_label">
                 Website
               </label>
 
@@ -1320,6 +1325,7 @@ if (searchAkun) {
           document.getElementById('edit_username').value = d.username;
           document.getElementById('edit_password').value = d.password;
           document.getElementById('edit_website').value = d.website;
+          document.getElementById('edit_access_label').textContent = String(d.nama_akun || '').trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website';
           document.getElementById('edit_max_user').value = d.max_user;
           document.getElementById('edit_expired_password').value = d.expired_password;
           document.getElementById('edit_note').value = d.note;

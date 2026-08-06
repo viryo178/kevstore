@@ -28,6 +28,11 @@
                 <option value="sharing" <?= ($akun->kategori ?? '') === 'sharing' ? 'selected' : '' ?>>Sharing</option>
                 <option value="belum_terjual" <?= ($akun->kategori ?? '') === 'belum_terjual' ? 'selected' : '' ?>>Belum Terjual</option>
                 <option value="done" <?= ($akun->kategori ?? '') === 'done' ? 'selected' : '' ?>>Done</option>
+                <option value="1bulan" <?= ($akun->kategori ?? '') === '1bulan' ? 'selected' : '' ?>>1 Bulan</option>
+                <option value="2bulan" <?= ($akun->kategori ?? '') === '2bulan' ? 'selected' : '' ?>>2 Bulan</option>
+                <option value="3bulan" <?= ($akun->kategori ?? '') === '3bulan' ? 'selected' : '' ?>>3 Bulan</option>
+                <option value="4bulan" <?= ($akun->kategori ?? '') === '4bulan' ? 'selected' : '' ?>>4 Bulan</option>
+                <option value="1tahun" <?= ($akun->kategori ?? '') === '1tahun' ? 'selected' : '' ?>>1 Tahun</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
@@ -51,7 +56,7 @@
               <input type="text" name="password" class="form-control" value="<?= htmlspecialchars($akun->password ?? '', ENT_QUOTES, 'UTF-8') ?>">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Website</label>
+              <label><?= strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ADOBE' ? 'Akses' : 'Website' ?></label>
               <input type="text" name="website" class="form-control" value="<?= htmlspecialchars($akun->website ?? '', ENT_QUOTES, 'UTF-8') ?>">
             </div>
             <div class="col-md-6 mb-3">

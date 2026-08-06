@@ -632,23 +632,50 @@ private function get_notification_data()
             ? $bulk_product
             : 'GROK';
         $bulk_max_user = 0;
-        $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
+        $rows = [];
+
+        if ($bulk_product === 'SPOTIFY') {
+            preg_match_all(
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:[^\p{L}\p{N}\r\n]\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                $bulk_accounts,
+                $matches,
+                PREG_SET_ORDER
+            );
+
+            foreach ($matches as $match) {
+                $rows[] = [
+                    'username' => trim((string) ($match[1] ?? '')),
+                    'password' => trim((string) ($match[2] ?? '')),
+                    'note' => '',
+                ];
+            }
+        }
+
+        if (empty($rows)) {
+            $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '') {
+                    continue;
+                }
+
+                $parts = explode('|', $line, 3);
+                $rows[] = [
+                    'username' => trim($parts[0] ?? ''),
+                    'password' => trim($parts[1] ?? ''),
+                    'note' => trim($parts[2] ?? ''),
+                ];
+            }
+        }
 
         $created = 0;
         $skipped = 0;
         $seen_usernames = [];
 
-        foreach ($lines as $line) {
-            $line = trim((string) $line);
-
-            if ($line === '') {
-                continue;
-            }
-
-            $parts = explode('|', $line, 3);
-            $row_username = trim($parts[0] ?? '');
-            $row_password = trim($parts[1] ?? '');
-            $row_note = trim($parts[2] ?? '');
+        foreach ($rows as $row) {
+            $row_username = $row['username'];
+            $row_password = $row['password'];
+            $row_note = $row['note'];
 
             if ($row_username === '' || $row_password === '') {
                 $skipped++;

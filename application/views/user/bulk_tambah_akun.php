@@ -78,12 +78,12 @@
           <input type="hidden" name="product" value="<?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?>">
           <div class="mb-4">
             <h5 class="card-title mb-1">Tambah Stok <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></h5>
-            <div class="bulk-help">Satu akun per baris. Format: username|password|catatan</div>
+            <div class="bulk-help"><?= $bulk_product === 'SPOTIFY' ? 'Format Spotify: username|password|catatan atau format Email dan Password.' : 'Satu akun per baris. Format: username|password|catatan' ?></div>
           </div>
 
           <div class="mb-3">
             <label>Daftar Akun</label>
-            <textarea name="bulk_accounts" class="form-control" placeholder="user1@gmail.com|password123|akun utama&#10;user2@gmail.com|pass456&#10;user3@gmail.com|mypass789|catatan opsional" required></textarea>
+            <textarea name="bulk_accounts" class="form-control" placeholder="<?= $bulk_product === 'SPOTIFY' ? 'username1|password1&#10;&#10;atau&#10;&#10;Email : user@outlook.com&#10;Password : Premium123@' : 'user1@gmail.com|password123|akun utama&#10;user2@gmail.com|pass456&#10;user3@gmail.com|mypass789|catatan opsional' ?>" required></textarea>
           </div>
 
           <div class="bulk-defaults mb-4">

@@ -239,6 +239,12 @@
                   <option value="private">Private</option>
                   <option value="sharing">Sharing</option>
                   <option value="belum_terjual">Belum Terjual</option>
+                  <option value="done">Done</option>
+                  <option value="1bulan">1 Bulan</option>
+                  <option value="2bulan">2 Bulan</option>
+                  <option value="3bulan">3 Bulan</option>
+                  <option value="4bulan">4 Bulan</option>
+                  <option value="1tahun">1 Tahun</option>
                 </select>
               </div>
 
@@ -266,7 +272,7 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <label>Website</label>
+                <label id="editAccessLabel">Website</label>
                 <input type="text" name="website" class="form-control">
               </div>
 
@@ -334,6 +340,8 @@
           document.querySelector('[name="username"]').value = d.username;
           document.querySelector('[name="password"]').value = d.password;
           document.querySelector('[name="website"]').value = d.website;
+          const editAccessLabel = document.getElementById('editAccessLabel');
+          if (editAccessLabel) editAccessLabel.textContent = String(d.nama_akun || '').trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website';
           document.querySelector('[name="max_user"]').value = 0;
           document.querySelector('[name="expired_password"]').value = '';
           document.querySelector('[name="note"]').value = d.note;

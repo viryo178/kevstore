@@ -24,7 +24,10 @@ WHERE UPPER(TRIM(`nama_akun`)) = 'ZOOM'
 
 -- Pastikan kategori Done tersedia untuk akun yang sudah terjual.
 ALTER TABLE `akun`
-  MODIFY COLUMN `kategori` enum('private','sharing','belum_terjual','done') DEFAULT NULL;
+  MODIFY COLUMN `kategori` enum(
+    'private','sharing','belum_terjual','done',
+    '1bulan','2bulan','3bulan','4bulan','1tahun'
+  ) DEFAULT NULL;
 
 -- Samakan enum status aplikasi dan database. Tahap pertama tetap menerima
 -- status lama agar datanya dapat dimigrasikan tanpa terpotong.

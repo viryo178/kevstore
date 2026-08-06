@@ -1637,6 +1637,11 @@
               <option value="sharing" ${selectedOption(account.kategori, 'sharing')}>Sharing</option>
               <option value="belum_terjual" ${selectedOption(account.kategori, 'belum_terjual')}>Belum Terjual</option>
               <option value="done" ${selectedOption(account.kategori, 'done')}>Done</option>
+              <option value="1bulan" ${selectedOption(account.kategori, '1bulan')}>1 Bulan</option>
+              <option value="2bulan" ${selectedOption(account.kategori, '2bulan')}>2 Bulan</option>
+              <option value="3bulan" ${selectedOption(account.kategori, '3bulan')}>3 Bulan</option>
+              <option value="4bulan" ${selectedOption(account.kategori, '4bulan')}>4 Bulan</option>
+              <option value="1tahun" ${selectedOption(account.kategori, '1tahun')}>1 Tahun</option>
             </select>
           </div>
           <div class="col-md-6 mb-3">
@@ -1660,7 +1665,7 @@
             <input type="text" name="akun[${id}][password]" class="form-control" value="${escapeHtml(account.password)}">
           </div>
           <div class="col-md-6 mb-3">
-            <label>Website</label>
+            <label>${String(account.nama_akun || '').trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website'}</label>
             <input type="text" name="akun[${id}][website]" class="form-control" value="${escapeHtml(account.website)}">
           </div>
           <div class="col-md-6 mb-3">

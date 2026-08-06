@@ -18,7 +18,7 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label>Nama Akun</label>
-              <input type="text" name="nama_akun" class="form-control" required>
+              <input type="text" id="namaAkun" name="nama_akun" class="form-control" required>
             </div>
             <div class="col-md-6 mb-3">
               <label>Kategori</label>
@@ -27,6 +27,11 @@
                 <option value="sharing">Sharing</option>
                 <option value="belum_terjual">Belum Terjual</option>
                 <option value="done">Done</option>
+                <option value="1bulan">1 Bulan</option>
+                <option value="2bulan">2 Bulan</option>
+                <option value="3bulan">3 Bulan</option>
+                <option value="4bulan">4 Bulan</option>
+                <option value="1tahun">1 Tahun</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
@@ -50,7 +55,7 @@
               <input type="text" name="password" class="form-control">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Website</label>
+              <label id="accessLabel">Website</label>
               <input type="text" name="website" class="form-control">
             </div>
             <div class="col-md-6 mb-3">
@@ -76,3 +81,15 @@
     </div>
   </section>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const product = document.getElementById('namaAkun');
+  const label = document.getElementById('accessLabel');
+  if (!product || !label) return;
+  const syncAccessLabel = function () {
+    label.textContent = product.value.trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website';
+  };
+  product.addEventListener('input', syncAccessLabel);
+  syncAccessLabel();
+});
+</script>

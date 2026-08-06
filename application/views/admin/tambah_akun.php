@@ -35,6 +35,11 @@
                 <option value="sharing">Sharing</option>
                 <option value="belum_terjual">Belum Terjual</option>
                 <option value="done">Done</option>
+                <option value="1bulan">1 Bulan</option>
+                <option value="2bulan">2 Bulan</option>
+                <option value="3bulan">3 Bulan</option>
+                <option value="4bulan">4 Bulan</option>
+                <option value="1tahun">1 Tahun</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
@@ -58,7 +63,7 @@
               <input type="text" name="password" class="form-control">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Website</label>
+              <label id="accessLabel">Website</label>
               <input type="text" name="website" class="form-control">
             </div>
             <div class="col-md-6 mb-3">
@@ -89,11 +94,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const product = document.getElementById('namaAkun');
   const field = document.getElementById('zoomDurationField');
   const duration = document.getElementById('durasiZoom');
+  const accessLabel = document.getElementById('accessLabel');
   const syncZoomDuration = function () {
     const isZoom = product.value.trim().toUpperCase() === 'ZOOM';
     field.hidden = !isZoom;
     duration.required = isZoom;
     if (!isZoom) duration.value = '';
+    accessLabel.textContent = product.value.trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website';
   };
   product.addEventListener('input', syncZoomDuration);
   syncZoomDuration();
