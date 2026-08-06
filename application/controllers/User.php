@@ -896,6 +896,55 @@ private function get_notification_data()
     }
 
 
+    public function bulk_hapus_akun()
+    {
+        $ids = $this->input->post('ids');
+        $ids = is_array($ids) ? array_values(array_unique(array_filter(array_map('intval', $ids)))) : [];
+
+        if (empty($ids)) {
+            $this->output->set_content_type('application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Pilih akun yang ingin dihapus']);
+            return;
+        }
+
+        $accounts = $this->db->where_in('id_akun', $ids)->get('akun')->result();
+
+        if (empty($accounts)) {
+            $this->output->set_content_type('application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Akun yang dipilih tidak ditemukan']);
+            return;
+        }
+
+        $this->ensure_activity_snapshot_columns();
+        $now = date('Y-m-d H:i:s');
+        $changed_by = $this->session->userdata('nama_user');
+        $found_ids = [];
+
+        $this->db->trans_start();
+        foreach ($accounts as $account) {
+            $found_ids[] = (int) $account->id_akun;
+            $this->db->insert('activity_log', [
+                'akun_id' => $account->id_akun,
+                'akun_nama_snapshot' => $account->nama_akun,
+                'akun_username_snapshot' => $account->username,
+                'action' => 'bulk hapus akun',
+                'changed_by' => $changed_by,
+                'created_at' => $now,
+            ]);
+        }
+        $this->db->where_in('id_akun', $found_ids)->delete('akun');
+        $deleted = $this->db->affected_rows();
+        $this->db->trans_complete();
+
+        $success = $this->db->trans_status() && $deleted > 0;
+        $this->output->set_content_type('application/json');
+        echo json_encode([
+            'status' => $success ? 'success' : 'error',
+            'message' => $success ? $deleted . ' akun terpilih berhasil dihapus' : 'Akun terpilih gagal dihapus',
+            'deleted' => $success ? $deleted : 0,
+        ]);
+    }
+
     public function hapus_akun($id)
     {
         // ambil akun

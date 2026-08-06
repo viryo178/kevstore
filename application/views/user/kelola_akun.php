@@ -1028,6 +1028,17 @@
 
                 </button>
 
+                <button
+                  type="button"
+                  class="btn-tambah"
+                  id="bulkDeleteButton"
+                  disabled>
+
+                  <i class="bi bi-trash-fill"></i>
+                  Hapus Terpilih <span id="bulkDeleteSelectedCount">(0)</span>
+
+                </button>
+
                 <a
                   href="<?= base_url('user/tambah_akun') ?>"
                   class="btn-tambah text-decoration-none">
@@ -1505,6 +1516,7 @@
 
   window.addEventListener('load', initKelolaNiceTable);
   const editAkunActionBase = '<?= base_url('user/edit_akun/') ?>';
+  const bulkDeleteAction = '<?= base_url('user/bulk_hapus_akun') ?>';
 
   function fieldValue(value) {
     return value === null || value === undefined ? '' : value;
@@ -1585,6 +1597,8 @@
     const selectedCount = selectedBulkAkun.size;
     const bulkButton = document.getElementById('bulkEditButton');
     const bulkCount = document.getElementById('bulkSelectedCount');
+    const bulkDeleteButton = document.getElementById('bulkDeleteButton');
+    const bulkDeleteCount = document.getElementById('bulkDeleteSelectedCount');
     const checkAll = document.getElementById('bulkCheckAll');
     const rowChecks = getVisibleBulkChecks();
 
@@ -1594,6 +1608,8 @@
 
     if (bulkButton) bulkButton.disabled = false;
     if (bulkCount) bulkCount.textContent = `(${selectedCount})`;
+    if (bulkDeleteButton) bulkDeleteButton.disabled = selectedCount === 0;
+    if (bulkDeleteCount) bulkDeleteCount.textContent = `(${selectedCount})`;
 
     if (checkAll) {
       const checkedRows = rowChecks.filter(function(check) { return check.checked; }).length;
@@ -1604,6 +1620,37 @@
 
   function showCrudMessage(message) {
     alert(message);
+  }
+
+  function deleteSelectedAccounts() {
+    const ids = Array.from(selectedBulkAkun);
+    if (!ids.length) {
+      showCrudMessage('Pilih akun yang ingin dihapus');
+      return;
+    }
+
+    if (!confirm(`Yakin ingin menghapus ${ids.length} akun yang dipilih?`)) return;
+
+    const button = document.getElementById('bulkDeleteButton');
+    const formData = new FormData();
+    ids.forEach(function(id) { formData.append('ids[]', id); });
+    if (button) button.disabled = true;
+
+    fetch(bulkDeleteAction, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+      .then(parseJsonResponse)
+      .then(function(result) {
+        if (result.status !== 'success') throw new Error(result.message || 'Akun terpilih gagal dihapus');
+        showCrudMessage(result.message);
+        return refreshKelolaAkunTable(true);
+      })
+      .catch(function(error) {
+        showCrudMessage(error.message || 'Akun terpilih gagal dihapus');
+        updateBulkSelectionUi();
+      });
   }
 
   function buildBulkEditRow(account) {
@@ -1850,6 +1897,12 @@
   });
 
   document.addEventListener('click', function(e) {
+    const bulkDeleteButton = e.target.closest('#bulkDeleteButton');
+    if (bulkDeleteButton) {
+      deleteSelectedAccounts();
+      return;
+    }
+
     const tambahButton = e.target.closest('[data-bs-target="#tambahModal"]');
 
     if (tambahButton && window.bootstrap) {

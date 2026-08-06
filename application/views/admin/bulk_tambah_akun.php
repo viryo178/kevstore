@@ -81,7 +81,7 @@
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
               <?= $bulk_product === 'ADOBE'
-                ? 'Format Adobe: Email, Password, lalu ➞Akses. Nilai Akses disimpan ke kolom Akses.'
+                ? 'Format Adobe: Email dan Password, lalu gunakan ➞Akses atau Emailakses. Nilainya disimpan ke kolom Akses.'
                 : ($bulk_product === 'GEMINI'
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
-      ? 'Format Adobe: Email, Password, lalu ➞Akses. Nilai Akses disimpan ke kolom Akses.'
+      ? 'Format Adobe: Email dan Password, lalu gunakan ➞Akses atau Emailakses. Nilainya disimpan ke kolom Akses.'
       : (isGemini
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify
