@@ -12,6 +12,16 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
+-- Variasi khusus akun Zoom.
+ALTER TABLE `akun`
+  ADD COLUMN IF NOT EXISTS `durasi_zoom` varchar(20) DEFAULT NULL AFTER `nama_akun`;
+
+-- Akun Zoom lama berasal dari paket yang sebelumnya hanya tersedia (1 bulan).
+UPDATE `akun`
+SET `durasi_zoom` = '1_bulan'
+WHERE UPPER(TRIM(`nama_akun`)) = 'ZOOM'
+  AND (`durasi_zoom` IS NULL OR `durasi_zoom` = '');
+
 -- Pastikan kategori Done tersedia untuk akun yang sudah terjual.
 ALTER TABLE `akun`
   MODIFY COLUMN `kategori` enum('private','sharing','belum_terjual','done') DEFAULT NULL;
@@ -91,6 +101,13 @@ SELECT IF(
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = 'akun'
       AND COLUMN_NAME = 'two_fa'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun'
+      AND COLUMN_NAME = 'durasi_zoom'
   )
   AND EXISTS(
     SELECT 1

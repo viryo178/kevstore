@@ -647,6 +647,7 @@
   $is_password_exp_page = (($page_title ?? '') === 'Ganti Password Exp');
   $bulk_product = strtoupper(trim((string) ($selected_product ?? $this->input->get('product'))));
   $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true) ? $bulk_product : '';
+  $selected_zoom_duration = $selected_zoom_duration ?? null;
   ?>
   <!-- kelola-akun-table-fix-v3-manual-controls -->
 
@@ -1053,7 +1054,7 @@
                 <form id="bulkEditSelectForm" action="<?= base_url('admin/bulk_edit_akun') ?>" method="GET"></form>
 
                 <a
-                  href="<?= base_url('admin/bulk_tambah_akun?product=' . rawurlencode($bulk_product)) ?>"
+                  href="<?= base_url('admin/bulk_tambah_akun?product=' . rawurlencode($bulk_product) . ($selected_zoom_duration ? '&durasi_zoom=' . rawurlencode($selected_zoom_duration) : '')) ?>"
                   class="btn-tambah text-decoration-none">
 
                   <i class="bi bi-list-plus"></i>
@@ -1094,6 +1095,16 @@
                   <?php endforeach; ?>
                 </select>
               </div>
+              <?php if (($selected_product ?? '') === 'ZOOM'): ?>
+                <div>
+                  <label class="form-label" for="kelola_zoom_duration">Variasi Zoom</label>
+                  <select class="form-control" id="kelola_zoom_duration" name="durasi_zoom" onchange="this.form.submit()">
+                    <option value="">Semua variasi</option>
+                    <option value="14_hari" <?= $selected_zoom_duration === '14_hari' ? 'selected' : '' ?>>14 Hari</option>
+                    <option value="1_bulan" <?= $selected_zoom_duration === '1_bulan' ? 'selected' : '' ?>>1 Bulan</option>
+                  </select>
+                </div>
+              <?php endif; ?>
               <div>
                 <label class="form-label" for="kelola_tanggal_mulai">Dari tanggal</label>
                 <input type="date" class="form-control" id="kelola_tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
@@ -1162,6 +1173,7 @@
                     $search_text = implode(' ', [
                       $a->id_akun ?? '',
                       $a->nama_akun ?? '',
+                      $a->durasi_zoom ?? '',
                       $a->username ?? '',
                       $a->password ?? '',
                       $a->kategori ?? '',
@@ -1188,8 +1200,11 @@
 
                       <td>
                         <strong>
-                          <?= $a->nama_akun ?>
+                          <?= htmlspecialchars($a->nama_akun ?? '', ENT_QUOTES, 'UTF-8') ?>
                         </strong>
+                        <?php if (strtoupper(trim((string) ($a->nama_akun ?? ''))) === 'ZOOM' && !empty($a->durasi_zoom)): ?>
+                          <small class="d-block text-info mt-1"><?= $a->durasi_zoom === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
+                        <?php endif; ?>
                       </td>
 
                       <td class="username-cell" title="<?= htmlspecialchars($a->username ?? '', ENT_QUOTES, 'UTF-8') ?>">
@@ -1653,6 +1668,7 @@
         <div class="bulk-edit-row">
           <div class="bulk-edit-row-title">${escapeHtml(account.nama_akun || 'Akun')} #${escapeHtml(id)}</div>
           <input type="hidden" name="akun[${id}][nama_akun]" value="${escapeHtml(account.nama_akun)}">
+          <input type="hidden" name="akun[${id}][durasi_zoom]" value="${escapeHtml(account.durasi_zoom)}">
           <input type="hidden" name="akun[${id}][kategori]" value="belum_terjual">
           <input type="hidden" name="akun[${id}][status]" value="aktif">
           <input type="hidden" name="akun[${id}][website]" value="${escapeHtml(account.website)}">
@@ -1682,7 +1698,15 @@
         <div class="row">
           <div class="col-md-6 mb-3">
             <label>Nama Akun</label>
-            <input type="text" name="akun[${id}][nama_akun]" class="form-control" value="${escapeHtml(account.nama_akun)}">
+            <input type="text" name="akun[${id}][nama_akun]" class="form-control bulk-product-name" value="${escapeHtml(account.nama_akun)}">
+          </div>
+          <div class="col-md-6 mb-3 zoom-duration-field" ${String(account.nama_akun || '').trim().toUpperCase() === 'ZOOM' ? '' : 'hidden'}>
+            <label>Variasi Zoom</label>
+            <select name="akun[${id}][durasi_zoom]" class="form-select zoom-duration-select">
+              <option value="">Pilih variasi</option>
+              <option value="14_hari" ${selectedOption(account.durasi_zoom, '14_hari')}>14 Hari</option>
+              <option value="1_bulan" ${selectedOption(account.durasi_zoom, '1_bulan')}>1 Bulan</option>
+            </select>
           </div>
           <div class="col-md-6 mb-3">
             <label>Kategori</label>
@@ -1751,6 +1775,19 @@
   }
 
   document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('bulk-product-name')) {
+      const row = e.target.closest('.bulk-edit-row');
+      const field = row ? row.querySelector('.zoom-duration-field') : null;
+      const select = field ? field.querySelector('.zoom-duration-select') : null;
+      const isZoom = e.target.value.trim().toUpperCase() === 'ZOOM';
+      if (field) field.hidden = !isZoom;
+      if (select) {
+        select.required = isZoom;
+        if (!isZoom) select.value = '';
+      }
+      return;
+    }
+
     const rowCheck = e.target.closest('.bulk-akun-check');
 
     if (rowCheck) {

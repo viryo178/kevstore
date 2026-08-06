@@ -18,7 +18,15 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label>Nama Akun</label>
-              <input type="text" name="nama_akun" class="form-control" required>
+              <input type="text" id="namaAkun" name="nama_akun" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3" id="zoomDurationField" hidden>
+              <label>Variasi Zoom</label>
+              <select id="durasiZoom" name="durasi_zoom" class="form-select">
+                <option value="">Pilih variasi</option>
+                <option value="14_hari">14 Hari</option>
+                <option value="1_bulan">1 Bulan</option>
+              </select>
             </div>
             <div class="col-md-6 mb-3">
               <label>Kategori</label>
@@ -76,3 +84,18 @@
     </div>
   </section>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const product = document.getElementById('namaAkun');
+  const field = document.getElementById('zoomDurationField');
+  const duration = document.getElementById('durasiZoom');
+  const syncZoomDuration = function () {
+    const isZoom = product.value.trim().toUpperCase() === 'ZOOM';
+    field.hidden = !isZoom;
+    duration.required = isZoom;
+    if (!isZoom) duration.value = '';
+  };
+  product.addEventListener('input', syncZoomDuration);
+  syncZoomDuration();
+});
+</script>

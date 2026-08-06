@@ -67,6 +67,7 @@
       ? ($bulk_product ?? 'SPOTIFY')
       : ($bulk_products[0] ?? 'SPOTIFY');
     $bulk_max_user = 0;
+    $bulk_zoom_duration = $bulk_zoom_duration ?? null;
   ?>
   <div class="pagetitle">
     <h1>Bulk Tambah Akun</h1>
@@ -91,6 +92,15 @@
               <?php foreach ($bulk_products as $product): ?>
                 <option value="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" <?= $bulk_product === $product ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst(strtolower($product)), ENT_QUOTES, 'UTF-8') ?></option>
               <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="mb-3" id="bulkZoomDurationField" <?= $bulk_product === 'ZOOM' ? '' : 'hidden' ?>>
+            <label for="bulk_zoom_duration">Variasi Zoom</label>
+            <select class="form-control" id="bulk_zoom_duration" name="durasi_zoom" <?= $bulk_product === 'ZOOM' ? 'required' : '' ?>>
+              <option value="">Pilih variasi</option>
+              <option value="14_hari" <?= $bulk_zoom_duration === '14_hari' ? 'selected' : '' ?>>14 Hari</option>
+              <option value="1_bulan" <?= $bulk_zoom_duration === '1_bulan' ? 'selected' : '' ?>>1 Bulan</option>
             </select>
           </div>
 
@@ -131,13 +141,19 @@ document.addEventListener('DOMContentLoaded', function () {
   const formatHelp = document.getElementById('bulkFormatHelp');
   const defaults = document.getElementById('bulkDefaults');
   const productTitle = document.getElementById('bulkProductTitle');
+  const zoomDurationField = document.getElementById('bulkZoomDurationField');
+  const zoomDuration = document.getElementById('bulk_zoom_duration');
   if (!productSelect || !accountsInput || !formatHelp || !defaults || !productTitle) return;
 
   function updateBulkFormat() {
     const product = String(productSelect.value || '').trim().toUpperCase();
     const isGemini = product === 'GEMINI';
     const isAdobe = product === 'ADOBE';
+    const isZoom = product === 'ZOOM';
     const usesEmailFormat = isGemini || isAdobe;
+    zoomDurationField.hidden = !isZoom;
+    zoomDuration.required = isZoom;
+    if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = usesEmailFormat
       ? 'Format ' + (isGemini ? 'Gemini' : 'Adobe') + ': tempel daftar bernomor Email, Password, dan 2FA.'
@@ -146,7 +162,8 @@ document.addEventListener('DOMContentLoaded', function () {
       ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret\n\n2. Email: user2@gmail.com\n- Password: password456 2fa :'
       : 'username1|password1\nusername2|password2';
     defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
-      + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '');
+      + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '')
+      + (isZoom ? ' Pilih variasi Zoom 14 Hari atau 1 Bulan.' : '');
   }
 
   function escapeBulkHtml(value) {

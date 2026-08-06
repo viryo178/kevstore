@@ -18,7 +18,30 @@ class Admin extends CI_Controller
 
         $this->load->helper('text');
         $this->load->database();
+        $this->ensure_zoom_duration_column();
         $this->process_account_bin();
+    }
+
+    private function ensure_zoom_duration_column()
+    {
+        if ($this->db->table_exists('akun') && !$this->db->field_exists('durasi_zoom', 'akun')) {
+            $this->db->query("ALTER TABLE `akun` ADD `durasi_zoom` VARCHAR(20) NULL AFTER `nama_akun`");
+        }
+
+        if ($this->db->table_exists('akun') && $this->db->field_exists('durasi_zoom', 'akun')) {
+            // Akun Zoom yang dibuat sebelum fitur variasi dianggap paket 1 bulan.
+            $this->db->query("UPDATE `akun` SET `durasi_zoom` = '1_bulan' WHERE UPPER(TRIM(`nama_akun`)) = 'ZOOM' AND (`durasi_zoom` IS NULL OR `durasi_zoom` = '')");
+        }
+    }
+
+    private function normalize_zoom_duration($product, $duration)
+    {
+        if (strtoupper(trim((string) $product)) !== 'ZOOM') {
+            return null;
+        }
+
+        $duration = strtolower(trim((string) $duration));
+        return in_array($duration, ['14_hari', '1_bulan'], true) ? $duration : null;
     }
 
     private function ensure_account_bin_table()
@@ -329,6 +352,7 @@ class Admin extends CI_Controller
         $fields = [
             'id_akun',
             'nama_akun',
+            'durasi_zoom',
             'kategori',
             'status',
             'username',
@@ -369,6 +393,7 @@ class Admin extends CI_Controller
 
         $labels = [
             'nama_akun' => 'Akun',
+            'durasi_zoom' => 'Variasi Zoom',
             'kategori' => 'Kategori',
             'status' => 'Status',
             'username' => 'Email / Username',
@@ -600,6 +625,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
             ? $product
             : '';
+        $zoom_duration = $this->normalize_zoom_duration('ZOOM', $this->input->get('durasi_zoom'));
         $tanggal_mulai = $this->normalize_date($this->input->get('tanggal_mulai'));
         $tanggal_selesai = $this->normalize_date($this->input->get('tanggal_selesai'));
 
@@ -613,6 +639,10 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         if ($product !== '') {
             $this->db->where('UPPER(nama_akun)', $product);
+        }
+
+        if ($product === 'ZOOM' && $zoom_duration !== null) {
+            $this->db->where('durasi_zoom', $zoom_duration);
         }
 
         if ($keyword !== '') {
@@ -646,6 +676,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $data['tanggal_mulai'] = $tanggal_mulai;
         $data['tanggal_selesai'] = $tanggal_selesai;
         $data['selected_product'] = $product;
+        $data['selected_zoom_duration'] = $zoom_duration;
         $data['stat_akun'] = $this->db->get('akun')->result();
 
         $data = array_merge($data, $this->get_notification_data());
@@ -838,9 +869,17 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
                 $note
             );
+            $nama_akun = $this->input->post('nama_akun');
+            $durasi_zoom = $this->normalize_zoom_duration($nama_akun, $this->input->post('durasi_zoom'));
+
+            if (strtoupper(trim((string) $nama_akun)) === 'ZOOM' && $durasi_zoom === null) {
+                $this->respond_akun_error('Pilih variasi Zoom: 14 Hari atau 1 Bulan.', 'admin/tambah_akun');
+                return;
+            }
 
             $data = [
-                'nama_akun'        => $this->input->post('nama_akun'),
+                'nama_akun'        => $nama_akun,
+                'durasi_zoom'      => $durasi_zoom,
                 'kategori'         => $kategori,
                 'status'           => $status,
                 'username'         => $username,
@@ -911,6 +950,10 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $data['bulk_product'] = in_array($bulk_product, $bulk_products, true)
                 ? $bulk_product
                 : ($bulk_products[0] ?? 'SPOTIFY');
+            $data['bulk_zoom_duration'] = $this->normalize_zoom_duration(
+                $data['bulk_product'],
+                $this->input->get('durasi_zoom')
+            );
 
             $this->load->view('templates/header');
             $this->load->view('templates/topbar', $data);
@@ -925,6 +968,13 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $bulk_product = in_array($bulk_product, $bulk_products, true)
             ? $bulk_product
             : ($bulk_products[0] ?? 'SPOTIFY');
+        $bulk_zoom_duration = $this->normalize_zoom_duration($bulk_product, $this->input->post('durasi_zoom'));
+
+        if ($bulk_product === 'ZOOM' && $bulk_zoom_duration === null) {
+            $this->session->set_flashdata('error', 'Pilih variasi Zoom: 14 Hari atau 1 Bulan.');
+            redirect('admin/bulk_tambah_akun?product=ZOOM');
+            return;
+        }
 
         $jenis_akun_id = $this->get_account_type_id($bulk_product);
         if ($jenis_akun_id === null) {
@@ -968,6 +1018,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
             $data = [
                 'nama_akun'        => $bulk_product,
+                'durasi_zoom'      => $bulk_zoom_duration,
                 'jenis_akun_id'    => $jenis_akun_id,
                 'kategori'         => 'belum_terjual',
                 'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
@@ -1246,6 +1297,13 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 $this->resolve_akun_status($kategori, $max_user, $row['status'] ?? ''),
                 $row_note
             );
+            $row_product = $row['nama_akun'] ?? '';
+            $row_zoom_duration = $this->normalize_zoom_duration($row_product, $row['durasi_zoom'] ?? '');
+
+            if (strtoupper(trim((string) $row_product)) === 'ZOOM' && $row_zoom_duration === null) {
+                $skipped++;
+                continue;
+            }
 
             $username_key = strtolower($row_username);
 
@@ -1262,7 +1320,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
             }
 
             $update = [
-                'nama_akun'        => $row['nama_akun'] ?? '',
+                'nama_akun'        => $row_product,
+                'durasi_zoom'      => $row_zoom_duration,
                 'kategori'         => $kategori,
                 'status'           => $status,
                 'username'         => $row_username,
@@ -1297,7 +1356,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         if ($updated > 0) {
             $message = $updated . ' akun berhasil diedit lewat bulk.';
             if ($skipped > 0) {
-                $message .= ' ' . $skipped . ' akun dilewati karena username sudah ada.';
+                $message .= ' ' . $skipped . ' akun dilewati karena data tidak valid atau username sudah ada.';
             }
             $this->session->set_flashdata('success', $message);
         } else {
@@ -1312,7 +1371,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             echo json_encode([
                 'status' => $updated > 0 ? 'success' : 'error',
                 'message' => $updated > 0
-                    ? $updated . ' akun berhasil diedit' . ($skipped > 0 ? '. ' . $skipped . ' akun dilewati karena username sudah ada.' : '')
+                    ? $updated . ' akun berhasil diedit' . ($skipped > 0 ? '. ' . $skipped . ' akun dilewati karena data tidak valid atau username sudah ada.' : '')
                     : 'Tidak ada akun yang berhasil diedit'
             ]);
             return;
@@ -1812,9 +1871,25 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
             $note
         );
+        $nama_akun = $this->input->post('nama_akun');
+        $posted_zoom_duration = $this->input->post('durasi_zoom');
+        $durasi_zoom = $posted_zoom_duration === null
+            && strtoupper(trim((string) ($akun_old->nama_akun ?? ''))) === 'ZOOM'
+            && strtoupper(trim((string) $nama_akun)) === 'ZOOM'
+                ? ($akun_old->durasi_zoom ?? null)
+                : $this->normalize_zoom_duration($nama_akun, $posted_zoom_duration);
+
+        if (strtoupper(trim((string) $nama_akun)) === 'ZOOM' && $durasi_zoom === null) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Pilih variasi Zoom: 14 Hari atau 1 Bulan.'
+            ]);
+            return;
+        }
 
         $data = [
-            'nama_akun'        => $this->input->post('nama_akun'),
+            'nama_akun'        => $nama_akun,
+            'durasi_zoom'      => $durasi_zoom,
             'kategori'         => $kategori,
             'status'           => $status,
             'username'         => $username,
@@ -1896,11 +1971,19 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 $this->resolve_akun_status($kategori, $max_user, $this->input->post('status')),
                 $note
             );
+            $nama_akun = $this->input->post('nama_akun');
+            $durasi_zoom = $this->normalize_zoom_duration($nama_akun, $this->input->post('durasi_zoom'));
+
+            if (strtoupper(trim((string) $nama_akun)) === 'ZOOM' && $durasi_zoom === null) {
+                $this->respond_akun_error('Pilih variasi Zoom: 14 Hari atau 1 Bulan.', 'admin/edit_akun/' . $id);
+                return;
+            }
 
             // data update
             $update = [
 
-                'nama_akun'        => $this->input->post('nama_akun'),
+                'nama_akun'        => $nama_akun,
+                'durasi_zoom'      => $durasi_zoom,
                 'kategori'         => $kategori,
                 'status'           => $status,
                 'username'         => $username,

@@ -166,6 +166,16 @@
                         </div>
 
                         <!-- MAX USER -->
+                        <?php if (strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ZOOM'): ?>
+                        <div class="mb-2">
+                            <label class="detail-label">Variasi Zoom</label>
+                            <div class="detail-box">
+                                <?= ($akun->durasi_zoom ?? '') === '14_hari' ? '14 Hari' : (($akun->durasi_zoom ?? '') === '1_bulan' ? '1 Bulan' : '-') ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- MAX USER -->
                         <div class="mb-2">
 
                             <label class="detail-label">

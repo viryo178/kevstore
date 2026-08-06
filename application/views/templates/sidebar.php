@@ -33,6 +33,7 @@
   ]);
 
   $akun_produk = strtolower(trim((string) $this->input->get('product')));
+  $akun_zoom_duration = strtolower(trim((string) $this->input->get('durasi_zoom')));
   $sidebar_products = $role_prefix === 'admin'
     ? ['LEONARDO' => 'Leonardo', 'SPOTIFY' => 'Spotify', 'GEMINI' => 'Gemini', 'ZOOM' => 'Zoom', 'ADOBE' => 'Adobe']
     : ['LEONARDO' => 'Leonardo', 'SPOTIFY' => 'Spotify', 'GROK' => 'Grok'];
@@ -126,10 +127,24 @@
             ? $role_prefix . '/kelola_akun?product=' . rawurlencode($product_code)
             : $role_prefix . '/kelola_akun?search_akun=' . rawurlencode($product_label) . '&product=' . rawurlencode($product_code); ?>
           <li>
-            <a href="<?= base_url($product_url) ?>" class="<?= $akun_produk === strtolower($product_code) ? 'active' : '' ?>">
+            <a href="<?= base_url($product_url) ?>" class="<?= $akun_produk === strtolower($product_code) && ($product_code !== 'ZOOM' || $akun_zoom_duration === '') ? 'active' : '' ?>">
               <i class="bi bi-circle"></i><span><?= htmlspecialchars($product_label, ENT_QUOTES, 'UTF-8') ?></span>
             </a>
           </li>
+          <?php if ($role_prefix === 'admin' && $product_code === 'ZOOM'): ?>
+            <li>
+              <a href="<?= base_url('admin/kelola_akun?product=ZOOM&durasi_zoom=14_hari') ?>"
+                class="ps-4 <?= $akun_produk === 'zoom' && $akun_zoom_duration === '14_hari' ? 'active' : '' ?>">
+                <i class="bi bi-dash"></i><span>Zoom 14 Hari</span>
+              </a>
+            </li>
+            <li>
+              <a href="<?= base_url('admin/kelola_akun?product=ZOOM&durasi_zoom=1_bulan') ?>"
+                class="ps-4 <?= $akun_produk === 'zoom' && $akun_zoom_duration === '1_bulan' ? 'active' : '' ?>">
+                <i class="bi bi-dash"></i><span>Zoom 1 Bulan</span>
+              </a>
+            </li>
+          <?php endif; ?>
         <?php endforeach; ?>
       </ul>
 

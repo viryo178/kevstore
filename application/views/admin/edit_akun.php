@@ -19,7 +19,15 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label>Nama Akun</label>
-              <input type="text" name="nama_akun" class="form-control" value="<?= htmlspecialchars($akun->nama_akun ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
+              <input type="text" id="namaAkun" name="nama_akun" class="form-control" value="<?= htmlspecialchars($akun->nama_akun ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
+            </div>
+            <div class="col-md-6 mb-3" id="zoomDurationField" <?= strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ZOOM' ? '' : 'hidden' ?>>
+              <label>Variasi Zoom</label>
+              <select id="durasiZoom" name="durasi_zoom" class="form-select">
+                <option value="">Pilih variasi</option>
+                <option value="14_hari" <?= ($akun->durasi_zoom ?? '') === '14_hari' ? 'selected' : '' ?>>14 Hari</option>
+                <option value="1_bulan" <?= ($akun->durasi_zoom ?? '') === '1_bulan' ? 'selected' : '' ?>>1 Bulan</option>
+              </select>
             </div>
             <div class="col-md-6 mb-3">
               <label>Kategori</label>
@@ -77,3 +85,18 @@
     </div>
   </section>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const product = document.getElementById('namaAkun');
+  const field = document.getElementById('zoomDurationField');
+  const duration = document.getElementById('durasiZoom');
+  const syncZoomDuration = function () {
+    const isZoom = product.value.trim().toUpperCase() === 'ZOOM';
+    field.hidden = !isZoom;
+    duration.required = isZoom;
+    if (!isZoom) duration.value = '';
+  };
+  product.addEventListener('input', syncZoomDuration);
+  syncZoomDuration();
+});
+</script>
