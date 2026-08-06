@@ -132,18 +132,6 @@
             </a>
           </li>
           <?php if ($role_prefix === 'admin' && $product_code === 'ZOOM'): ?>
-            <li>
-              <a href="<?= base_url('admin/kelola_akun?product=ZOOM&durasi_zoom=14_hari') ?>"
-                class="ps-4 <?= $akun_produk === 'zoom' && $akun_zoom_duration === '14_hari' ? 'active' : '' ?>">
-                <i class="bi bi-dash"></i><span>Zoom 14 Hari</span>
-              </a>
-            </li>
-            <li>
-              <a href="<?= base_url('admin/kelola_akun?product=ZOOM&durasi_zoom=1_bulan') ?>"
-                class="ps-4 <?= $akun_produk === 'zoom' && $akun_zoom_duration === '1_bulan' ? 'active' : '' ?>">
-                <i class="bi bi-dash"></i><span>Zoom 1 Bulan</span>
-              </a>
-            </li>
           <?php endif; ?>
         <?php endforeach; ?>
       </ul>
