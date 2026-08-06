@@ -23,7 +23,11 @@ class Admin extends CI_Controller
 
     private function ensure_account_bin_table()
     {
-        $this->db->query("CREATE TABLE IF NOT EXISTS `akun_bin` (
+        if ($this->db->table_exists('akun_bin')) {
+            return true;
+        }
+
+        $created = $this->db->query("CREATE TABLE IF NOT EXISTS `akun_bin` (
             `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `original_id` INT NULL,
             `nama_akun` VARCHAR(191) NOT NULL,
@@ -35,12 +39,17 @@ class Admin extends CI_Controller
             PRIMARY KEY (`id`),
             UNIQUE KEY `uniq_akun_bin_original_id` (`original_id`),
             KEY `idx_akun_bin_purge_at` (`purge_at`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        return $created !== false;
     }
 
     private function process_account_bin()
     {
-        $this->ensure_account_bin_table();
+        if (!$this->ensure_account_bin_table()) {
+            log_message('error', 'Tabel akun_bin tidak tersedia dan gagal dibuat. Jalankan benerin.sql.');
+            return;
+        }
         $now = date('Y-m-d H:i:s');
         $sold_cutoff = date('Y-m-d H:i:s', strtotime('-7 days'));
 
@@ -581,10 +590,13 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
     public function bin()
     {
-        $data['bin_accounts'] = $this->db
-            ->order_by('binned_at', 'DESC')
-            ->get('akun_bin')
-            ->result();
+        $data['bin_accounts'] = $this->db->table_exists('akun_bin')
+            ? $this->db->order_by('binned_at', 'DESC')->get('akun_bin')->result()
+            : [];
+
+        if (!$this->db->table_exists('akun_bin')) {
+            $this->session->set_flashdata('error', 'Tabel Bin belum tersedia. Jalankan benerin.sql terlebih dahulu.');
+        }
         $data = array_merge($data, $this->get_notification_data());
 
         $this->load->view('templates/header');
@@ -597,6 +609,12 @@ $data['akun_belum_penuh'] = $available_accounts_query
     public function pulihkan_akun_bin($bin_id)
     {
         if (!$this->input->post()) {
+            redirect('admin/bin');
+            return;
+        }
+
+        if (!$this->db->table_exists('akun_bin')) {
+            $this->session->set_flashdata('error', 'Tabel Bin belum tersedia. Jalankan benerin.sql terlebih dahulu.');
             redirect('admin/bin');
             return;
         }
@@ -819,6 +837,13 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
             ? $bulk_product
             : 'SPOTIFY';
+
+        if ($bulk_product === 'GEMINI' && !$this->db->field_exists('two_fa', 'akun')) {
+            $this->session->set_flashdata('error', 'Kolom 2FA belum tersedia di database. Jalankan benerin.sql terlebih dahulu.');
+            redirect('admin/bulk_tambah_akun?product=GEMINI');
+            return;
+        }
+
         $bulk_max_user = 0;
         $rows = $this->parse_bulk_account_rows($bulk_accounts, $bulk_product);
 

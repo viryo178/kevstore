@@ -3637,8 +3637,12 @@ class Api extends CI_Controller
         $this->require_admin();
         $this->only_methods(['GET']);
 
+        $login_field = $this->db->field_exists('login', 'users')
+            ? 'login'
+            : "'active' AS login";
+
         $users = $this->db
-            ->select('id_user, username, tipe_user, no_wa, login, otp_expired')
+            ->select('id_user, username, tipe_user, no_wa, ' . $login_field . ', otp_expired', false)
             ->order_by('id_user', 'ASC')
             ->get('users')
             ->result();

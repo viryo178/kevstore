@@ -4,11 +4,17 @@
 -- Tabel `akun_bin` dipakai oleh application/controllers/Admin.php,
 -- tetapi belum terdapat di dump database.
 
+USE `kevsmyid_storekevs`;
+
 SET NAMES utf8mb4;
 
 -- 2FA hanya diisi untuk akun Gemini. Akun lain boleh NULL/kosong.
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
+
+-- Dipakai oleh login web dan endpoint API users.
+ALTER TABLE `users`
+  ADD COLUMN IF NOT EXISTS `login` varchar(20) NOT NULL DEFAULT 'active' AFTER `tipe_user`;
 
 CREATE TABLE IF NOT EXISTS `akun_bin` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -23,3 +29,29 @@ CREATE TABLE IF NOT EXISTS `akun_bin` (
   UNIQUE KEY `uniq_akun_bin_original_id` (`original_id`),
   KEY `idx_akun_bin_purge_at` (`purge_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Hasil harus menampilkan: DATABASE SIAP
+SELECT IF(
+  EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun'
+      AND COLUMN_NAME = 'two_fa'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND COLUMN_NAME = 'login'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun_bin'
+  ),
+  'DATABASE SIAP',
+  'DATABASE BELUM LENGKAP'
+) AS `hasil_perbaikan`;
