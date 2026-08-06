@@ -7,7 +7,8 @@ foreach (($akun ?? []) as $account) {
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
     if (!isset($sales[$product])) continue;
     if ($status === 'terjual') {
-        $sales[$product]++;
+        // Satu akun Gemini mewakili empat penjualan.
+        $sales[$product] += $product === 'GEMINI' ? 4 : 1;
     }
     if (($account->kategori ?? '') === 'belum_terjual' && $status === 'aktif') $stock[$product]++;
 }
@@ -28,6 +29,6 @@ $lowStock = array_filter($stock, static function ($amount) { return $amount < 5;
   </div>
 </section>
 <script>
-document.addEventListener('DOMContentLoaded',function(){if(typeof ApexCharts==='undefined')return;new ApexCharts(document.querySelector('#accountSalesChart'),{series:[{name:'Akun Terjual',data:<?= json_encode(array_values($sales)) ?>}],chart:{type:'bar',height:360,toolbar:{show:false},background:'transparent'},plotOptions:{bar:{borderRadius:7,columnWidth:'48%'}},colors:['#3b82f6'],dataLabels:{enabled:false},xaxis:{categories:<?= json_encode(array_map('ucfirst', array_map('strtolower', $products))) ?>,labels:{style:{colors:'#8fa5cf'}}},yaxis:{min:0,forceNiceScale:true,labels:{style:{colors:'#8fa5cf'},formatter:function(v){return Math.round(v)}}},grid:{borderColor:'rgba(148,163,184,.12)'},tooltip:{theme:'dark'}}).render()});
+document.addEventListener('DOMContentLoaded',function(){if(typeof ApexCharts==='undefined')return;new ApexCharts(document.querySelector('#accountSalesChart'),{series:[{name:'Akun Terjual',data:<?= json_encode(array_values($sales)) ?>}],chart:{type:'line',height:360,toolbar:{show:false},background:'transparent'},stroke:{curve:'smooth',width:4},markers:{size:6,strokeWidth:3,hover:{size:8}},colors:['#60a5fa'],dataLabels:{enabled:false},xaxis:{categories:<?= json_encode(array_map('ucfirst', array_map('strtolower', $products))) ?>,labels:{style:{colors:'#8fa5cf'}}},yaxis:{min:0,forceNiceScale:true,labels:{style:{colors:'#8fa5cf'},formatter:function(v){return Math.round(v)}}},grid:{borderColor:'rgba(148,163,184,.12)'},tooltip:{theme:'dark'}}).render()});
 </script>
 </main>
