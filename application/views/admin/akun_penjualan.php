@@ -22,8 +22,11 @@ $nextDailyResetMs = $dailyStart->modify('+1 day')->getTimestamp() * 1000;
 $sales = array_fill_keys($products, 0);
 $allSales = array_fill_keys($products, 0);
 $stock = array_fill_keys($products, 0);
+$zoomStock = ['1_bulan' => 0, '14_hari' => 0];
 foreach (($akun ?? []) as $account) {
-    $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
+    $rawProduct = strtoupper(trim((string) ($account->nama_akun ?? '')));
+    $product = $rawProduct;
+    if (preg_match('/^ZOOM(?:\s|$)/', $product)) $product = 'ZOOM';
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
     if (!isset($sales[$product])) continue;
     if ($status === 'terjual') {
@@ -38,14 +41,25 @@ foreach (($akun ?? []) as $account) {
             $sales[$product] += $saleAmount;
         }
     }
-    if (($account->kategori ?? '') === 'belum_terjual' && $status === 'aktif') $stock[$product]++;
+    if ($status !== 'terjual') {
+        $stock[$product]++;
+
+        if ($product === 'ZOOM') {
+            $zoomDuration = strtolower(trim((string) ($account->durasi_zoom ?? '')));
+            if ($zoomDuration === '' && strpos($rawProduct, '14 HARI') !== false) $zoomDuration = '14_hari';
+            if ($zoomDuration === '' && strpos($rawProduct, '1 BULAN') !== false) $zoomDuration = '1_bulan';
+            if (isset($zoomStock[$zoomDuration])) $zoomStock[$zoomDuration]++;
+        }
+    }
 }
 $periodSalesTotal = array_sum($sales);
 $allSalesTotal = array_sum($allSales);
-$lowStock = array_filter($stock, static function ($amount) { return $amount < 5; });
 ?>
 <style>
-.sales-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px}.sales-chart-card,.stock-card{margin:0!important;height:100%}.sales-filter{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}.sales-filter label{display:block;color:#dbe7ff;font-size:13px;font-weight:700;margin-bottom:6px}.sales-filter select{min-width:240px;background:#081225!important;border:1px solid #16366f!important;color:#fff!important;border-radius:10px;padding:9px 12px}.sales-filter-note{color:#8fa5cf;font-size:12px}.sales-summary{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px}.sales-summary-item{background:rgba(15,35,75,.62);border:1px solid rgba(96,165,250,.16);border-radius:12px;padding:13px}.sales-summary-item.total-period{border-color:rgba(96,165,250,.42)}.sales-summary-item.total-all{border-color:rgba(34,197,94,.42)}.sales-summary-item span{display:block;color:#8fa5cf;font-size:11px}.sales-summary-item strong{font-size:22px;color:#fff}.stock-alert{display:flex;align-items:flex-start;gap:12px;border:1px solid;border-radius:13px;padding:14px;margin-bottom:12px}.stock-alert.warning{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35)}.stock-alert.danger{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.4)}.stock-alert i{font-size:21px}.stock-alert.warning i{color:#fbbf24}.stock-alert.danger i{color:#f87171}.stock-alert strong{display:block;color:#fff}.stock-alert small{color:#9db1d6}.stock-ok{text-align:center;color:#8fa5cf;padding:55px 10px}.stock-ok i{display:block;color:#4ade80;font-size:38px;margin-bottom:10px}@media(max-width:1199px){.sales-summary{grid-template-columns:repeat(4,1fr)}}@media(max-width:991px){.sales-layout{grid-template-columns:1fr}.sales-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:575px){.sales-summary{grid-template-columns:1fr}.sales-filter select{width:100%;min-width:0}}
+.sales-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px}.sales-chart-card,.stock-card{margin:0!important;height:100%}.sales-filter{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}.sales-filter label{display:block;color:#dbe7ff;font-size:13px;font-weight:700;margin-bottom:6px}.sales-filter select{min-width:240px;background:#081225!important;border:1px solid #16366f!important;color:#fff!important;border-radius:10px;padding:9px 12px}.sales-filter-note{color:#8fa5cf;font-size:12px}.sales-summary{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px}.sales-summary-item{background:rgba(15,35,75,.62);border:1px solid rgba(96,165,250,.16);border-radius:12px;padding:13px}.sales-summary-item.total-period{border-color:rgba(96,165,250,.42)}.sales-summary-item.total-all{border-color:rgba(34,197,94,.42)}.sales-summary-item span{display:block;color:#8fa5cf;font-size:11px}.sales-summary-item strong{font-size:22px;color:#fff}.stock-alert{display:flex;align-items:flex-start;gap:12px;border:1px solid;border-radius:13px;padding:14px;margin-bottom:12px}.stock-alert.safe{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}.stock-alert.warning{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35)}.stock-alert.danger{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.4)}.stock-alert i{font-size:21px}.stock-alert.safe i{color:#4ade80}.stock-alert.warning i{color:#fbbf24}.stock-alert.danger i{color:#f87171}.stock-alert strong{display:block;color:#fff}.stock-alert small{color:#9db1d6}.stock-ok{text-align:center;color:#8fa5cf;padding:55px 10px}.stock-ok i{display:block;color:#4ade80;font-size:38px;margin-bottom:10px}@media(max-width:1199px){.sales-summary{grid-template-columns:repeat(4,1fr)}}@media(max-width:991px){.sales-layout{grid-template-columns:1fr}.sales-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:575px){.sales-summary{grid-template-columns:1fr}.sales-filter select{width:100%;min-width:0}}
+</style>
+<style>
+.stock-zoom-breakdown{display:flex;flex-direction:column;gap:3px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}
 </style>
 <main id="main" class="main">
 <div class="pagetitle"><h1>Akun Penjualan</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Akun Penjualan</li></ol></nav></div>
@@ -69,7 +83,28 @@ $lowStock = array_filter($stock, static function ($amount) { return $amount < 5;
   <div class="sales-layout">
     <div class="card sales-chart-card"><div class="card-body"><h5 class="card-title">Grafik Penjualan — <?= htmlspecialchars($periodLabels[$period], ENT_QUOTES, 'UTF-8') ?></h5><div id="accountSalesChart" style="min-height:360px"></div></div></div>
     <div class="card stock-card"><div class="card-body"><h5 class="card-title">Notifikasi Stok</h5>
-      <?php if ($lowStock): foreach ($lowStock as $product => $amount): ?><div class="stock-alert <?= $amount === 0 ? 'danger' : 'warning' ?>"><i class="bi <?= $amount === 0 ? 'bi-exclamation-octagon-fill' : 'bi-exclamation-triangle-fill' ?>"></i><div><strong><?= ucfirst(strtolower($product)) ?></strong><small><?= $amount === 0 ? 'Stok habis, butuh restok.' : 'Stok tersisa ' . $amount . ', segera tambah stok.' ?></small></div></div><?php endforeach; else: ?><div class="stock-ok"><i class="bi bi-check-circle"></i>Semua stok akun aman.</div><?php endif; ?>
+      <?php foreach ($stock as $product => $amount): ?>
+        <?php
+          $stock_class = $amount === 0 ? 'danger' : ($amount < 5 ? 'warning' : 'safe');
+          $stock_icon = $amount === 0 ? 'bi-exclamation-octagon-fill' : ($amount < 5 ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill');
+          $stock_message = $amount === 0
+            ? 'Stok habis, butuh restok.'
+            : ($amount < 5 ? 'Stok tersisa ' . $amount . ', segera tambah stok.' : 'Stok aman, tersedia ' . $amount . ' akun.');
+        ?>
+        <div class="stock-alert <?= $stock_class ?>">
+          <i class="bi <?= $stock_icon ?>"></i>
+          <div>
+            <strong><?= ucfirst(strtolower($product)) ?></strong>
+            <small><?= $stock_message ?></small>
+            <?php if ($product === 'ZOOM'): ?>
+              <div class="stock-zoom-breakdown">
+                <span>Stok 1 Bulan: <b><?= (int) $zoomStock['1_bulan'] ?></b></span>
+                <span>Stok 14 Hari: <b><?= (int) $zoomStock['14_hari'] ?></b></span>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      <?php endforeach; ?>
     </div></div>
   </div>
 </section>
