@@ -604,14 +604,6 @@ private function get_notification_data()
     // ==============================
     public function index()
     {
-        // Dashboard harus selalu dirender ulang. Hindari cache browser/proxy
-        // menyajikan HTML lama yang kehilangan referensi stylesheet template.
-        $this->output
-            ->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0')
-            ->set_header('Cache-Control: post-check=0, pre-check=0')
-            ->set_header('Pragma: no-cache')
-            ->set_header('Expires: 0');
-
         $data['akun'] = $this->db->get('akun')->result();
         $dashboard_product = strtoupper(trim((string) $this->input->get('produk')));
         $dashboard_product = in_array($dashboard_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
