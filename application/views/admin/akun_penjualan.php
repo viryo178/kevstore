@@ -6,7 +6,9 @@ foreach (($akun ?? []) as $account) {
     $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
     if (!isset($sales[$product])) continue;
-    if ($status === 'terjual') $sales[$product]++;
+    if ($status === 'terjual') {
+        $sales[$product]++;
+    }
     if (($account->kategori ?? '') === 'belum_terjual' && $status === 'aktif') $stock[$product]++;
 }
 $lowStock = array_filter($stock, static function ($amount) { return $amount < 5; });

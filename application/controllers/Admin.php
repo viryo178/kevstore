@@ -1254,7 +1254,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
         }
 
         // limit berdasarkan kategori
-        $is_single_use_product = in_array(strtoupper((string) $akun->nama_akun), ['SPOTIFY', 'LEONARDO'], true);
+        $product = strtoupper((string) $akun->nama_akun);
+        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         // cek limit
@@ -1270,13 +1271,12 @@ $data['akun_belum_penuh'] = $available_accounts_query
             redirect('admin');
         }
 
-        $new_max = $akun->max_user + 1;
+        $new_max = min($max_limit, (int) $akun->max_user + 1);
         $status = ($is_single_use_product && $new_max >= $max_limit)
             ? 'terjual'
             : $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
 
-        // increment
-        $this->db->set('max_user', 'max_user+1', FALSE);
+        $this->db->set('max_user', $new_max);
         $this->db->set('status', $status);
 
         $this->db->set(
@@ -1323,7 +1323,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
             return;
         }
 
-        $is_single_use_product = in_array(strtoupper((string) $akun->nama_akun), ['SPOTIFY', 'LEONARDO'], true);
+        $product = strtoupper((string) $akun->nama_akun);
+        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         if ($akun->max_user >= $limit) {
@@ -1335,7 +1336,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             return;
         }
 
-        $new_max = $akun->max_user + 1;
+        $new_max = min($limit, (int) $akun->max_user + 1);
 
         $status = ($is_single_use_product && $new_max >= $limit)
             ? 'terjual'

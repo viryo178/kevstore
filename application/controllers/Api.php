@@ -192,14 +192,18 @@ class Api extends CI_Controller
             return $this->json_error('Akun tidak ditemukan', 404);
         }
 
-        $limit = $akun->kategori === 'private' ? 1 : 4;
+        $product = strtoupper((string) $akun->nama_akun);
+        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
+        $limit = $is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4);
 
         if ((int) $akun->max_user >= $limit) {
             return $this->json_error('Max user sudah penuh', 422);
         }
 
-        $new_max = (int) $akun->max_user + 1;
-        $status = $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
+        $new_max = min($limit, (int) $akun->max_user + 1);
+        $status = $is_single_use_product && $new_max >= $limit
+            ? 'terjual'
+            : $this->resolve_akun_status($akun->kategori, $new_max, $akun->status);
         $now = date('Y-m-d H:i:s');
 
         $this->db->where('id_akun', (int) $id)->update('akun', [

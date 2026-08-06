@@ -12,6 +12,13 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
+-- Normalisasi data Gemini lama: satu akun hanya memiliki satu penjualan.
+UPDATE `akun`
+SET `max_user` = 1,
+    `status` = 'terjual'
+WHERE UPPER(TRIM(`nama_akun`)) = 'GEMINI'
+  AND `max_user` >= 1;
+
 CREATE TABLE IF NOT EXISTS `akun_bin` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `original_id` int(11) DEFAULT NULL,

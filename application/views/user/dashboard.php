@@ -780,7 +780,7 @@
 <td>
 
 <?php
-$limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO'], true)
+$limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO', 'GEMINI'], true)
   ? 1
   : (($a->kategori == 'private') ? 1 : 4);
 ?>
@@ -819,6 +819,7 @@ $limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO'], t
     data-nama="<?= htmlspecialchars((string)$a->nama_akun, ENT_QUOTES, 'UTF-8') ?>"
     data-username="<?= htmlspecialchars((string)$a->username, ENT_QUOTES, 'UTF-8') ?>"
     data-password="<?= htmlspecialchars((string)$a->password, ENT_QUOTES, 'UTF-8') ?>"
+    data-two-fa="<?= htmlspecialchars((string)($a->two_fa ?? ''), ENT_QUOTES, 'UTF-8') ?>"
     data-max="<?= $a->max_user ?>"
     data-kategori="<?= $a->kategori ?>">
 
@@ -1434,22 +1435,25 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
   }
 
   function copyToClipboard(text) {
+    const fallbackCopy = () => new Promise((resolve, reject) => {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      const copied = document.execCommand('copy');
+      textarea.remove();
+      copied ? resolve() : reject(new Error('Clipboard tidak tersedia'));
+    });
+
     if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
+      return navigator.clipboard.writeText(text).catch(fallbackCopy);
     }
 
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-
-    return new Promise((resolve, reject) => {
-      document.execCommand('copy') ? resolve() : reject();
-      textarea.remove();
-    });
+    return fallbackCopy();
   }
 
   function escapeHtml(value) {
@@ -1462,7 +1466,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
   }
 
   function getAkunLimit(kategori, namaAkun) {
-    if (['SPOTIFY', 'LEONARDO'].includes(String(namaAkun || '').toUpperCase())) return 1;
+    if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(String(namaAkun || '').toUpperCase())) return 1;
     return kategori === 'private' ? 1 : 4;
   }
 
@@ -1513,6 +1517,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
       copyButton.dataset.nama = akun.nama_akun || '';
       copyButton.dataset.username = akun.username || '';
       copyButton.dataset.password = akun.password || '';
+      copyButton.dataset.twoFa = akun.two_fa || '';
       copyButton.dataset.max = String(maxUser);
       copyButton.dataset.kategori = akun.kategori || '';
       copyButton.disabled = maxUser >= limit;
@@ -1551,11 +1556,22 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
 
     const id = target.dataset.id;
     const kategori = target.dataset.kategori;
+    const product = String(target.dataset.nama || '').toUpperCase();
     const username = target.dataset.username || '';
     const password = target.dataset.password || '';
-    const loginText = getLoginText(kategori, username, password);
+    const twoFa = target.dataset.twoFa || '';
+    const copyText = product === 'GEMINI' ? twoFa : getLoginText(kategori, username, password);
 
-    copyToClipboard(loginText)
+    if (product === 'GEMINI' && copyText === '') {
+      alert('Data 2FA Gemini masih kosong');
+      return;
+    }
+
+    if (target.dataset.processing === '1') return;
+    target.dataset.processing = '1';
+    target.disabled = true;
+
+    copyToClipboard(copyText)
       .then(() => fetch(
         '<?= base_url('user/ajax_tambah_max_user/') ?>' +
         id, {
@@ -1568,13 +1584,18 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
       .then(data => {
         if (data.status === 'success') {
           updateMaxUserRow(id, data);
-          alert('Data login berhasil dicopy');
+          alert(product === 'GEMINI' ? '2FA Gemini berhasil disalin' : 'Data login berhasil dicopy');
         } else {
+          target.disabled = false;
           alert(data.message);
         }
       })
       .catch(() => {
-        alert('Gagal copy data login');
+        target.disabled = false;
+        alert('Gagal menyalin data');
+      })
+      .finally(() => {
+        delete target.dataset.processing;
       });
 
   });
