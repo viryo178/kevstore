@@ -497,7 +497,7 @@
         'GROK' => 0,
         'LEONARDO' => 0,
       ];
-      $inactive_statuses = ['deactived', 'disable_x', 'disable_email', 'ban'];
+      $inactive_statuses = ['deactived', 'tidak_preimum', 'lainnya', 'ban'];
 
       if (!empty($akun)) {
         foreach ($akun as $a) {
@@ -1059,8 +1059,8 @@ $limit = in_array(strtoupper(trim((string) $a->nama_akun)), ['SPOTIFY', 'LEONARD
                 <option value="verif">Verif</option>
                 <option value="deactived">Deactived</option>
                 <option value="ban">Ban</option>
-                <option value="disable_x">Disable X</option>
-                <option value="disable_email">Disable Email</option>
+                <option value="tidak_preimum">Tidak Premium</option>
+                <option value="lainnya">Lainnya</option>
                 <option value="terjual">Terjual</option>
 
               </select>

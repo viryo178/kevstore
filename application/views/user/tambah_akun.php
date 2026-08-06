@@ -36,8 +36,8 @@
                 <option value="verif">Verif</option>
                 <option value="deactived">Deactived</option>
                 <option value="ban">Ban</option>
-                <option value="disable_x">Disable X</option>
-                <option value="disable_email">Disable Email</option>
+                <option value="tidak_preimum">Tidak Premium</option>
+                <option value="lainnya">Lainnya</option>
                 <option value="terjual">Terjual</option>
               </select>
             </div>

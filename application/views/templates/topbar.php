@@ -47,7 +47,7 @@
     ->result();
 
   $status_problem = $this->db
-    ->where_in('status', ['deactived', 'verif', 'ban', 'disable_x', 'disable_email'])
+    ->where_in('status', ['deactived', 'verif', 'ban', 'tidak_preimum', 'lainnya'])
     ->get('akun')
     ->result();
 
@@ -251,8 +251,8 @@
                   <option value="verif">Verif</option>
                   <option value="deactived">Akun Bermasalah</option>
                   <option value="ban">Ban</option>
-                  <option value="disable_x">Disable X</option>
-                  <option value="disable_email">Disable Email</option>
+                  <option value="tidak_preimum">Tidak Premium</option>
+                  <option value="lainnya">Lainnya</option>
                   <option value="terjual">Terjual</option>
                 </select>
               </div>

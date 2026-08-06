@@ -1,6 +1,6 @@
 <?php
 $products = ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'];
-$problemStatuses = ['deactived', 'disable_x', 'disable_email', 'ban', 'verif'];
+$problemStatuses = ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif'];
 $stats = ['total' => count($akun ?? []), 'aktif' => 0, 'bermasalah' => 0];
 $unsold = array_fill_keys($products, 0);
 
@@ -67,6 +67,55 @@ foreach ($products as $product) {
 </style>
 <style>
 .dashboard-main-grid .metric-summary .metric-card .card-body{align-content:start!important;padding-top:7px!important}
+</style>
+
+<style>
+/* Lima kartu produk dalam satu baris dan ikon mengikuti kartu ringkasan. */
+@media (min-width:1200px){
+  .dashboard-main-grid{grid-template-columns:repeat(15,minmax(0,1fr))!important}
+  .metric-link.metric-summary{grid-column:span 5!important}
+  .metric-link.metric-product{grid-column:span 3!important}
+}
+.dashboard .metric-product .metric-card .d-flex.align-items-center{
+  grid-template-columns:56px minmax(0,1fr)!important;
+  gap:12px!important;
+}
+.dashboard .metric-product .card-icon{
+  position:relative!important;
+  width:56px!important;
+  height:56px!important;
+  flex:0 0 56px!important;
+  margin:0!important;
+  border-radius:16px!important;
+  display:grid!important;
+  place-items:center!important;
+  box-shadow:none!important;
+}
+.dashboard .metric-product .card-icon i{
+  font-size:28px!important;
+  line-height:1!important;
+}
+.product-card-spotify{border-color:rgba(34,197,94,.42)!important}
+.dashboard .product-card-spotify .card-icon{color:#4ade80!important;background:rgba(34,197,94,.14)!important}
+.product-card-leonardo{border-color:rgba(239,68,68,.42)!important}
+.dashboard .product-card-leonardo .card-icon{color:#f87171!important;background:rgba(239,68,68,.14)!important}
+.product-card-gemini{border-color:rgba(234,179,8,.44)!important}
+.dashboard .product-card-gemini .card-icon{color:#facc15!important;background:rgba(234,179,8,.14)!important}
+.product-card-zoom{border-color:rgba(59,130,246,.44)!important}
+.dashboard .product-card-zoom .card-icon{color:#60a5fa!important;background:rgba(59,130,246,.14)!important}
+.product-card-adobe{border-color:rgba(168,85,247,.44)!important}
+.dashboard .product-card-adobe .card-icon{color:#c084fc!important;background:rgba(168,85,247,.14)!important}
+@media(max-width:1199px){
+  .dashboard-main-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  .metric-link.metric-summary,.metric-link.metric-product{grid-column:span 2!important}
+}
+@media(max-width:767px){
+  .metric-link.metric-summary,.metric-link.metric-product{grid-column:span 3!important}
+}
+@media(max-width:575px){
+  .dashboard-main-grid{grid-template-columns:1fr!important}
+  .metric-link.metric-summary,.metric-link.metric-product{grid-column:1/-1!important}
+}
 </style>
 
 <main id="main" class="main">

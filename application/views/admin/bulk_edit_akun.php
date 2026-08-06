@@ -42,8 +42,8 @@
                     <option value="verif" <?= $status_akun === 'verif' ? 'selected' : '' ?>>Verif</option>
                     <option value="deactived" <?= $status_akun === 'deactived' ? 'selected' : '' ?>>Akun Bermasalah</option>
                     <option value="ban" <?= $status_akun === 'ban' ? 'selected' : '' ?>>Ban</option>
-                    <option value="disable_x" <?= $status_akun === 'disable_x' ? 'selected' : '' ?>>Disable X</option>
-                    <option value="disable_email" <?= $status_akun === 'disable_email' ? 'selected' : '' ?>>Disable Email</option>
+                    <option value="tidak_preimum" <?= $status_akun === 'tidak_preimum' ? 'selected' : '' ?>>Tidak Premium</option>
+                    <option value="lainnya" <?= $status_akun === 'lainnya' ? 'selected' : '' ?>>Lainnya</option>
                     <option value="terjual" <?= $status_akun === 'terjual' ? 'selected' : '' ?>>Terjual</option>
                   </select>
                 </div>

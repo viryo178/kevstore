@@ -5,6 +5,11 @@
   .account-type-card .form-control:focus, .account-type-card .form-select:focus { background:#081225; color:#fff; border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,.18); }
   .account-type-table { color:#dbe7ff; }
   .account-type-table > :not(caption) > * > * { background:transparent; color:inherit; border-color:rgba(148,163,184,.14); }
+  .account-type-status { display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; line-height:1.2; }
+  .account-type-status.is-active { color:#4ade80; background:rgba(34,197,94,.1); border:1px solid #22c55e; box-shadow:0 0 14px rgba(34,197,94,.12); }
+  .account-type-status.is-inactive { color:#94a3b8; background:rgba(148,163,184,.09); border:1px solid #64748b; }
+  .account-type-delete { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; padding:0; color:#f87171; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.55); border-radius:9px; }
+  .account-type-delete:hover { color:#fff; background:#dc3545; border-color:#dc3545; }
 </style>
 
 <main id="main" class="main">
@@ -58,14 +63,21 @@
             <h5 class="card-title">Daftar Jenis Akun</h5>
             <div class="table-responsive">
               <table class="table account-type-table align-middle">
-                <thead><tr><th>Nama</th><th>Slug</th><th>Status</th><th>Website</th></tr></thead>
+                <thead><tr><th>Nama</th><th>Slug</th><th>Status</th><th>Website</th><th class="text-center">Aksi</th></tr></thead>
                 <tbody>
                   <?php foreach (($jenis_akun ?? []) as $type): ?>
                     <tr>
                       <td><?= htmlspecialchars($type->nama_akun, ENT_QUOTES, 'UTF-8') ?></td>
                       <td><?= htmlspecialchars((string) $type->slug, ENT_QUOTES, 'UTF-8') ?></td>
-                      <td><span class="badge <?= $type->status === 'aktif' ? 'bg-success' : 'bg-secondary' ?>"><?= ucfirst($type->status) ?></span></td>
+                      <td><span class="account-type-status <?= $type->status === 'aktif' ? 'is-active' : 'is-inactive' ?>"><?= ucfirst($type->status) ?></span></td>
                       <td><?php if (!empty($type->website_resmi)): ?><a href="<?= htmlspecialchars($type->website_resmi, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Buka</a><?php else: ?>-<?php endif; ?></td>
+                      <td class="text-center">
+                        <form action="<?= base_url('admin/jenis_akun/hapus/' . (int) $type->id_jenis_akun) ?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus jenis akun <?= htmlspecialchars(addslashes($type->nama_akun), ENT_QUOTES, 'UTF-8') ?>? Data akun tidak ikut terhapus.');">
+                          <button type="submit" class="account-type-delete" title="Hapus <?= htmlspecialchars($type->nama_akun, ENT_QUOTES, 'UTF-8') ?>" aria-label="Hapus <?= htmlspecialchars($type->nama_akun, ENT_QUOTES, 'UTF-8') ?>">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </form>
+                      </td>
                     </tr>
                   <?php endforeach; ?>
                 </tbody>

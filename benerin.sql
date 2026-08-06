@@ -16,6 +16,27 @@ ALTER TABLE `akun`
 ALTER TABLE `akun`
   MODIFY COLUMN `kategori` enum('private','sharing','belum_terjual','done') DEFAULT NULL;
 
+-- Samakan enum status aplikasi dan database. Tahap pertama tetap menerima
+-- status lama agar datanya dapat dimigrasikan tanpa terpotong.
+ALTER TABLE `akun`
+  MODIFY COLUMN `status` enum(
+    'aktif','verif','deactived','tidak_preimum','lainnya',
+    'disable_x','disable_email','ban','terjual'
+  ) NOT NULL DEFAULT 'aktif';
+
+UPDATE `akun`
+SET `status` = CASE
+  WHEN `status` = 'disable_x' THEN 'tidak_preimum'
+  WHEN `status` = 'disable_email' THEN 'lainnya'
+  ELSE `status`
+END
+WHERE `status` IN ('disable_x', 'disable_email');
+
+ALTER TABLE `akun`
+  MODIFY COLUMN `status` enum(
+    'aktif','verif','deactived','tidak_preimum','lainnya','ban','terjual'
+  ) NOT NULL DEFAULT 'aktif';
+
 -- Isi master jenis akun. Data yang sudah ada tidak akan diduplikasi.
 INSERT INTO `jenis_akun` (`nama_akun`, `slug`, `website_resmi`, `status`)
 VALUES
@@ -89,6 +110,15 @@ SELECT IF(
       AND TABLE_NAME = 'akun'
       AND COLUMN_NAME = 'kategori'
       AND COLUMN_TYPE LIKE '%done%'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun'
+      AND COLUMN_NAME = 'status'
+      AND COLUMN_TYPE LIKE '%tidak_preimum%'
+      AND COLUMN_TYPE LIKE '%lainnya%'
   ),
   'DATABASE SIAP',
   'DATABASE BELUM LENGKAP'

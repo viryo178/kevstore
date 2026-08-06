@@ -663,8 +663,8 @@
       $total_verif = 0;
       $total_aktif = 0;
       $total_deactived = 0;
-      $total_disable_x = 0;
-      $total_disable_email = 0;
+      $total_tidak_preimum = 0;
+      $total_lainnya = 0;
       $total_ban = 0;
       $total_belum_terjual = 0;
 
@@ -682,11 +682,11 @@
         if ($status_akun == 'deactived') {
           $total_deactived++;
         }
-        if ($status_akun == 'disable_x') {
-          $total_disable_x++;
+        if ($status_akun == 'tidak_preimum') {
+          $total_tidak_preimum++;
         }
-        if ($status_akun == 'disable_email') {
-          $total_disable_email++;
+        if ($status_akun == 'lainnya') {
+          $total_lainnya++;
         }
         if ($status_akun == 'ban') {
           $total_ban++;
@@ -699,8 +699,8 @@
       $persen_verif = $total_akun > 0 ? round(($total_verif / $total_akun) * 100) : 0;
       $persen_aktif = $total_akun > 0 ? round(($total_aktif / $total_akun) * 100) : 0;
       $persen_deactived = $total_akun > 0 ? round(($total_deactived / $total_akun) * 100) : 0;
-      $persen_disable_x = $total_akun > 0 ? round(($total_disable_x / $total_akun) * 100) : 0;
-      $persen_disable_email = $total_akun > 0 ? round(($total_disable_email / $total_akun) * 100) : 0;
+      $persen_tidak_preimum = $total_akun > 0 ? round(($total_tidak_preimum / $total_akun) * 100) : 0;
+      $persen_lainnya = $total_akun > 0 ? round(($total_lainnya / $total_akun) * 100) : 0;
       $persen_ban = $total_akun > 0 ? round(($total_ban / $total_akun) * 100) : 0;
       $persen_belum_terjual = $total_akun > 0 ? round(($total_belum_terjual / $total_akun) * 100) : 0;
 
@@ -710,7 +710,7 @@
       foreach ($summary_accounts as $summary_account) {
         $summary_status = kevstore_effective_akun_status($summary_account->status ?? '', $summary_account->note ?? '');
         if ($summary_status === 'aktif') $summary['aktif']++;
-        if (in_array($summary_status, ['deactived', 'disable_x', 'disable_email', 'ban', 'verif'], true)) $summary['bermasalah']++;
+        if (in_array($summary_status, ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif'], true)) $summary['bermasalah']++;
         $summary_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
         if (isset($summary_products[$summary_product])) $summary_products[$summary_product]++;
       }
@@ -896,7 +896,7 @@
             <div class="card-body">
 
               <h5 class="card-title">
-                Disable X <span>| Total</span>
+                Tidak Premium <span>| Total</span>
               </h5>
 
               <div class="d-flex align-items-center">
@@ -909,10 +909,10 @@
 
                 <div class="ps-3">
 
-                  <h6><?= $total_disable_x ?></h6>
+                  <h6><?= $total_tidak_preimum ?></h6>
 
                   <span class="text-danger small pt-1 fw-bold">
-                    <?= $persen_disable_x ?>%
+                    <?= $persen_tidak_preimum ?>%
                   </span>
 
                 </div>
@@ -933,7 +933,7 @@
             <div class="card-body">
 
               <h5 class="card-title">
-                Disable Email <span>| Total</span>
+                Lainnya <span>| Total</span>
               </h5>
 
               <div class="d-flex align-items-center">
@@ -946,10 +946,10 @@
 
                 <div class="ps-3">
 
-                  <h6><?= $total_disable_email ?></h6>
+                  <h6><?= $total_lainnya ?></h6>
 
                   <span class="text-danger small pt-1 fw-bold">
-                    <?= $persen_disable_email ?>%
+                    <?= $persen_lainnya ?>%
                   </span>
 
                 </div>
@@ -1266,16 +1266,16 @@
                             Ban
                           </span>
 
-                        <?php elseif ($status_akun == 'disable_x'): ?>
+                        <?php elseif ($status_akun == 'tidak_preimum'): ?>
 
                           <span class="bg-border-danger">
-                            Disable X
+                            Tidak Premium
                           </span>
 
-                        <?php elseif ($status_akun == 'disable_email'): ?>
+                        <?php elseif ($status_akun == 'lainnya'): ?>
 
                           <span class="bg-border-danger">
-                            Disable Email
+                            Lainnya
                           </span>
 
                         <?php endif; ?>
@@ -1700,8 +1700,8 @@
               <option value="verif" ${selectedOption(account.status, 'verif')}>Verif</option>
               <option value="deactived" ${selectedOption(account.status, 'deactived')}>Akun Bermasalah</option>
               <option value="ban" ${selectedOption(account.status, 'ban')}>Ban</option>
-              <option value="disable_x" ${selectedOption(account.status, 'disable_x')}>Disable X</option>
-              <option value="disable_email" ${selectedOption(account.status, 'disable_email')}>Disable Email</option>
+              <option value="tidak_preimum" ${selectedOption(account.status, 'tidak_preimum')}>Tidak Premium</option>
+              <option value="lainnya" ${selectedOption(account.status, 'lainnya')}>Lainnya</option>
               <option value="terjual" ${selectedOption(account.status, 'terjual')}>Terjual</option>
             </select>
           </div>

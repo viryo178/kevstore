@@ -39,7 +39,7 @@ class User extends CI_Controller
 
     private function resolve_akun_status($kategori, $max_user, $status)
     {
-        $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+        $manual_statuses = ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif', 'terjual'];
         $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
         $kategori = strtolower(trim((string) $kategori));
 
@@ -74,11 +74,11 @@ class User extends CI_Controller
         $note = str_replace(['-', '_'], ' ', $note);
 
         if (preg_match('/\bdisable\s*x\b/', $note)) {
-            return 'disable_x';
+            return 'tidak_preimum';
         }
 
         if (preg_match('/\bdisable\s*email\b/', $note)) {
-            return 'disable_email';
+            return 'lainnya';
         }
 
         if (preg_match('/\bban(ned)?\b/', $note)) {
@@ -279,8 +279,8 @@ private function get_notification_data()
             'deactived',
             'verif',
             'ban',
-            'disable_x',
-            'disable_email'
+            'tidak_preimum',
+            'lainnya'
         ])
 
         ->order_by('id_akun', 'DESC')
@@ -486,7 +486,7 @@ private function get_notification_data()
 
     public function deactived()
     {
-        $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+        $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif')";
 
         $data['akun'] = $this->db
             ->where($status_filter, null, false)

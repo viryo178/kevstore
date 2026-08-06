@@ -110,7 +110,7 @@ class Admin extends CI_Controller
 
     private function resolve_akun_status($kategori, $max_user, $status)
     {
-        $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+        $manual_statuses = ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif', 'terjual'];
         $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
         $kategori = strtolower(trim((string) $kategori));
 
@@ -145,11 +145,11 @@ class Admin extends CI_Controller
         $note = str_replace(['-', '_'], ' ', $note);
 
         if (preg_match('/\bdisable\s*x\b/', $note)) {
-            return 'disable_x';
+            return 'tidak_preimum';
         }
 
         if (preg_match('/\bdisable\s*email\b/', $note)) {
-            return 'disable_email';
+            return 'lainnya';
         }
 
         if (preg_match('/\bban(ned)?\b/', $note)) {
@@ -213,11 +213,13 @@ class Admin extends CI_Controller
             return false;
         }
 
-        foreach ($this->default_account_types() as $name) {
-            if ($this->find_account_type($name)) {
-                continue;
-            }
+        // Seed awal hanya saat tabel benar-benar kosong. Dengan begitu jenis akun
+        // yang sengaja dihapus admin tidak dibuat ulang pada request berikutnya.
+        if ($this->db->count_all('jenis_akun') > 0) {
+            return true;
+        }
 
+        foreach ($this->default_account_types() as $name) {
             $this->db->insert('jenis_akun', [
                 'nama_akun' => $name,
                 'slug' => $this->account_type_slug($name),
@@ -428,8 +430,8 @@ private function get_notification_data()
             'deactived',
             'verif',
             'ban',
-            'disable_x',
-            'disable_email'
+            'tidak_preimum',
+            'lainnya'
         ])
 
         ->order_by('id_akun', 'DESC')
@@ -773,7 +775,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
     public function deactived()
     {
-        $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+        $status_filter = "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif')";
 
         $data['akun'] = $this->db
             ->where($status_filter, null, false)
@@ -1059,6 +1061,41 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $this->load->view('templates/sidebar');
         $this->load->view('admin/jenis_akun', $data);
         $this->load->view('templates/footer');
+    }
+
+    public function hapus_jenis_akun($id)
+    {
+        if (strtoupper((string) $this->input->method()) !== 'POST') {
+            show_404();
+            return;
+        }
+
+        $id = (int) $id;
+        $type = $this->db->get_where('jenis_akun', ['id_jenis_akun' => $id])->row();
+        if (!$type) {
+            $this->session->set_flashdata('error', 'Jenis akun tidak ditemukan.');
+            redirect('admin/jenis_akun');
+            return;
+        }
+
+        $linked_accounts = $this->db
+            ->where('jenis_akun_id', $id)
+            ->count_all_results('akun');
+        $deleted = $this->db
+            ->where('id_jenis_akun', $id)
+            ->delete('jenis_akun');
+
+        if ($deleted) {
+            $message = 'Jenis akun ' . $type->nama_akun . ' berhasil dihapus.';
+            if ($linked_accounts > 0) {
+                $message .= ' Relasi pada ' . $linked_accounts . ' akun dikosongkan, tetapi data akunnya tetap aman.';
+            }
+            $this->session->set_flashdata('success', $message);
+        } else {
+            $this->session->set_flashdata('error', 'Jenis akun gagal dihapus.');
+        }
+
+        redirect('admin/jenis_akun');
     }
 
     private function parse_bulk_account_rows($bulk_accounts, $bulk_product)

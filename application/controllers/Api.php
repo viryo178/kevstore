@@ -111,8 +111,8 @@ class Api extends CI_Controller
             'verif' => 0,
             'aktif' => 0,
             'deactived' => 0,
-            'disable_x' => 0,
-            'disable_email' => 0,
+            'tidak_preimum' => 0,
+            'lainnya' => 0,
             'ban' => 0,
             'terjual' => 0,
             'belum_terjual' => 0,
@@ -3536,11 +3536,11 @@ class Api extends CI_Controller
         $note = str_replace(['-', '_'], ' ', $note);
 
         if (preg_match('/\bdisable\s*x\b/', $note)) {
-            return 'disable_x';
+            return 'tidak_preimum';
         }
 
         if (preg_match('/\bdisable\s*email\b/', $note)) {
-            return 'disable_email';
+            return 'lainnya';
         }
 
         if (preg_match('/\bban(ned)?\b/', $note)) {
@@ -4190,7 +4190,7 @@ class Api extends CI_Controller
 
     private function resolve_akun_status($kategori, $max_user, $status)
     {
-        $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
+        $manual_statuses = ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif', 'terjual'];
         $status = $this->normalize_status($status);
         $kategori = strtolower(trim((string) $kategori));
 
@@ -4240,7 +4240,7 @@ class Api extends CI_Controller
 
     private function status_problem_filter()
     {
-        return "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'disable_x', 'disable_email', 'ban', 'verif')";
+        return "LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) IN ('deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif')";
     }
 
     private function expired_date_expression()
