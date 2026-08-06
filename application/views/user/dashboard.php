@@ -780,7 +780,7 @@
 <td>
 
 <?php
-$limit = in_array(strtoupper((string) $a->nama_akun), ['SPOTIFY', 'LEONARDO', 'GEMINI'], true)
+$limit = in_array(strtoupper(trim((string) $a->nama_akun)), ['SPOTIFY', 'LEONARDO', 'GEMINI'], true)
   ? 1
   : (($a->kategori == 'private') ? 1 : 4);
 ?>
@@ -1466,7 +1466,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
   }
 
   function getAkunLimit(kategori, namaAkun) {
-    if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(String(namaAkun || '').toUpperCase())) return 1;
+    if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(String(namaAkun || '').trim().toUpperCase())) return 1;
     return kategori === 'private' ? 1 : 4;
   }
 
@@ -1556,7 +1556,7 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
 
     const id = target.dataset.id;
     const kategori = target.dataset.kategori;
-    const product = String(target.dataset.nama || '').toUpperCase();
+    const product = String(target.dataset.nama || '').trim().toUpperCase();
     const username = target.dataset.username || '';
     const password = target.dataset.password || '';
     const twoFa = target.dataset.twoFa || '';

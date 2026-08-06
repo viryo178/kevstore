@@ -21,6 +21,7 @@
   $is_dashboard = (($class == 'admin' || $class == 'user') && $method == 'index');
   $is_penjualan = ($method == 'akun_penjualan');
   $is_bin = in_array($method, ['bin', 'pulihkan_akun_bin'], true);
+  $is_jenis_akun = ($method === 'jenis_akun');
 
   // KELOLA AKUN ACTIVE
   $is_kelola = in_array($method, [
@@ -133,6 +134,15 @@
       </ul>
 
     </li>
+
+    <?php if ($role_prefix === 'admin'): ?>
+    <li class="nav-item">
+      <a class="nav-link <?= $is_jenis_akun ? '' : 'collapsed' ?>" href="<?= base_url('admin/jenis_akun') ?>">
+        <i class="bi bi-tags"></i>
+        <span>Tambahkan Jenis Akun</span>
+      </a>
+    </li>
+    <?php endif; ?>
 
     <!-- Profile -->
     <li class="nav-item">

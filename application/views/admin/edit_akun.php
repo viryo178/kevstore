@@ -68,7 +68,7 @@
           </div>
 
           <div class="d-flex justify-content-end gap-2">
-            <a href="<?= base_url('admin/kelola_akun') ?>" class="btn btn-secondary">Batal</a>
+            <a href="<?= base_url('admin') ?>" class="btn btn-secondary">Batal</a>
             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
           </div>
         </form>

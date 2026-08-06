@@ -1043,6 +1043,8 @@ private function get_notification_data()
     // ==============================
     public function ajax_tambah_max_user($id)
     {
+        $this->output->set_content_type('application/json');
+
         $akun = $this->db
             ->get_where('akun', ['id_akun' => $id])
             ->row();
@@ -1056,7 +1058,7 @@ private function get_notification_data()
             return;
         }
 
-        $product = strtoupper((string) $akun->nama_akun);
+        $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
@@ -1415,7 +1417,7 @@ private function get_notification_data()
             $username = trim((string) $this->input->post('username'));
 
             if ($this->username_exists($username, $id)) {
-                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'user/detail_akun/' . $id);
+                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'user');
                 return;
             }
 
@@ -1525,7 +1527,7 @@ private function get_notification_data()
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('user/detail_akun/' . $id);
+                redirect('user');
             } else {
 
                 $this->session->set_flashdata(
@@ -1534,7 +1536,7 @@ private function get_notification_data()
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('user/kelola_akun');
+                redirect('user');
             }
         }
 

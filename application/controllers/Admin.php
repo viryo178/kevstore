@@ -178,6 +178,84 @@ class Admin extends CI_Controller
         return $this->db->count_all_results() > 0;
     }
 
+    private function default_account_types()
+    {
+        return ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'];
+    }
+
+    private function account_type_slug($name)
+    {
+        $slug = strtolower(trim((string) $name));
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug);
+        return trim((string) $slug, '-');
+    }
+
+    private function find_account_type($name)
+    {
+        if (!$this->db->table_exists('jenis_akun')) {
+            return null;
+        }
+
+        return $this->db->query(
+            "SELECT * FROM `jenis_akun` WHERE UPPER(TRIM(`nama_akun`)) = ? LIMIT 1",
+            [strtoupper(trim((string) $name))]
+        )->row();
+    }
+
+    private function ensure_default_account_types()
+    {
+        if (!$this->db->table_exists('jenis_akun')) {
+            return false;
+        }
+
+        foreach ($this->default_account_types() as $name) {
+            if ($this->find_account_type($name)) {
+                continue;
+            }
+
+            $this->db->insert('jenis_akun', [
+                'nama_akun' => $name,
+                'slug' => $this->account_type_slug($name),
+                'website_resmi' => null,
+                'status' => 'aktif',
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return true;
+    }
+
+    private function get_bulk_account_types()
+    {
+        if (!$this->ensure_default_account_types()) {
+            return $this->default_account_types();
+        }
+
+        $rows = $this->db
+            ->select('nama_akun')
+            ->where('status', 'aktif')
+            ->order_by('nama_akun', 'ASC')
+            ->get('jenis_akun')
+            ->result_array();
+
+        $types = [];
+        foreach ($rows as $row) {
+            $name = strtoupper(trim((string) ($row['nama_akun'] ?? '')));
+            if ($name !== '') {
+                $types[$name] = $name;
+            }
+        }
+
+        return $types ? array_values($types) : $this->default_account_types();
+    }
+
+    private function get_account_type_id($name)
+    {
+        $this->ensure_default_account_types();
+        $type = $this->find_account_type($name);
+        return $type ? (int) $type->id_jenis_akun : null;
+    }
+
     private function respond_akun_error($message, $redirect = 'admin/kelola_akun')
     {
         if ($this->is_ajax_request()) {
@@ -817,12 +895,15 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
     public function bulk_tambah_akun()
     {
+        $bulk_products = $this->get_bulk_account_types();
+
         if (!$this->input->post()) {
             $data = $this->get_notification_data();
             $bulk_product = strtoupper(trim((string) $this->input->get('product')));
-            $data['bulk_product'] = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
+            $data['bulk_products'] = $bulk_products;
+            $data['bulk_product'] = in_array($bulk_product, $bulk_products, true)
                 ? $bulk_product
-                : 'SPOTIFY';
+                : ($bulk_products[0] ?? 'SPOTIFY');
 
             $this->load->view('templates/header');
             $this->load->view('templates/topbar', $data);
@@ -834,9 +915,16 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         $bulk_accounts = (string) $this->input->post('bulk_accounts');
         $bulk_product = strtoupper(trim((string) $this->input->post('product')));
-        $bulk_product = in_array($bulk_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
+        $bulk_product = in_array($bulk_product, $bulk_products, true)
             ? $bulk_product
-            : 'SPOTIFY';
+            : ($bulk_products[0] ?? 'SPOTIFY');
+
+        $jenis_akun_id = $this->get_account_type_id($bulk_product);
+        if ($jenis_akun_id === null) {
+            $this->session->set_flashdata('error', 'Jenis akun tidak ditemukan. Tambahkan jenis akun terlebih dahulu.');
+            redirect('admin/bulk_tambah_akun');
+            return;
+        }
 
         if ($bulk_product === 'GEMINI' && !$this->db->field_exists('two_fa', 'akun')) {
             $this->session->set_flashdata('error', 'Kolom 2FA belum tersedia di database. Jalankan benerin.sql terlebih dahulu.');
@@ -873,6 +961,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
             $data = [
                 'nama_akun'        => $bulk_product,
+                'jenis_akun_id'    => $jenis_akun_id,
                 'kategori'         => 'belum_terjual',
                 'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
                 'username'         => $row_username,
@@ -911,6 +1000,60 @@ $data['akun_belum_penuh'] = $available_accounts_query
         }
 
         redirect('admin/kelola_akun?search_akun=' . rawurlencode($bulk_product) . '&product=' . rawurlencode($bulk_product));
+    }
+
+    public function jenis_akun()
+    {
+        if (!$this->db->table_exists('jenis_akun')) {
+            $this->session->set_flashdata('error', 'Tabel jenis_akun belum tersedia. Impor database utama terlebih dahulu.');
+            redirect('admin');
+            return;
+        }
+
+        $this->ensure_default_account_types();
+
+        if ($this->input->post()) {
+            $name = strtoupper(trim((string) $this->input->post('nama_akun')));
+            $slug_input = trim((string) $this->input->post('slug'));
+            $slug = $this->account_type_slug($slug_input !== '' ? $slug_input : $name);
+            $website = trim((string) $this->input->post('website_resmi'));
+            $status = $this->input->post('status') === 'nonaktif' ? 'nonaktif' : 'aktif';
+
+            if ($name === '' || $slug === '') {
+                $this->session->set_flashdata('error', 'Nama jenis akun wajib diisi.');
+            } elseif ($this->find_account_type($name)) {
+                $this->session->set_flashdata('error', 'Jenis akun tersebut sudah tersedia.');
+            } elseif ($this->db->where('slug', $slug)->count_all_results('jenis_akun') > 0) {
+                $this->session->set_flashdata('error', 'Slug sudah digunakan oleh jenis akun lain.');
+            } else {
+                $saved = $this->db->insert('jenis_akun', [
+                    'nama_akun' => $name,
+                    'slug' => $slug,
+                    'website_resmi' => $website !== '' ? $website : null,
+                    'status' => $status,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+                $this->session->set_flashdata(
+                    $saved ? 'success' : 'error',
+                    $saved ? 'Jenis akun berhasil ditambahkan.' : 'Jenis akun gagal ditambahkan.'
+                );
+            }
+
+            redirect('admin/jenis_akun');
+            return;
+        }
+
+        $data = $this->get_notification_data();
+        $data['jenis_akun'] = $this->db
+            ->order_by('nama_akun', 'ASC')
+            ->get('jenis_akun')
+            ->result();
+
+        $this->load->view('templates/header');
+        $this->load->view('templates/topbar', $data);
+        $this->load->view('templates/sidebar');
+        $this->load->view('admin/jenis_akun', $data);
+        $this->load->view('templates/footer');
     }
 
     private function parse_bulk_account_rows($bulk_accounts, $bulk_product)
@@ -1310,6 +1453,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
     // ==============================
     public function ajax_tambah_max_user($id)
     {
+        $this->output->set_content_type('application/json');
+
         $akun = $this->db
             ->get_where('akun', ['id_akun' => $id])
             ->row();
@@ -1323,7 +1468,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             return;
         }
 
-        $product = strtoupper((string) $akun->nama_akun);
+        $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
@@ -1682,7 +1827,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $username = trim((string) $this->input->post('username'));
 
             if ($this->username_exists($username, $id)) {
-                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'admin/detail_akun/' . $id);
+                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'admin');
                 return;
             }
 
@@ -1792,7 +1937,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('admin/detail_akun/' . $id);
+                redirect('admin');
             } else {
 
                 $this->session->set_flashdata(
@@ -1801,7 +1946,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('admin/kelola_akun');
+                redirect('admin');
             }
         }
 

@@ -192,7 +192,7 @@ class Api extends CI_Controller
             return $this->json_error('Akun tidak ditemukan', 404);
         }
 
-        $product = strtoupper((string) $akun->nama_akun);
+        $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $limit = $is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4);
 

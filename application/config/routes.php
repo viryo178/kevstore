@@ -64,6 +64,7 @@ $route['admin/akun_bermasalah'] = 'admin/deactived';
 $route['admin/ganti_password_exp'] = 'admin/ganti_password_exp';
 $route['admin/tambah_akun'] = 'admin/tambah_akun';
 $route['admin/bulk_tambah_akun'] = 'admin/bulk_tambah_akun';
+$route['admin/jenis_akun'] = 'admin/jenis_akun';
 $route['admin/bulk_edit_akun'] = 'admin/bulk_edit_akun';
 $route['admin/edit_akun/(:num)'] = 'admin/edit_akun/$1';
 $route['admin/hapus_akun/(:num)'] = 'admin/hapus_akun/$1';

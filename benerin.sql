@@ -12,6 +12,25 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
+-- Isi master jenis akun. Data yang sudah ada tidak akan diduplikasi.
+INSERT INTO `jenis_akun` (`nama_akun`, `slug`, `website_resmi`, `status`)
+VALUES
+  ('SPOTIFY', 'spotify', NULL, 'aktif'),
+  ('LEONARDO', 'leonardo', NULL, 'aktif'),
+  ('GEMINI', 'gemini', NULL, 'aktif'),
+  ('ZOOM', 'zoom', NULL, 'aktif'),
+  ('ADOBE', 'adobe', NULL, 'aktif')
+ON DUPLICATE KEY UPDATE
+  `nama_akun` = VALUES(`nama_akun`),
+  `status` = 'aktif';
+
+-- Hubungkan akun lama dengan master jenis akun berdasarkan namanya.
+UPDATE `akun` AS a
+INNER JOIN `jenis_akun` AS j
+  ON UPPER(TRIM(a.`nama_akun`)) = UPPER(TRIM(j.`nama_akun`))
+SET a.`jenis_akun_id` = j.`id_jenis_akun`
+WHERE a.`jenis_akun_id` IS NULL;
+
 -- Normalisasi data Gemini lama: satu akun hanya memiliki satu penjualan.
 UPDATE `akun`
 SET `max_user` = 1,
@@ -47,6 +66,11 @@ SELECT IF(
     FROM information_schema.TABLES
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = 'akun_bin'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM `jenis_akun`
+    WHERE UPPER(TRIM(`nama_akun`)) = 'GEMINI'
   ),
   'DATABASE SIAP',
   'DATABASE BELUM LENGKAP'

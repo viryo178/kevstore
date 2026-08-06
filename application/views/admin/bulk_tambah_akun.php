@@ -62,10 +62,10 @@
 
 <main id="main" class="main">
   <?php
-    $bulk_products = ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'];
+    $bulk_products = !empty($bulk_products) ? $bulk_products : ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'];
     $bulk_product = in_array(($bulk_product ?? 'SPOTIFY'), $bulk_products, true)
       ? ($bulk_product ?? 'SPOTIFY')
-      : 'SPOTIFY';
+      : ($bulk_products[0] ?? 'SPOTIFY');
     $bulk_max_user = 0;
   ?>
   <div class="pagetitle">
@@ -87,7 +87,7 @@
             <label for="bulk_product">Jenis Akun</label>
             <select class="form-control" id="bulk_product" name="product" required>
               <?php foreach ($bulk_products as $product): ?>
-                <option value="<?= $product ?>" <?= $bulk_product === $product ? 'selected' : '' ?>><?= ucfirst(strtolower($product)) ?></option>
+                <option value="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" <?= $bulk_product === $product ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst(strtolower($product)), ENT_QUOTES, 'UTF-8') ?></option>
               <?php endforeach; ?>
             </select>
           </div>

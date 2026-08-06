@@ -102,7 +102,7 @@ foreach ($products as $product) {
         <div class="dashboard-toolbar">
           <h5 class="card-title mb-0">
             <span id="availableAccountsTitle">Akun Tersedia</span>
-            <span>| Max User &lt; 4</span>
+            <span>| Batas sesuai jenis akun</span>
           </h5>
         </div>
         <div class="kelola-date-filter dashboard-filter-row">
@@ -141,7 +141,7 @@ foreach ($products as $product) {
               <?php
                 $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
                 $category = (string) ($account->kategori ?? '');
-                $limit = in_array($product, ['SPOTIFY', 'LEONARDO'], true) ? 1 : ($category === 'private' ? 1 : 4);
+                $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true) ? 1 : ($category === 'private' ? 1 : 4);
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
               <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
@@ -159,7 +159,18 @@ foreach ($products as $product) {
                   <?php endif; ?>
                 </td>
                 <td>
-                  <button class="btn btn-sm btn-primary dashboard-action-btn" <?= $maxUser >= $limit ? 'disabled' : '' ?> type="button"><i class="bi bi-clipboard"></i></button>
+                  <button
+                    class="btn btn-sm btn-primary dashboard-action-btn dashboard-copy-btn"
+                    <?= $maxUser >= $limit ? 'disabled' : '' ?>
+                    type="button"
+                    title="<?= $product === 'GEMINI' ? 'Salin 2FA' : 'Salin data login' ?>"
+                    data-id="<?= (int) $account->id_akun ?>"
+                    data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>"
+                    data-username="<?= htmlspecialchars((string) ($account->username ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                    data-password="<?= htmlspecialchars((string) ($account->password ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                    data-two-fa="<?= htmlspecialchars((string) ($account->two_fa ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
                   <a class="btn btn-sm btn-warning dashboard-action-btn" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) ?>"><i class="bi bi-pencil-square"></i></a>
                 </td>
               </tr>
@@ -237,6 +248,88 @@ document.addEventListener('DOMContentLoaded',function(){
  if(!search||!product||!perPage||!info||!prev||!next)return;
  function render(){const q=search.value.toLowerCase().trim(),p=product.value,filtered=rows.filter(r=>(!q||r.dataset.search.includes(q))&&(!p||r.dataset.product===p)),selectedSize=Number(perPage.value),size=selectedSize===-1?Math.max(filtered.length,1):selectedSize,pages=Math.max(1,Math.ceil(filtered.length/size));page=Math.min(page,pages);rows.forEach(r=>r.style.display='none');filtered.slice((page-1)*size,page*size).forEach(r=>r.style.display='');info.textContent=filtered.length?`Menampilkan ${(page-1)*size+1}-${Math.min(page*size,filtered.length)} dari ${filtered.length} entries`:'Tidak ada data';prev.disabled=page<=1;next.disabled=page>=pages}
  [search,product,perPage].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{page=1;render()}));prev.addEventListener('click',()=>{page--;render()});next.addEventListener('click',()=>{page++;render()});render();
+});
+
+function dashboardCopyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(function () {
+      return dashboardFallbackCopy(text);
+    });
+  }
+  return dashboardFallbackCopy(text);
+}
+
+function dashboardFallbackCopy(text) {
+  return new Promise(function (resolve, reject) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    copied ? resolve() : reject(new Error('Clipboard tidak tersedia'));
+  });
+}
+
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('.dashboard-copy-btn');
+  if (!button || button.disabled || button.dataset.processing === '1') return;
+
+  const product = String(button.dataset.product || '').trim().toUpperCase();
+  const twoFa = String(button.dataset.twoFa || '').trim();
+  const username = String(button.dataset.username || '');
+  const password = String(button.dataset.password || '');
+  const copyText = product === 'GEMINI'
+    ? twoFa
+    : `Username: ${username}\nPassword: ${password}`;
+
+  if (product === 'GEMINI' && twoFa === '') {
+    alert('Data 2FA Gemini masih kosong. Isi 2FA terlebih dahulu.');
+    return;
+  }
+
+  button.dataset.processing = '1';
+  button.disabled = true;
+
+  dashboardCopyToClipboard(copyText)
+    .then(function () {
+      return fetch('<?= base_url('admin/ajax_tambah_max_user/') ?>' + encodeURIComponent(button.dataset.id), {
+        method: 'POST',
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+    })
+    .then(function (response) {
+      if (!response.ok) throw new Error('Server mengembalikan HTTP ' + response.status);
+      return response.json();
+    })
+    .then(function (result) {
+      if (result.status !== 'success') throw new Error(result.message || 'Gagal memperbarui akun');
+
+      const row = button.closest('tr');
+      const maxBadge = row ? row.querySelector('td:nth-child(4) span') : null;
+      const categoryCell = row ? row.querySelector('td:nth-child(5)') : null;
+      if (maxBadge) {
+        maxBadge.textContent = result.max_user + ' / ' + result.limit;
+        maxBadge.className = 'bg-border-danger';
+      }
+      if (categoryCell) {
+        categoryCell.innerHTML = '<span class="badge-private">Done</span>';
+      }
+
+      alert(product === 'GEMINI' ? '2FA Gemini berhasil disalin' : 'Data login berhasil disalin');
+    })
+    .catch(function (error) {
+      button.disabled = false;
+      alert(error.message || 'Gagal menyalin data');
+    })
+    .finally(function () {
+      delete button.dataset.processing;
+    });
 });
 </script>
 </main>
