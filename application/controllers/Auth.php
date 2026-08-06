@@ -49,7 +49,6 @@ class Auth extends CI_Controller
 			'username' => $user['username'],
 			'nama_user' => $user['nama_user'] ?? $user['username'],
 			'tipe_user' => $user['tipe_user'],
-			'status' => $user['login'] ?? 'active',
 			'last_login_at' => date('Y-m-d H:i:s'),
 		]);
 

@@ -12,10 +12,6 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
--- Dipakai oleh login web dan endpoint API users.
-ALTER TABLE `users`
-  ADD COLUMN IF NOT EXISTS `login` varchar(20) NOT NULL DEFAULT 'active' AFTER `tipe_user`;
-
 CREATE TABLE IF NOT EXISTS `akun_bin` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `original_id` int(11) DEFAULT NULL,
@@ -38,13 +34,6 @@ SELECT IF(
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = 'akun'
       AND COLUMN_NAME = 'two_fa'
-  )
-  AND EXISTS(
-    SELECT 1
-    FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'login'
   )
   AND EXISTS(
     SELECT 1

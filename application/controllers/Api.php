@@ -33,7 +33,6 @@ class Api extends CI_Controller
             'username' => $user['username'],
             'nama_user' => $user['nama_user'] ?? $user['username'],
             'tipe_user' => $user['tipe_user'],
-            'status' => $user['login'] ?? null,
             'last_login_at' => date('Y-m-d H:i:s'),
         ];
 
@@ -3637,12 +3636,8 @@ class Api extends CI_Controller
         $this->require_admin();
         $this->only_methods(['GET']);
 
-        $login_field = $this->db->field_exists('login', 'users')
-            ? 'login'
-            : "'active' AS login";
-
         $users = $this->db
-            ->select('id_user, username, tipe_user, no_wa, ' . $login_field . ', otp_expired', false)
+            ->select('id_user, username, tipe_user, no_wa, otp_expired')
             ->order_by('id_user', 'ASC')
             ->get('users')
             ->result();
