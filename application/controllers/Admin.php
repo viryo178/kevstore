@@ -36,12 +36,38 @@ class Admin extends CI_Controller
 
     private function normalize_zoom_duration($product, $duration)
     {
-        if (strtoupper(trim((string) $product)) !== 'ZOOM') {
+        $product = strtoupper(trim((string) $product));
+        if (!preg_match('/^ZOOM(?:\s+(?:14\s+HARI|1\s+BULAN))?$/', $product)) {
             return null;
         }
 
         $duration = strtolower(trim((string) $duration));
+        if ($duration === '') {
+            if ($product === 'ZOOM 14 HARI') {
+                $duration = '14_hari';
+            } elseif ($product === 'ZOOM 1 BULAN') {
+                $duration = '1_bulan';
+            }
+        }
         return in_array($duration, ['14_hari', '1_bulan'], true) ? $duration : null;
+    }
+
+    private function bulk_account_name($product, $zoom_duration = null)
+    {
+        $product = strtoupper(trim((string) $product));
+
+        if ($product !== 'ZOOM') {
+            return $product;
+        }
+
+        return $zoom_duration === '14_hari' ? 'ZOOM 14 HARI' : 'ZOOM 1 BULAN';
+    }
+
+    private function is_single_use_product($product)
+    {
+        $product = strtoupper(trim((string) $product));
+        return in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
+            || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
     }
 
     private function ensure_account_bin_table()
@@ -82,7 +108,10 @@ class Admin extends CI_Controller
         // Waktu status terjual mengikuti last_edited_at, karena setiap perubahan
         // status akun pada aplikasi memperbarui field tersebut.
         $eligible_accounts = $this->db
-            ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'ZOOM'])
+            ->group_start()
+                ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'ZOOM'])
+                ->or_like('nama_akun', 'ZOOM ', 'after')
+            ->group_end()
             ->where("LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) = 'terjual'", null, false)
             ->where('last_edited_at IS NOT NULL', null, false)
             ->where('last_edited_at <=', $sold_cutoff)
@@ -575,9 +604,19 @@ private function get_notification_data()
         // akun yang masih bisa dipakai di dashboard
 $available_accounts_query = $this->db->from('akun');
 if ($dashboard_product !== '') {
-    $available_accounts_query->where('nama_akun', $dashboard_product);
+    if ($dashboard_product === 'ZOOM') {
+        $available_accounts_query->group_start()
+            ->where('UPPER(nama_akun)', 'ZOOM')
+            ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
+            ->group_end();
+    } else {
+        $available_accounts_query->where('nama_akun', $dashboard_product);
+    }
 } else {
-    $available_accounts_query->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE']);
+    $available_accounts_query->group_start()
+        ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'])
+        ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
+        ->group_end();
 }
 $data['akun_belum_penuh'] = $available_accounts_query
 
@@ -638,7 +677,14 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $this->db->from('akun');
 
         if ($product !== '') {
-            $this->db->where('UPPER(nama_akun)', $product);
+            if ($product === 'ZOOM') {
+                $this->db->group_start()
+                    ->where('UPPER(nama_akun)', 'ZOOM')
+                    ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
+                    ->group_end();
+            } else {
+                $this->db->where('UPPER(nama_akun)', $product);
+            }
         }
 
         if ($product === 'ZOOM' && $zoom_duration !== null) {
@@ -993,8 +1039,10 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $rows = $this->parse_bulk_account_rows($bulk_accounts, $bulk_product);
 
         $created = 0;
-        $skipped = 0;
+        $invalid = 0;
+        $duplicates = 0;
         $seen_usernames = [];
+        $stored_account_name = $this->bulk_account_name($bulk_product, $bulk_zoom_duration);
 
         foreach ($rows as $row) {
             $row_username = $row['username'];
@@ -1003,21 +1051,21 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $row_two_fa = $row['two_fa'];
 
             if ($row_username === '' || $row_password === '') {
-                $skipped++;
+                $invalid++;
                 continue;
             }
 
             $username_key = strtolower($row_username);
 
             if (isset($seen_usernames[$username_key]) || $this->username_exists($row_username)) {
-                $skipped++;
+                $duplicates++;
                 continue;
             }
 
             $seen_usernames[$username_key] = true;
 
             $data = [
-                'nama_akun'        => $bulk_product,
+                'nama_akun'        => $stored_account_name,
                 'durasi_zoom'      => $bulk_zoom_duration,
                 'jenis_akun_id'    => $jenis_akun_id,
                 'kategori'         => 'belum_terjual',
@@ -1049,12 +1097,19 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         if ($created > 0) {
             $message = $created . ' akun berhasil ditambahkan lewat bulk.';
-            if ($skipped > 0) {
-                $message .= ' ' . $skipped . ' baris dilewati.';
+            if ($invalid > 0) {
+                $message .= ' ' . $invalid . ' baris tidak valid dilewati.';
             }
             $this->session->set_flashdata('success', $message);
         } else {
             $this->session->set_flashdata('error', 'Tidak ada akun yang berhasil ditambahkan.');
+        }
+
+        if ($duplicates > 0) {
+            $this->session->set_flashdata(
+                'error',
+                $duplicates . ' akun gagal ditambahkan karena username sudah ada.'
+            );
         }
 
         redirect('admin/kelola_akun?search_akun=' . rawurlencode($bulk_product) . '&product=' . rawurlencode($bulk_product));
@@ -1299,10 +1354,15 @@ $data['akun_belum_penuh'] = $available_accounts_query
             );
             $row_product = $row['nama_akun'] ?? '';
             $row_zoom_duration = $this->normalize_zoom_duration($row_product, $row['durasi_zoom'] ?? '');
+            $is_zoom_product = preg_match('/^ZOOM(?:\s|$)/', strtoupper(trim((string) $row_product))) === 1;
 
-            if (strtoupper(trim((string) $row_product)) === 'ZOOM' && $row_zoom_duration === null) {
+            if ($is_zoom_product && $row_zoom_duration === null) {
                 $skipped++;
                 continue;
+            }
+
+            if ($is_zoom_product) {
+                $row_product = $this->bulk_account_name('ZOOM', $row_zoom_duration);
             }
 
             $username_key = strtolower($row_username);
@@ -1505,7 +1565,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         // limit berdasarkan kategori
         $product = strtoupper(trim((string) $akun->nama_akun));
-        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
+        $is_single_use_product = $this->is_single_use_product($product);
         $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         // cek limit
@@ -1579,7 +1639,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         }
 
         $product = strtoupper(trim((string) $akun->nama_akun));
-        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
+        $is_single_use_product = $this->is_single_use_product($product);
         $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         if ($akun->max_user >= $limit) {

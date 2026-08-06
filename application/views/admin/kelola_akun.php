@@ -713,6 +713,7 @@
         if ($summary_status === 'aktif') $summary['aktif']++;
         if (in_array($summary_status, ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif'], true)) $summary['bermasalah']++;
         $summary_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
+        if (preg_match('/^ZOOM(?:\s|$)/', $summary_product)) $summary_product = 'ZOOM';
         if (isset($summary_products[$summary_product])) $summary_products[$summary_product]++;
       }
       $summary_cards = [
@@ -1700,7 +1701,7 @@
             <label>Nama Akun</label>
             <input type="text" name="akun[${id}][nama_akun]" class="form-control bulk-product-name" value="${escapeHtml(account.nama_akun)}">
           </div>
-          <div class="col-md-6 mb-3 zoom-duration-field" ${String(account.nama_akun || '').trim().toUpperCase() === 'ZOOM' ? '' : 'hidden'}>
+          <div class="col-md-6 mb-3 zoom-duration-field" ${String(account.nama_akun || '').trim().toUpperCase().startsWith('ZOOM') ? '' : 'hidden'}>
             <label>Variasi Zoom</label>
             <select name="akun[${id}][durasi_zoom]" class="form-select zoom-duration-select">
               <option value="">Pilih variasi</option>
@@ -1779,7 +1780,7 @@
       const row = e.target.closest('.bulk-edit-row');
       const field = row ? row.querySelector('.zoom-duration-field') : null;
       const select = field ? field.querySelector('.zoom-duration-select') : null;
-      const isZoom = e.target.value.trim().toUpperCase() === 'ZOOM';
+      const isZoom = e.target.value.trim().toUpperCase().startsWith('ZOOM');
       if (field) field.hidden = !isZoom;
       if (select) {
         select.required = isZoom;

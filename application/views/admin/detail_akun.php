@@ -166,7 +166,7 @@
                         </div>
 
                         <!-- MAX USER -->
-                        <?php if (strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ZOOM'): ?>
+                        <?php if (preg_match('/^ZOOM(?:\s|$)/', strtoupper(trim((string) ($akun->nama_akun ?? ''))))): ?>
                         <div class="mb-2">
                             <label class="detail-label">Variasi Zoom</label>
                             <div class="detail-box">

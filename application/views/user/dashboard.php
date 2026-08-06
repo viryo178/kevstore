@@ -780,7 +780,8 @@
 <td>
 
 <?php
-$limit = in_array(strtoupper(trim((string) $a->nama_akun)), ['SPOTIFY', 'LEONARDO', 'GEMINI'], true)
+$account_product = strtoupper(trim((string) $a->nama_akun));
+$limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true) || preg_match('/^ZOOM(?:\s|$)/', $account_product)
   ? 1
   : (($a->kategori == 'private') ? 1 : 4);
 ?>
@@ -1512,7 +1513,8 @@ Password : ${password}
   }
 
   function getAkunLimit(kategori, namaAkun) {
-    if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(String(namaAkun || '').trim().toUpperCase())) return 1;
+    const product = String(namaAkun || '').trim().toUpperCase();
+    if (['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'].includes(product) || product.startsWith('ZOOM')) return 1;
     return kategori === 'private' ? 1 : 4;
   }
 
@@ -1606,7 +1608,8 @@ Password : ${password}
 
     const id = target.dataset.id;
     const kategori = target.dataset.kategori;
-    const product = String(target.dataset.nama || '').trim().toUpperCase();
+    const accountName = String(target.dataset.nama || '').trim().toUpperCase();
+    const product = accountName.startsWith('ZOOM') ? 'ZOOM' : accountName;
     const username = target.dataset.username || '';
     const password = target.dataset.password || '';
     const twoFa = target.dataset.twoFa || '';

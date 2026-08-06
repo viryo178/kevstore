@@ -7,6 +7,7 @@ $unsold = array_fill_keys($products, 0);
 foreach (($akun ?? []) as $account) {
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
     $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
+    if (preg_match('/^ZOOM(?:\s|$)/', $product)) $product = 'ZOOM';
     if ($status === 'aktif') $stats['aktif']++;
     if (in_array($status, $problemStatuses, true)) $stats['bermasalah']++;
     if (isset($unsold[$product]) && ($account->kategori ?? '') === 'belum_terjual' && $status === 'aktif') {
@@ -213,12 +214,13 @@ foreach ($products as $product) {
             <thead><tr><th>Nama Akun</th><th>Username</th><th>Password</th><th>Max User</th><th>Kategori</th><th>Aksi</th></tr></thead>
             <tbody><?php foreach (($akun_belum_penuh ?? []) as $account): ?>
               <?php
-                $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
+                $account_name = strtoupper(trim((string) ($account->nama_akun ?? '')));
+                $product = preg_match('/^ZOOM(?:\s|$)/', $account_name) ? 'ZOOM' : $account_name;
                 $category = (string) ($account->kategori ?? '');
-                $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true) ? 1 : ($category === 'private' ? 1 : 4);
+                $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true) ? 1 : ($category === 'private' ? 1 : 4);
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
-              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
+              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
                 <td><strong><?= htmlspecialchars($account->nama_akun ?? '-', ENT_QUOTES, 'UTF-8') ?></strong></td>
                 <td><?= htmlspecialchars($account->username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
                 <td><code class="text-info"><?= htmlspecialchars($account->password ?? '-', ENT_QUOTES, 'UTF-8') ?></code></td>

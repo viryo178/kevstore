@@ -993,7 +993,8 @@ private function get_notification_data()
 
         // limit berdasarkan kategori
         $product = strtoupper(trim((string) $akun->nama_akun));
-        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
+        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
+            || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
         $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         // cek limit
@@ -1067,7 +1068,8 @@ private function get_notification_data()
         }
 
         $product = strtoupper(trim((string) $akun->nama_akun));
-        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
+        $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
+            || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
         $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
         if ($akun->max_user >= $limit) {
