@@ -1174,6 +1174,21 @@
                             Done
                           </span>
 
+                        <?php elseif (in_array($a->kategori, ['1bulan', '2bulan', '3bulan', '4bulan', '1tahun'], true)): ?>
+
+                          <?php
+                            $kategori_durasi_labels = [
+                              '1bulan' => '1 Bulan',
+                              '2bulan' => '2 Bulan',
+                              '3bulan' => '3 Bulan',
+                              '4bulan' => '4 Bulan',
+                              '1tahun' => '1 Tahun',
+                            ];
+                          ?>
+                          <span class="badge-sharing">
+                            <?= $kategori_durasi_labels[$a->kategori] ?>
+                          </span>
+
                         <?php endif; ?>
 
                       </td>

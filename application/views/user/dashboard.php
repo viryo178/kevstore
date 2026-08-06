@@ -804,19 +804,23 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
 
                             <td>
 
-                              <?php if ($a->kategori == 'private'): ?>
-
-                                <span class="badge-private">
-                                  Private
-                                </span>
-
-                              <?php else: ?>
-
-                                <span class="badge-sharing">
-                                  Sharing
-                                </span>
-
-                              <?php endif; ?>
+                              <?php
+                                $kategori_labels = [
+                                  'private' => 'Private',
+                                  'sharing' => 'Sharing',
+                                  'belum_terjual' => 'Belum Terjual',
+                                  'done' => 'Done',
+                                  '1bulan' => '1 Bulan',
+                                  '2bulan' => '2 Bulan',
+                                  '3bulan' => '3 Bulan',
+                                  '4bulan' => '4 Bulan',
+                                  '1tahun' => '1 Tahun',
+                                ];
+                                $kategori_label = $kategori_labels[$a->kategori] ?? (string) $a->kategori;
+                              ?>
+                              <span class="<?= in_array($a->kategori, ['private', 'done'], true) ? 'badge-private' : 'badge-sharing' ?>">
+                                <?= htmlspecialchars($kategori_label, ENT_QUOTES, 'UTF-8') ?>
+                              </span>
 
                             </td>
 
@@ -1545,6 +1549,18 @@ Password : ${password}
   }
 
   function getKategoriBadge(kategori) {
+    const durationLabels = {
+      '1bulan': '1 Bulan',
+      '2bulan': '2 Bulan',
+      '3bulan': '3 Bulan',
+      '4bulan': '4 Bulan',
+      '1tahun': '1 Tahun'
+    };
+
+    if (durationLabels[kategori]) {
+      return '<span class="badge-sharing">' + durationLabels[kategori] + '</span>';
+    }
+
     if (kategori === 'done') {
       return '<span class="badge-private">Done</span>';
     }
