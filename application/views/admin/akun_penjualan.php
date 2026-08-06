@@ -59,7 +59,7 @@ $allSalesTotal = array_sum($allSales);
 .sales-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px}.sales-chart-card,.stock-card{margin:0!important;height:100%}.sales-filter{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}.sales-filter label{display:block;color:#dbe7ff;font-size:13px;font-weight:700;margin-bottom:6px}.sales-filter select{min-width:240px;background:#081225!important;border:1px solid #16366f!important;color:#fff!important;border-radius:10px;padding:9px 12px}.sales-filter-note{color:#8fa5cf;font-size:12px}.sales-summary{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px}.sales-summary-item{background:rgba(15,35,75,.62);border:1px solid rgba(96,165,250,.16);border-radius:12px;padding:13px}.sales-summary-item.total-period{border-color:rgba(96,165,250,.42)}.sales-summary-item.total-all{border-color:rgba(34,197,94,.42)}.sales-summary-item span{display:block;color:#8fa5cf;font-size:11px}.sales-summary-item strong{font-size:22px;color:#fff}.stock-alert{display:flex;align-items:flex-start;gap:12px;border:1px solid;border-radius:13px;padding:14px;margin-bottom:12px}.stock-alert.safe{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}.stock-alert.warning{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35)}.stock-alert.danger{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.4)}.stock-alert i{font-size:21px}.stock-alert.safe i{color:#4ade80}.stock-alert.warning i{color:#fbbf24}.stock-alert.danger i{color:#f87171}.stock-alert strong{display:block;color:#fff}.stock-alert small{color:#9db1d6}.stock-ok{text-align:center;color:#8fa5cf;padding:55px 10px}.stock-ok i{display:block;color:#4ade80;font-size:38px;margin-bottom:10px}@media(max-width:1199px){.sales-summary{grid-template-columns:repeat(4,1fr)}}@media(max-width:991px){.sales-layout{grid-template-columns:1fr}.sales-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:575px){.sales-summary{grid-template-columns:1fr}.sales-filter select{width:100%;min-width:0}}
 </style>
 <style>
-.stock-zoom-breakdown{display:flex;flex-direction:column;gap:3px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}
+.stock-zoom-breakdown{display:flex;flex-direction:column;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}.zoom-stock-state{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;font-size:10px;font-style:normal;font-weight:700}.zoom-stock-state.safe{background:rgba(34,197,94,.14);color:#4ade80}.zoom-stock-state.warning{background:rgba(245,158,11,.14);color:#fbbf24}.zoom-stock-state.danger{background:rgba(239,68,68,.14);color:#f87171}
 </style>
 <main id="main" class="main">
 <div class="pagetitle"><h1>Akun Penjualan</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Akun Penjualan</li></ol></nav></div>
@@ -90,6 +90,28 @@ $allSalesTotal = array_sum($allSales);
           $stock_message = $amount === 0
             ? 'Stok habis, butuh restok.'
             : ($amount < 5 ? 'Stok tersisa ' . $amount . ', segera tambah stok.' : 'Stok aman, tersedia ' . $amount . ' akun.');
+
+          if ($product === 'ZOOM') {
+              $zoom_needs_stock = [];
+              $zoom_has_empty_stock = false;
+              foreach (['1_bulan' => '1 Bulan', '14_hari' => '14 Hari'] as $duration_key => $duration_label) {
+                  $duration_amount = (int) $zoomStock[$duration_key];
+                  if ($duration_amount < 5) {
+                      $zoom_needs_stock[] = $duration_label . ' (' . $duration_amount . ')';
+                  }
+                  if ($duration_amount === 0) $zoom_has_empty_stock = true;
+              }
+
+              if (!empty($zoom_needs_stock)) {
+                  $stock_class = $zoom_has_empty_stock ? 'danger' : 'warning';
+                  $stock_icon = $zoom_has_empty_stock ? 'bi-exclamation-octagon-fill' : 'bi-exclamation-triangle-fill';
+                  $stock_message = 'Butuh stok variasi: ' . implode(', ', $zoom_needs_stock) . '.';
+              } else {
+                  $stock_class = 'safe';
+                  $stock_icon = 'bi-check-circle-fill';
+                  $stock_message = 'Semua variasi Zoom memiliki stok aman.';
+              }
+          }
         ?>
         <div class="stock-alert <?= $stock_class ?>">
           <i class="bi <?= $stock_icon ?>"></i>
@@ -98,8 +120,14 @@ $allSalesTotal = array_sum($allSales);
             <small><?= $stock_message ?></small>
             <?php if ($product === 'ZOOM'): ?>
               <div class="stock-zoom-breakdown">
-                <span>Stok 1 Bulan: <b><?= (int) $zoomStock['1_bulan'] ?></b></span>
-                <span>Stok 14 Hari: <b><?= (int) $zoomStock['14_hari'] ?></b></span>
+                <?php foreach (['1_bulan' => '1 Bulan', '14_hari' => '14 Hari'] as $duration_key => $duration_label): ?>
+                  <?php
+                    $duration_amount = (int) $zoomStock[$duration_key];
+                    $duration_state = $duration_amount === 0 ? 'Habis' : ($duration_amount < 5 ? 'Butuh stok' : 'Aman');
+                    $duration_class = $duration_amount === 0 ? 'danger' : ($duration_amount < 5 ? 'warning' : 'safe');
+                  ?>
+                  <span>Stok <?= $duration_label ?>: <b><?= $duration_amount ?></b> <em class="zoom-stock-state <?= $duration_class ?>"><?= $duration_state ?></em></span>
+                <?php endforeach; ?>
               </div>
             <?php endif; ?>
           </div>
