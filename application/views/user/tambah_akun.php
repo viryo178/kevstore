@@ -26,6 +26,7 @@
                 <option value="private">Private</option>
                 <option value="sharing">Sharing</option>
                 <option value="belum_terjual">Belum Terjual</option>
+                <option value="done">Done</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">

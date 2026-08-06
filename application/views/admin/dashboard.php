@@ -311,17 +311,22 @@ document.addEventListener('click', function (event) {
       if (result.status !== 'success') throw new Error(result.message || 'Gagal memperbarui akun');
 
       const row = button.closest('tr');
-      const maxBadge = row ? row.querySelector('td:nth-child(4) span') : null;
-      const categoryCell = row ? row.querySelector('td:nth-child(5)') : null;
-      if (maxBadge) {
-        maxBadge.textContent = result.max_user + ' / ' + result.limit;
-        maxBadge.className = 'bg-border-danger';
-      }
-      if (categoryCell) {
-        categoryCell.innerHTML = '<span class="badge-private">Done</span>';
+      if (result.akun_status === 'terjual') {
+        if (row) row.remove();
+      } else if (row) {
+        const maxBadge = row.querySelector('td:nth-child(4) span');
+        if (maxBadge) {
+          maxBadge.textContent = result.max_user + ' / ' + result.limit;
+          maxBadge.className = Number(result.max_user) >= Number(result.limit)
+            ? 'bg-border-danger'
+            : 'bg-border-success';
+        }
+        button.disabled = Number(result.max_user) >= Number(result.limit);
       }
 
-      alert(product === 'GEMINI' ? '2FA Gemini berhasil disalin' : 'Data login berhasil disalin');
+      alert(result.akun_status === 'terjual'
+        ? (product === 'GEMINI' ? '2FA Gemini berhasil disalin dan akun menjadi terjual' : 'Data berhasil disalin dan akun menjadi terjual')
+        : 'Data berhasil disalin');
     })
     .catch(function (error) {
       button.disabled = false;

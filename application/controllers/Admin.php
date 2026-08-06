@@ -112,9 +112,14 @@ class Admin extends CI_Controller
     {
         $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
         $status = strtolower(str_replace([' ', '-'], '_', trim((string) $status)));
+        $kategori = strtolower(trim((string) $kategori));
 
         if (in_array($status, $manual_statuses, true)) {
             return $status;
+        }
+
+        if ($kategori === 'done') {
+            return 'terjual';
         }
 
         $max_user = max(0, (int) $max_user);
@@ -1397,7 +1402,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         }
 
         // limit berdasarkan kategori
-        $product = strtoupper((string) $akun->nama_akun);
+        $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true);
         $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
 
@@ -1421,6 +1426,9 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         $this->db->set('max_user', $new_max);
         $this->db->set('status', $status);
+        if ($status === 'terjual') {
+            $this->db->set('kategori', 'done');
+        }
 
         $this->db->set(
             'last_edited_by',
@@ -1492,6 +1500,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
             ->update('akun', [
 
                 'max_user'       => $new_max,
+
+                'kategori'       => $status === 'terjual' ? 'done' : $akun->kategori,
 
                 'status'         => $status,
 

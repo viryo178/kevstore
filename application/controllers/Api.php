@@ -208,6 +208,7 @@ class Api extends CI_Controller
 
         $this->db->where('id_akun', (int) $id)->update('akun', [
             'max_user' => $new_max,
+            'kategori' => $status === 'terjual' ? 'done' : $akun->kategori,
             'status' => $status,
             'last_edited_by' => $this->actor_name(),
             'last_edited_at' => $now,
@@ -4191,9 +4192,14 @@ class Api extends CI_Controller
     {
         $manual_statuses = ['deactived', 'ban', 'disable_x', 'disable_email', 'verif', 'terjual'];
         $status = $this->normalize_status($status);
+        $kategori = strtolower(trim((string) $kategori));
 
         if (in_array($status, $manual_statuses, true)) {
             return $status;
+        }
+
+        if ($kategori === 'done') {
+            return 'terjual';
         }
 
         $max_user = max(0, (int) $max_user);

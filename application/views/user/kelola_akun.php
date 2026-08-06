@@ -1168,6 +1168,12 @@
                             Belum Terjual
                           </span>
 
+                        <?php elseif ($a->kategori == 'done'): ?>
+
+                          <span class="badge-private">
+                            Done
+                          </span>
+
                         <?php endif; ?>
 
                       </td>
@@ -1630,6 +1636,7 @@
               <option value="private" ${selectedOption(account.kategori, 'private')}>Private</option>
               <option value="sharing" ${selectedOption(account.kategori, 'sharing')}>Sharing</option>
               <option value="belum_terjual" ${selectedOption(account.kategori, 'belum_terjual')}>Belum Terjual</option>
+              <option value="done" ${selectedOption(account.kategori, 'done')}>Done</option>
             </select>
           </div>
           <div class="col-md-6 mb-3">

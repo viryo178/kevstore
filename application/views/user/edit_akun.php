@@ -27,6 +27,7 @@
                 <option value="private" <?= ($akun->kategori ?? '') === 'private' ? 'selected' : '' ?>>Private</option>
                 <option value="sharing" <?= ($akun->kategori ?? '') === 'sharing' ? 'selected' : '' ?>>Sharing</option>
                 <option value="belum_terjual" <?= ($akun->kategori ?? '') === 'belum_terjual' ? 'selected' : '' ?>>Belum Terjual</option>
+                <option value="done" <?= ($akun->kategori ?? '') === 'done' ? 'selected' : '' ?>>Done</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">

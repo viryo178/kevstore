@@ -1042,6 +1042,7 @@ $limit = in_array(strtoupper(trim((string) $a->nama_akun)), ['SPOTIFY', 'LEONARD
     <option value="sharing">Sharing</option>
     <option value="private">Private</option>
     <option value="belum_terjual">Belum Terjual</option>
+    <option value="done">Done</option>
 </select>
 
             </div>
@@ -1481,6 +1482,10 @@ MELANGGAR? DENDA 500K + GARANSI HANGUS + AKUN DI TARIK`;
   }
 
   function getKategoriBadge(kategori) {
+    if (kategori === 'done') {
+      return '<span class="badge-private">Done</span>';
+    }
+
     if (kategori === 'private') {
       return '<span class="badge-private">Private</span>';
     }

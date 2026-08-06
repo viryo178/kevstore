@@ -32,6 +32,7 @@
                     <option value="private" <?= ($a->kategori ?? '') === 'private' ? 'selected' : '' ?>>Private</option>
                     <option value="sharing" <?= ($a->kategori ?? '') === 'sharing' ? 'selected' : '' ?>>Sharing</option>
                     <option value="belum_terjual" <?= ($a->kategori ?? '') === 'belum_terjual' ? 'selected' : '' ?>>Belum Terjual</option>
+                    <option value="done" <?= ($a->kategori ?? '') === 'done' ? 'selected' : '' ?>>Done</option>
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">

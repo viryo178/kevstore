@@ -12,6 +12,10 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
+-- Pastikan kategori Done tersedia untuk akun yang sudah terjual.
+ALTER TABLE `akun`
+  MODIFY COLUMN `kategori` enum('private','sharing','belum_terjual','done') DEFAULT NULL;
+
 -- Isi master jenis akun. Data yang sudah ada tidak akan diduplikasi.
 INSERT INTO `jenis_akun` (`nama_akun`, `slug`, `website_resmi`, `status`)
 VALUES
@@ -34,9 +38,15 @@ WHERE a.`jenis_akun_id` IS NULL;
 -- Normalisasi data Gemini lama: satu akun hanya memiliki satu penjualan.
 UPDATE `akun`
 SET `max_user` = 1,
-    `status` = 'terjual'
+    `status` = 'terjual',
+    `kategori` = 'done'
 WHERE UPPER(TRIM(`nama_akun`)) = 'GEMINI'
   AND `max_user` >= 1;
+
+-- Samakan akun terjual lama dengan kategori Done.
+UPDATE `akun`
+SET `kategori` = 'done'
+WHERE `status` = 'terjual';
 
 CREATE TABLE IF NOT EXISTS `akun_bin` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -71,6 +81,14 @@ SELECT IF(
     SELECT 1
     FROM `jenis_akun`
     WHERE UPPER(TRIM(`nama_akun`)) = 'GEMINI'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun'
+      AND COLUMN_NAME = 'kategori'
+      AND COLUMN_TYPE LIKE '%done%'
   ),
   'DATABASE SIAP',
   'DATABASE BELUM LENGKAP'
