@@ -32,7 +32,7 @@ $productVisuals = [
 
 foreach ($products as $product) {
     $visual = $productVisuals[$product] ?? ['bi-box-seam', 'product-card-default'];
-    $metricCards[] = [ucfirst(strtolower($product)), $unsold[$product], $visual[0], 'customers-card ' . $visual[1], base_url('admin/kelola_akun?product=' . $product . '&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat'];
+    $metricCards[] = [ucfirst(strtolower($product)), $unsold[$product], $visual[0], 'customers-card ' . $visual[1], base_url('admin?produk=' . rawurlencode($product)) . '#available-accounts', 'Belum terjual', 'Klik untuk lihat'];
 }
 ?>
 
@@ -56,6 +56,9 @@ foreach ($products as $product) {
 </style>
 <style>
 .dashboard .metric-summary .card-icon i{font-size:22px!important;color:inherit!important;display:flex!important;align-items:center!important;justify-content:center!important;width:22px!important;height:22px!important}.dashboard .metric-summary .card-icon i::before{display:block!important;width:22px!important;height:22px!important;line-height:22px!important;margin:0!important;text-align:center!important;vertical-align:0!important}.dashboard .metric-summary .sales-card .card-icon i{color:#6366f1!important}.dashboard .metric-summary .revenue-card .card-icon i{color:#22c55e!important}.dashboard .metric-summary .customers-card .card-icon i{color:#f97316!important}
+</style>
+<style>
+.dashboard-table-bottom{display:flex;align-items:center;justify-content:space-between;gap:18px;clear:both;padding:18px 0 4px;color:#fff;font-size:13px}.dashboard-table-bottom .datatable-info{float:none;margin:0}.dashboard-table-bottom .datatable-pagination{float:none;margin-left:auto}.dashboard-table-bottom .datatable-pagination-list{display:flex;align-items:center;gap:2px;margin:0}.dashboard-table-bottom .datatable-pagination-list li{float:none}.dashboard-table-bottom .datatable-pagination-list button{min-width:34px;height:34px;padding:6px 10px;border:0!important;border-radius:0;background:transparent!important;color:#fff!important;text-align:center;transition:.15s}.dashboard-table-bottom .datatable-pagination-list button:hover{background:rgba(255,255,255,.1)!important}.dashboard-table-bottom .datatable-active button,.dashboard-table-bottom .datatable-active button:hover{background:#d9dee5!important;color:#334155!important}.dashboard-table-bottom .datatable-disabled button{color:#71809c!important}@media(max-width:575px){.dashboard-table-bottom{align-items:flex-start;flex-direction:column}.dashboard-table-bottom .datatable-pagination{margin-left:0}}
 </style>
 <style>
 .dashboard .metric-summary .card-icon{position:relative!important;width:56px!important;height:56px!important;flex:0 0 56px!important;border-radius:16px!important;overflow:hidden!important;display:block!important}.dashboard .metric-summary .card-icon i{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:grid!important;place-items:center!important;font-size:30px!important;line-height:1!important;margin:0!important}.dashboard .metric-summary .card-icon i::before{display:block!important;width:auto!important;height:auto!important;line-height:1!important;margin:0!important;text-align:center!important;vertical-align:0!important}.metric-summary .metric-card .d-flex.align-items-center{grid-template-columns:56px minmax(0,1fr)!important}
@@ -173,7 +176,7 @@ foreach ($products as $product) {
         </a>
       <?php endforeach; ?>
 
-      <div class="card dashboard-table-card recent-sales"><div class="card-body">
+      <div class="card dashboard-table-card recent-sales" id="available-accounts"><div class="card-body">
         <div class="dashboard-toolbar">
           <h5 class="card-title mb-0">
             <span id="availableAccountsTitle">Akun Tersedia</span>
@@ -184,9 +187,9 @@ foreach ($products as $product) {
           <div>
             <label class="form-label" for="dashboardProduct">Jenis akun</label>
             <select class="form-control" id="dashboardProduct">
-              <option value="">Semua jenis akun</option>
+              <option value="" <?= empty($dashboard_product) ? 'selected' : '' ?>>Semua jenis akun</option>
               <?php foreach ($products as $product): ?>
-                <option value="<?= $product ?>"><?= ucfirst(strtolower($product)) ?></option>
+                <option value="<?= $product ?>" <?= ($dashboard_product ?? '') === $product ? 'selected' : '' ?>><?= ucfirst(strtolower($product)) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -238,13 +241,23 @@ foreach ($products as $product) {
                 <td><code class="text-info"><?= htmlspecialchars($account->password ?? '-', ENT_QUOTES, 'UTF-8') ?></code></td>
                 <td><span class="<?= $maxUser >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>"><?= $maxUser ?> / <?= $limit ?></span></td>
                 <td>
-                  <?php if ($category === 'private'): ?>
-                    <span class="badge-private">Private</span>
-                  <?php elseif ($category === 'sharing'): ?>
-                    <span class="badge-sharing">Sharing</span>
-                  <?php else: ?>
-                    <span class="badge-sharing">Belum Terjual</span>
-                  <?php endif; ?>
+                  <?php
+                    $category_labels = [
+                      'private' => 'Private',
+                      'sharing' => 'Sharing',
+                      'belum_terjual' => 'Belum Terjual',
+                      'done' => 'Done',
+                      '1bulan' => '1 Bulan',
+                      '2bulan' => '2 Bulan',
+                      '3bulan' => '3 Bulan',
+                      '4bulan' => '4 Bulan',
+                      '1tahun' => '1 Tahun',
+                    ];
+                    $category_label = $category_labels[$category] ?? $category;
+                  ?>
+                  <span class="<?= in_array($category, ['private', 'done'], true) ? 'badge-private' : 'badge-sharing' ?>">
+                    <?= htmlspecialchars($category_label, ENT_QUOTES, 'UTF-8') ?>
+                  </span>
                 </td>
                 <td>
                   <button
@@ -259,12 +272,15 @@ foreach ($products as $product) {
                     data-two-fa="<?= htmlspecialchars((string) ($account->two_fa ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <i class="bi bi-clipboard"></i>
                   </button>
-                  <a class="btn btn-sm btn-warning dashboard-action-btn" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) ?>"><i class="bi bi-pencil-square"></i></a>
+                  <a class="btn btn-sm btn-warning dashboard-action-btn" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) . '?return_to=' . rawurlencode('admin' . (!empty($dashboard_product) ? '?produk=' . $dashboard_product : '')) ?>"><i class="bi bi-pencil-square"></i></a>
                 </td>
               </tr>
             <?php endforeach; ?></tbody>
           </table></div>
-          <div class="dashboard-pagination"><span id="dashboardInfo"></span><div><button id="dashboardPrev">Sebelumnya</button><button id="dashboardNext">Berikutnya</button></div></div>
+          <div class="datatable-bottom kelola-manual-table-bottom dashboard-table-bottom">
+            <div class="datatable-info" id="dashboardInfo">Menampilkan 0 sampai 0 dari 0 entries</div>
+            <nav class="datatable-pagination" id="dashboardPagination" aria-label="Dashboard table pagination"></nav>
+          </div>
         <?php else: ?>
           <div class="alert alert-danger mb-0">Tidak ada akun tersedia</div>
         <?php endif; ?>
@@ -315,7 +331,7 @@ foreach ($products as $product) {
                           - <?= !empty($account->expired_password) ? date('d M Y', strtotime($account->expired_password)) : '-' ?>
                         </div>
                       </div>
-                      <a class="btn btn-sm btn-warning" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) ?>">Edit</a>
+                      <a class="btn btn-sm btn-warning" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) . '?return_to=' . rawurlencode('admin' . (!empty($dashboard_product) ? '?produk=' . $dashboard_product : '')) ?>">Edit</a>
                     </div>
                   <?php endforeach; ?>
                 </div>
@@ -332,10 +348,71 @@ foreach ($products as $product) {
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
- const rows=Array.from(document.querySelectorAll('#dashboardTable tbody tr')),search=document.getElementById('dashboardSearch'),product=document.getElementById('dashboardProduct'),perPage=document.getElementById('dashboardPerPage'),info=document.getElementById('dashboardInfo'),prev=document.getElementById('dashboardPrev'),next=document.getElementById('dashboardNext');let page=1;
- if(!search||!product||!perPage||!info||!prev||!next)return;
- function render(){const q=search.value.toLowerCase().trim(),p=product.value,filtered=rows.filter(r=>(!q||r.dataset.search.includes(q))&&(!p||r.dataset.product===p)),selectedSize=Number(perPage.value),size=selectedSize===-1?Math.max(filtered.length,1):selectedSize,pages=Math.max(1,Math.ceil(filtered.length/size));page=Math.min(page,pages);rows.forEach(r=>r.style.display='none');filtered.slice((page-1)*size,page*size).forEach(r=>r.style.display='');info.textContent=filtered.length?`Menampilkan ${(page-1)*size+1}-${Math.min(page*size,filtered.length)} dari ${filtered.length} entries`:'Tidak ada data';prev.disabled=page<=1;next.disabled=page>=pages}
- [search,product,perPage].forEach(el=>el.addEventListener(el===search?'input':'change',()=>{page=1;render()}));prev.addEventListener('click',()=>{page--;render()});next.addEventListener('click',()=>{page++;render()});render();
+ const rows=Array.from(document.querySelectorAll('#dashboardTable tbody tr'));
+ const search=document.getElementById('dashboardSearch');
+ const product=document.getElementById('dashboardProduct');
+ const perPage=document.getElementById('dashboardPerPage');
+ const info=document.getElementById('dashboardInfo');
+ const pagination=document.getElementById('dashboardPagination');
+ let page=1;
+ if(!search||!product||!perPage||!info||!pagination)return;
+
+ function renderPagination(totalPages){
+   pagination.innerHTML='';
+   if(totalPages<=1)return;
+   const list=document.createElement('ul');
+   list.className='datatable-pagination-list';
+
+   function addButton(label,targetPage,disabled,active){
+     const item=document.createElement('li');
+     if(disabled)item.classList.add('datatable-disabled');
+     if(active)item.classList.add('datatable-active');
+     const button=document.createElement('button');
+     button.type='button';
+     button.textContent=label;
+     button.disabled=disabled;
+     button.addEventListener('click',function(){
+       if(disabled)return;
+       page=targetPage;
+       render();
+     });
+     item.appendChild(button);
+     list.appendChild(item);
+   }
+
+   addButton('<',Math.max(1,page-1),page===1,false);
+   const maxButtons=6;
+   const startPage=totalPages<=maxButtons?1:Math.max(1,Math.min(page-2,totalPages-maxButtons+1));
+   const endPage=Math.min(totalPages,startPage+maxButtons-1);
+   for(let number=startPage;number<=endPage;number++){
+     addButton(String(number),number,false,number===page);
+   }
+   addButton('>',Math.min(totalPages,page+1),page===totalPages,false);
+   pagination.appendChild(list);
+ }
+
+ function render(){
+   const query=search.value.toLowerCase().trim();
+   const selectedProduct=product.value;
+   const filtered=rows.filter(row=>(!query||row.dataset.search.includes(query))&&(!selectedProduct||row.dataset.product===selectedProduct));
+   const selectedSize=Number(perPage.value);
+   const size=selectedSize===-1?Math.max(filtered.length,1):selectedSize;
+   const totalPages=Math.max(1,Math.ceil(filtered.length/size));
+   page=Math.min(Math.max(page,1),totalPages);
+   const startIndex=selectedSize===-1?0:(page-1)*size;
+   const endIndex=selectedSize===-1?filtered.length:Math.min(startIndex+size,filtered.length);
+   const visibleRows=new Set(filtered.slice(startIndex,endIndex));
+   rows.forEach(row=>row.style.display=visibleRows.has(row)?'':'none');
+   info.textContent=filtered.length
+     ? `Menampilkan ${startIndex+1} sampai ${endIndex} dari ${filtered.length} entries`
+     : 'Menampilkan 0 sampai 0 dari 0 entries';
+   renderPagination(totalPages);
+ }
+
+ search.addEventListener('input',()=>{page=1;render()});
+ perPage.addEventListener('change',()=>{page=1;render()});
+ product.addEventListener('change',function(){const url=new URL(window.location.href);if(product.value){url.searchParams.set('produk',product.value)}else{url.searchParams.delete('produk')}window.location.assign(url.toString())});
+ render();
 });
 
 function dashboardCopyToClipboard(text) {

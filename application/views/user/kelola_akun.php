@@ -1278,7 +1278,7 @@
                           </button>
                         <?php else: ?>
                           <a
-                            href="<?= base_url('user/edit_akun/' . $a->id_akun) ?>"
+                            href="<?= base_url('user/edit_akun/' . $a->id_akun) . '?return_to=' . rawurlencode('user/kelola_akun' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '')) ?>"
                             class="btn-edit">
 
                             <i class="bi bi-pencil-square"></i>

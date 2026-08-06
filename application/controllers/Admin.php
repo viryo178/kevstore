@@ -619,30 +619,8 @@ if ($dashboard_product !== '') {
         ->group_end();
 }
 $data['akun_belum_penuh'] = $available_accounts_query
-
-    ->group_start()
-
-        // sharing belum penuh
-        ->group_start()
-            ->where('kategori', 'sharing')
-            ->where('max_user <', 4)
-        ->group_end()
-
-        // private belum penuh
-        ->or_group_start()
-            ->where('kategori', 'private')
-            ->where('max_user <', 1)
-        ->group_end()
-
-        // belum terjual (INI FIX UTAMA)
-        ->or_group_start()
-            ->where('kategori', 'belum_terjual')
-        ->group_end()
-
-    ->group_end()
-
-    // ❗ JANGAN CAMPUR OR DENGAN STATUS DI SINI
-    ->where('status', 'aktif')
+    // Semua kategori tetap tampil; hanya akun berstatus terjual yang disembunyikan.
+    ->where('status !=', 'terjual')
     ->order_by('id_akun', 'ASC')
     ->get()
     ->result();
@@ -2096,6 +2074,11 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         date_default_timezone_set('Asia/Jakarta');
 
+        $return_to = trim((string) ($this->input->post('return_to') ?: $this->input->get('return_to')));
+        if (!preg_match('/^admin(?:\?produk=(?:SPOTIFY|LEONARDO|GEMINI|ZOOM|ADOBE)|\/kelola_akun(?:\?[A-Za-z0-9_%+&=.-]*)?)?$/', $return_to)) {
+            $return_to = 'admin';
+        }
+
         $data['akun'] = $this->db->get_where('akun', [
             'id_akun' => $id
         ])->row();
@@ -2117,7 +2100,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $username = trim((string) $this->input->post('username'));
 
             if ($this->username_exists($username, $id)) {
-                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'admin');
+                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'admin/edit_akun/' . $id . '?return_to=' . rawurlencode($return_to));
                 return;
             }
 
@@ -2137,7 +2120,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $durasi_zoom = $this->normalize_zoom_duration($nama_akun, $this->input->post('durasi_zoom'));
 
             if (strtoupper(trim((string) $nama_akun)) === 'ZOOM' && $durasi_zoom === null) {
-                $this->respond_akun_error('Pilih variasi Zoom: 14 Hari atau 1 Bulan.', 'admin/edit_akun/' . $id);
+                $this->respond_akun_error('Pilih variasi Zoom: 14 Hari atau 1 Bulan.', 'admin/edit_akun/' . $id . '?return_to=' . rawurlencode($return_to));
                 return;
             }
 
@@ -2235,7 +2218,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('admin');
+                redirect($return_to);
             } else {
 
                 $this->session->set_flashdata(
@@ -2244,10 +2227,11 @@ $data['akun_belum_penuh'] = $available_accounts_query
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('admin');
+                redirect($return_to);
             }
         }
 
+        $data['return_to'] = $return_to;
         $data = array_merge($data, $this->get_notification_data());
 
         $this->load->view('templates/header');

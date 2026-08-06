@@ -402,20 +402,8 @@ private function get_notification_data()
             $available_accounts_query->where('nama_akun', $dashboard_product);
         }
         $data['akun_belum_penuh'] = $available_accounts_query
-            ->group_start()
-                ->group_start()
-                    ->where('kategori', 'sharing')
-                    ->where('max_user <', 4)
-                ->group_end()
-                ->or_group_start()
-                    ->where('kategori', 'private')
-                    ->where('max_user <', 1)
-                ->group_end()
-                ->or_group_start()
-                    ->where('kategori', 'belum_terjual')
-                ->group_end()
-            ->group_end()
-            ->where('status', 'aktif')
+            // Semua kategori tetap tampil; hanya akun berstatus terjual yang disembunyikan.
+            ->where('status !=', 'terjual')
             ->order_by('id_akun', 'ASC')
             ->get()
             ->result();
@@ -1484,6 +1472,11 @@ private function get_notification_data()
     {
         date_default_timezone_set('Asia/Jakarta');
 
+        $return_to = trim((string) ($this->input->post('return_to') ?: $this->input->get('return_to')));
+        if (!preg_match('/^user(?:\/kelola_akun(?:\?[A-Za-z0-9_%+&=.-]*)?)?$/', $return_to)) {
+            $return_to = 'user';
+        }
+
         $data['akun'] = $this->db->get_where('akun', [
             'id_akun' => $id
         ])->row();
@@ -1505,7 +1498,7 @@ private function get_notification_data()
             $username = trim((string) $this->input->post('username'));
 
             if ($this->username_exists($username, $id)) {
-                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'user');
+                $this->respond_akun_error('Username sudah ada, gunakan username lain.', 'user/edit_akun/' . $id . '?return_to=' . rawurlencode($return_to));
                 return;
             }
 
@@ -1615,7 +1608,7 @@ private function get_notification_data()
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('user');
+                redirect($return_to);
             } else {
 
                 $this->session->set_flashdata(
@@ -1624,10 +1617,11 @@ private function get_notification_data()
                         $this->session->userdata('nama_user')
                 );
 
-                redirect('user');
+                redirect($return_to);
             }
         }
 
+        $data['return_to'] = $return_to;
         $data = array_merge($data, $this->get_notification_data());
 
         $this->load->view('templates/header');

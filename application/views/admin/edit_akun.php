@@ -16,6 +16,7 @@
     <div class="card form-card">
       <div class="card-body p-4">
         <form action="<?= base_url('admin/edit_akun/' . $akun->id_akun) ?>" method="POST">
+          <input type="hidden" name="return_to" value="<?= htmlspecialchars($return_to ?? 'admin', ENT_QUOTES, 'UTF-8') ?>">
           <div class="row">
             <div class="col-md-6 mb-3">
               <label>Nama Akun</label>
@@ -82,7 +83,7 @@
           </div>
 
           <div class="d-flex justify-content-end gap-2">
-            <a href="<?= base_url('admin') ?>" class="btn btn-secondary">Batal</a>
+            <a href="<?= base_url($return_to ?? 'admin') ?>" class="btn btn-secondary">Batal</a>
             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
           </div>
         </form>
