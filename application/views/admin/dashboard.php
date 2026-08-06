@@ -215,13 +215,25 @@ foreach ($products as $product) {
             <tbody><?php foreach (($akun_belum_penuh ?? []) as $account): ?>
               <?php
                 $account_name = strtoupper(trim((string) ($account->nama_akun ?? '')));
-                $product = preg_match('/^ZOOM(?:\s|$)/', $account_name) ? 'ZOOM' : $account_name;
+                $is_zoom = preg_match('/^ZOOM(?:\s|$)/', $account_name) === 1;
+                $product = $is_zoom ? 'ZOOM' : $account_name;
+                $zoom_duration = (string) ($account->durasi_zoom ?? '');
+                if ($zoom_duration === '' && $account_name === 'ZOOM 14 HARI') $zoom_duration = '14_hari';
+                if ($zoom_duration === '' && $account_name === 'ZOOM 1 BULAN') $zoom_duration = '1_bulan';
+                $zoom_duration_label = $zoom_duration === '14_hari'
+                  ? '14 Hari'
+                  : ($zoom_duration === '1_bulan' ? '1 Bulan' : '');
                 $category = (string) ($account->kategori ?? '');
                 $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true) ? 1 : ($category === 'private' ? 1 : 4);
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
               <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
-                <td><strong><?= htmlspecialchars($account->nama_akun ?? '-', ENT_QUOTES, 'UTF-8') ?></strong></td>
+                <td>
+                  <strong><?= htmlspecialchars($is_zoom ? 'ZOOM' : ($account->nama_akun ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
+                  <?php if ($is_zoom && $zoom_duration_label !== ''): ?>
+                    <small class="d-block text-info mt-1"><?= htmlspecialchars($zoom_duration_label, ENT_QUOTES, 'UTF-8') ?></small>
+                  <?php endif; ?>
+                </td>
                 <td><?= htmlspecialchars($account->username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
                 <td><code class="text-info"><?= htmlspecialchars($account->password ?? '-', ENT_QUOTES, 'UTF-8') ?></code></td>
                 <td><span class="<?= $maxUser >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>"><?= $maxUser ?> / <?= $limit ?></span></td>

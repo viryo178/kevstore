@@ -757,13 +757,23 @@
                       <tbody>
 
                         <?php foreach ($akun_belum_penuh as $a): ?>
+                          <?php
+                            $dashboard_account_name = strtoupper(trim((string) ($a->nama_akun ?? '')));
+                            $dashboard_is_zoom = preg_match('/^ZOOM(?:\s|$)/', $dashboard_account_name) === 1;
+                            $dashboard_zoom_duration = (string) ($a->durasi_zoom ?? '');
+                            if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'ZOOM 14 HARI') $dashboard_zoom_duration = '14_hari';
+                            if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'ZOOM 1 BULAN') $dashboard_zoom_duration = '1_bulan';
+                          ?>
 
                           <tr id="akun-item-<?= $a->id_akun ?>">
 
                             <td>
                               <strong>
-                                <?= htmlspecialchars((string)$a->nama_akun) ?>
+                                <?= htmlspecialchars($dashboard_is_zoom ? 'ZOOM' : (string) $a->nama_akun) ?>
                               </strong>
+                              <?php if ($dashboard_is_zoom && in_array($dashboard_zoom_duration, ['14_hari', '1_bulan'], true)): ?>
+                                <small class="d-block text-info mt-1"><?= $dashboard_zoom_duration === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
+                              <?php endif; ?>
                             </td>
 
                             <td>

@@ -1200,11 +1200,18 @@
                       </td>
 
                       <td>
+                        <?php
+                          $row_account_name = strtoupper(trim((string) ($a->nama_akun ?? '')));
+                          $row_is_zoom = preg_match('/^ZOOM(?:\s|$)/', $row_account_name) === 1;
+                          $row_zoom_duration = (string) ($a->durasi_zoom ?? '');
+                          if ($row_zoom_duration === '' && $row_account_name === 'ZOOM 14 HARI') $row_zoom_duration = '14_hari';
+                          if ($row_zoom_duration === '' && $row_account_name === 'ZOOM 1 BULAN') $row_zoom_duration = '1_bulan';
+                        ?>
                         <strong>
-                          <?= htmlspecialchars($a->nama_akun ?? '', ENT_QUOTES, 'UTF-8') ?>
+                          <?= htmlspecialchars($row_is_zoom ? 'ZOOM' : ($a->nama_akun ?? ''), ENT_QUOTES, 'UTF-8') ?>
                         </strong>
-                        <?php if (strtoupper(trim((string) ($a->nama_akun ?? ''))) === 'ZOOM' && !empty($a->durasi_zoom)): ?>
-                          <small class="d-block text-info mt-1"><?= $a->durasi_zoom === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
+                        <?php if ($row_is_zoom && in_array($row_zoom_duration, ['14_hari', '1_bulan'], true)): ?>
+                          <small class="d-block text-info mt-1"><?= $row_zoom_duration === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
                         <?php endif; ?>
                       </td>
 
