@@ -17,12 +17,31 @@ class Auth extends CI_Controller
 
 	public function proses_login()
 	{
-		$username = $this->input->post('username');
-		$password = $this->input->post('password');
+		$username = trim((string) $this->input->post('username'));
+		$password = (string) $this->input->post('password');
 
-		$user = $this->db->get_where('users', [
-			'username' => $username
-		])->row_array();
+		try {
+			$query = $this->db->get_where('users', [
+				'username' => $username
+			]);
+
+			if ($query === false) {
+				$error = $this->db->error();
+				throw new RuntimeException(
+					'Database query failed [' . ($error['code'] ?? 'unknown') . ']: ' . ($error['message'] ?? 'unknown error')
+				);
+			}
+
+			$user = $query->row_array();
+		} catch (Throwable $error) {
+			log_message('error', 'LOGIN_DB_FAILURE: ' . $error->getMessage());
+			show_error(
+				'Koneksi database untuk proses login bermasalah. Periksa application/logs dengan kode LOGIN_DB_FAILURE.',
+				503,
+				'Login Tidak Tersedia'
+			);
+			return;
+		}
 
 		if (!$user) {
 
@@ -34,7 +53,9 @@ class Auth extends CI_Controller
 			redirect('/');
 		}
 
-		if (!password_verify($password, $user['password'])) {
+		$stored_password = (string) ($user['password'] ?? '');
+
+		if ($stored_password === '' || !password_verify($password, $stored_password)) {
 
 			$this->session->set_flashdata(
 				'error',
