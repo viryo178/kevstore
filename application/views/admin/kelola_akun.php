@@ -736,13 +736,39 @@
       $persen_ban = $total_akun > 0 ? round(($total_ban / $total_akun) * 100) : 0;
       $persen_belum_terjual = $total_akun > 0 ? round(($total_belum_terjual / $total_akun) * 100) : 0;
 
-      $summary_accounts = $stat_akun ?? $akun;
+      $all_summary_accounts = $stat_akun ?? $akun;
+      $selected_summary_product = strtoupper(trim((string) ($selected_product ?? '')));
+      $summary_accounts = [];
+
+      foreach ($all_summary_accounts as $summary_account) {
+        $account_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
+        if (preg_match('/^ZOOM(?:\s|$)/', $account_product)) $account_product = 'ZOOM';
+
+        if ($selected_summary_product !== '' && $account_product !== $selected_summary_product) {
+          continue;
+        }
+
+        if ($selected_summary_product === 'ZOOM' && !empty($selected_zoom_duration)) {
+          $account_zoom_duration = (string) ($summary_account->durasi_zoom ?? '');
+          $stored_account_name = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
+          if ($account_zoom_duration === '' && $stored_account_name === 'ZOOM 14 HARI') $account_zoom_duration = '14_hari';
+          if ($account_zoom_duration === '' && $stored_account_name === 'ZOOM 1 BULAN') $account_zoom_duration = '1_bulan';
+          if ($account_zoom_duration !== $selected_zoom_duration) continue;
+        }
+
+        $summary_accounts[] = $summary_account;
+      }
+
       $summary = ['total' => count($summary_accounts), 'aktif' => 0, 'bermasalah' => 0];
       $summary_products = array_fill_keys(['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], 0);
       foreach ($summary_accounts as $summary_account) {
         $summary_status = kevstore_effective_akun_status($summary_account->status ?? '', $summary_account->note ?? '');
         if ($summary_status === 'aktif') $summary['aktif']++;
         if (in_array($summary_status, ['deactived', 'tidak_preimum', 'lainnya', 'ban', 'verif'], true)) $summary['bermasalah']++;
+      }
+
+      foreach ($all_summary_accounts as $summary_account) {
+        $summary_status = kevstore_effective_akun_status($summary_account->status ?? '', $summary_account->note ?? '');
         $summary_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
         if (preg_match('/^ZOOM(?:\s|$)/', $summary_product)) $summary_product = 'ZOOM';
         if (
@@ -754,9 +780,23 @@
         }
       }
       $summary_total = max(1, (int) $summary['total']);
+      $summary_scope_name = $selected_summary_product !== ''
+        ? ucfirst(strtolower($selected_summary_product))
+        : '';
+      if ($selected_summary_product === 'ZOOM' && !empty($selected_zoom_duration)) {
+        $summary_scope_name .= $selected_zoom_duration === '14_hari' ? ' 14 Hari' : ' 1 Bulan';
+      }
+      $summary_scope_params = [];
+      if ($selected_summary_product !== '') $summary_scope_params['product'] = $selected_summary_product;
+      if ($selected_summary_product === 'ZOOM' && !empty($selected_zoom_duration)) {
+        $summary_scope_params['durasi_zoom'] = $selected_zoom_duration;
+      }
+      $summary_total_url = base_url('admin/kelola_akun' . (!empty($summary_scope_params) ? '?' . http_build_query($summary_scope_params) : ''));
+      $summary_active_params = array_merge($summary_scope_params, ['search_akun' => 'aktif']);
+      $summary_active_url = base_url('admin/kelola_akun?' . http_build_query($summary_active_params));
       $summary_cards = [
-        ['Total Seluruh Akun', $summary['total'], 'bi-box', 'summary', 'kelola-metric-total', base_url('admin/kelola_akun'), '100%', 'Semua akun', 'text-warning'],
-        ['Akun Aktif', $summary['aktif'], 'bi-check-circle', 'summary', 'kelola-metric-active', base_url('admin/kelola_akun?search_akun=aktif'), round(($summary['aktif'] / $summary_total) * 100) . '%', 'Status aktif', 'text-success'],
+        [$summary_scope_name !== '' ? 'Total Akun ' . $summary_scope_name : 'Total Seluruh Akun', $summary['total'], 'bi-box', 'summary', 'kelola-metric-total', $summary_total_url, '100%', $summary_scope_name !== '' ? 'Semua akun ' . $summary_scope_name : 'Semua akun', 'text-warning'],
+        ['Akun Aktif', $summary['aktif'], 'bi-check-circle', 'summary', 'kelola-metric-active', $summary_active_url, round(($summary['aktif'] / $summary_total) * 100) . '%', 'Status aktif', 'text-success'],
         ['Akun Bermasalah', $summary['bermasalah'], 'bi-exclamation-octagon', 'summary', 'kelola-metric-problem', base_url('admin/akun_bermasalah'), round(($summary['bermasalah'] / $summary_total) * 100) . '%', 'Perlu dicek', 'text-danger'],
         ['Spotify', $summary_products['SPOTIFY'], 'bi-music-note-beamed', 'product', 'kelola-product-spotify', base_url('admin/kelola_akun?product=SPOTIFY&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
         ['Leonardo', $summary_products['LEONARDO'], 'bi-palette', 'product', 'kelola-product-leonardo', base_url('admin/kelola_akun?product=LEONARDO&search_akun=belum_terjual'), 'Belum terjual', 'Klik untuk lihat', 'text-warning'],
