@@ -8,7 +8,7 @@ USE `kevsmyid_storekevs`;
 
 SET NAMES utf8mb4;
 
--- 2FA hanya diisi untuk akun Gemini. Akun lain boleh NULL/kosong.
+-- 2FA diisi untuk akun Gemini/Adobe. Akun lain boleh NULL/kosong.
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 

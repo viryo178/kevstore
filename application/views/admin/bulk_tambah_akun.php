@@ -77,9 +77,11 @@
       <div class="card-body p-4">
         <form action="<?= base_url('admin/bulk_tambah_akun') ?>" method="POST">
           <div class="mb-4">
-            <h5 class="card-title mb-1">Tambah Stok <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></h5>
-            <div class="bulk-help">
-              Format biasa: username|password|catatan. Khusus Gemini juga bisa tempel format bernomor Email, Password, dan 2fa.
+            <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
+            <div class="bulk-help" id="bulkFormatHelp">
+              <?= in_array($bulk_product, ['GEMINI', 'ADOBE'], true)
+                ? 'Format ' . htmlspecialchars(ucfirst(strtolower($bulk_product)), ENT_QUOTES, 'UTF-8') . ': tempel daftar bernomor Email, Password, dan 2FA.'
+                : 'Format: username|password. Satu akun ditulis dalam satu baris.' ?>
             </div>
           </div>
 
@@ -94,11 +96,18 @@
 
           <div class="mb-3">
             <label>Daftar Akun</label>
-            <textarea name="bulk_accounts" class="form-control" placeholder="1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret&#10;&#10;2. Email: user2@gmail.com&#10;- Password: password456 2fa :" required></textarea>
+            <textarea
+              id="bulkAccounts"
+              name="bulk_accounts"
+              class="form-control"
+              placeholder="<?= in_array($bulk_product, ['GEMINI', 'ADOBE'], true)
+                ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret&#10;&#10;2. Email: user2@gmail.com&#10;- Password: password456 2fa :'
+                : 'username1|password1&#10;username2|password2' ?>"
+              required></textarea>
           </div>
 
-          <div class="bulk-defaults mb-4">
-            Default: <strong>Nama Akun <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User <?= $bulk_max_user ?></strong>. Kolom 2FA hanya disimpan untuk Gemini dan boleh kosong.
+          <div class="bulk-defaults mb-4" id="bulkDefaults">
+            Default: <strong>Nama Akun <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User <?= $bulk_max_user ?></strong>.<?= in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? ' Kolom 2FA disimpan untuk ' . htmlspecialchars(ucfirst(strtolower($bulk_product)), ENT_QUOTES, 'UTF-8') . ' dan boleh kosong.' : '' ?>
           </div>
 
           <div class="d-flex justify-content-end gap-2">
@@ -115,3 +124,38 @@
     </div>
   </section>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const productSelect = document.getElementById('bulk_product');
+  const accountsInput = document.getElementById('bulkAccounts');
+  const formatHelp = document.getElementById('bulkFormatHelp');
+  const defaults = document.getElementById('bulkDefaults');
+  const productTitle = document.getElementById('bulkProductTitle');
+  if (!productSelect || !accountsInput || !formatHelp || !defaults || !productTitle) return;
+
+  function updateBulkFormat() {
+    const product = String(productSelect.value || '').trim().toUpperCase();
+    const isGemini = product === 'GEMINI';
+    const isAdobe = product === 'ADOBE';
+    const usesEmailFormat = isGemini || isAdobe;
+    productTitle.textContent = product;
+    formatHelp.textContent = usesEmailFormat
+      ? 'Format ' + (isGemini ? 'Gemini' : 'Adobe') + ': tempel daftar bernomor Email, Password, dan 2FA.'
+      : 'Format: username|password. Satu akun ditulis dalam satu baris.';
+    accountsInput.placeholder = usesEmailFormat
+      ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret\n\n2. Email: user2@gmail.com\n- Password: password456 2fa :'
+      : 'username1|password1\nusername2|password2';
+    defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
+      + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '');
+  }
+
+  function escapeBulkHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (character) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character];
+    });
+  }
+
+  productSelect.addEventListener('change', updateBulkFormat);
+  updateBulkFormat();
+});
+</script>

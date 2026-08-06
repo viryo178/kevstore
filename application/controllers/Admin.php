@@ -931,9 +931,9 @@ $data['akun_belum_penuh'] = $available_accounts_query
             return;
         }
 
-        if ($bulk_product === 'GEMINI' && !$this->db->field_exists('two_fa', 'akun')) {
+        if (in_array($bulk_product, ['GEMINI', 'ADOBE'], true) && !$this->db->field_exists('two_fa', 'akun')) {
             $this->session->set_flashdata('error', 'Kolom 2FA belum tersedia di database. Jalankan benerin.sql terlebih dahulu.');
-            redirect('admin/bulk_tambah_akun?product=GEMINI');
+            redirect('admin/bulk_tambah_akun?product=' . rawurlencode($bulk_product));
             return;
         }
 
@@ -971,7 +971,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
                 'username'         => $row_username,
                 'password'         => $row_password,
-                'two_fa'           => $bulk_product === 'GEMINI' && $row_two_fa !== '' ? $row_two_fa : null,
+                'two_fa'           => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) && $row_two_fa !== '' ? $row_two_fa : null,
                 'website'          => '',
                 'max_user'         => $bulk_max_user,
                 'expired_password' => null,
@@ -1065,12 +1065,12 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         $rows = [];
 
-        // Format khusus Gemini:
+        // Format khusus Gemini dan Adobe:
         // 1. Email: user@gmail.com
         // - Password: password 2fa : https://contoh.test/secret
-        if ($bulk_product === 'GEMINI') {
+        if (in_array($bulk_product, ['GEMINI', 'ADOBE'], true)) {
             preg_match_all(
-                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\r\n]+)\R\s*(?:-\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:-\s*)?Password\s*:\s*([^\r\n]*)/iu',
                 $bulk_accounts,
                 $matches,
                 PREG_SET_ORDER
@@ -1079,12 +1079,18 @@ $data['akun_belum_penuh'] = $available_accounts_query
             foreach ($matches as $match) {
                 $password_and_two_fa = trim((string) ($match[2] ?? ''));
                 $password_parts = preg_split('/\s+2fa\s*:\s*/iu', $password_and_two_fa, 2);
+                $two_fa = trim((string) ($password_parts[1] ?? ''));
+
+                // Format Markdown [URL](URL) disimpan sebagai URL saja.
+                if (preg_match('/\[[^\]]*\]\((https?:\/\/[^)]+)\)/iu', $two_fa, $url_match)) {
+                    $two_fa = trim((string) $url_match[1]);
+                }
 
                 $rows[] = [
                     'username' => trim((string) ($match[1] ?? '')),
                     'password' => trim((string) ($password_parts[0] ?? '')),
                     'note' => '',
-                    'two_fa' => trim((string) ($password_parts[1] ?? '')),
+                    'two_fa' => $two_fa,
                 ];
             }
 
@@ -1093,7 +1099,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             }
         }
 
-        // Format lama tetap didukung. Kolom keempat hanya dipakai untuk Gemini.
+        // Format lama tetap didukung. Kolom keempat dipakai untuk Gemini/Adobe.
         $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
 
         foreach ($lines as $line) {
@@ -1108,7 +1114,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'username' => trim($parts[0] ?? ''),
                 'password' => trim($parts[1] ?? ''),
                 'note' => trim($parts[2] ?? ''),
-                'two_fa' => $bulk_product === 'GEMINI' ? trim($parts[3] ?? '') : '',
+                'two_fa' => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? trim($parts[3] ?? '') : '',
             ];
         }
 
