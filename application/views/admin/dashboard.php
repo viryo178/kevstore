@@ -147,38 +147,6 @@ foreach ($products as $product) {
 }
 </style>
 
-<style>
-.dashboard-table-card .table-responsive{overflow-x:auto!important}.dashboard-table-card #dashboardTable{table-layout:fixed!important;min-width:1056px!important}.dashboard-table-card #dashboardTable th:nth-child(1),.dashboard-table-card #dashboardTable td:nth-child(1){width:96px!important}.dashboard-table-card #dashboardTable th:nth-child(2),.dashboard-table-card #dashboardTable td:nth-child(2){width:280px!important;max-width:280px!important}.dashboard-table-card #dashboardTable th:nth-child(3),.dashboard-table-card #dashboardTable td:nth-child(3){width:150px!important}.dashboard-table-card #dashboardTable th:nth-child(4),.dashboard-table-card #dashboardTable td:nth-child(4),.dashboard-table-card #dashboardTable th:nth-child(5),.dashboard-table-card #dashboardTable td:nth-child(5){width:125px!important}.dashboard-table-card #dashboardTable th:nth-child(6),.dashboard-table-card #dashboardTable td:nth-child(6){width:130px!important}.dashboard-table-card #dashboardTable th:nth-child(7),.dashboard-table-card #dashboardTable td:nth-child(7){width:150px!important}.dashboard-table-card #dashboardTable .username-cell{max-width:280px;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.35}.dashboard-table-card #dashboardTable td:last-child{white-space:nowrap}.dashboard-table-card .dashboard-copy-btn{background:rgba(34,197,94,.1)!important;color:#4ade80!important;border:1px solid rgba(34,197,94,.35)!important}.dashboard-table-card .btn-info.dashboard-action-btn{background:rgba(59,130,246,.1)!important;color:#60a5fa!important;border:1px solid rgba(59,130,246,.35)!important}.dashboard-table-card .btn-warning.dashboard-action-btn{background:rgba(234,179,8,.1)!important;color:#facc15!important;border:1px solid rgba(234,179,8,.35)!important}
-</style>
-
-<style>
-/* Pulihkan shell template dashboard tanpa menggandakan file stylesheet. */
-#header.header{
-  display:flex!important;
-  visibility:visible!important;
-  opacity:1!important;
-}
-#sidebar.sidebar{
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-}
-
-/* Kolom notifikasi hanya berada di kanan jika ruang layar benar-benar cukup. */
-@media (max-width:1599px){
-  .admin-dashboard-grid{
-    grid-template-columns:minmax(0,1fr)!important;
-  }
-  .admin-dashboard-grid > aside{
-    grid-column:1/-1;
-  }
-  .dashboard-notifications{
-    height:auto!important;
-    min-height:0!important;
-  }
-}
-</style>
-
 <main id="main" class="main">
 <div class="pagetitle"><h1>Dashboard</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Dashboard</li></ol></nav></div>
 
@@ -246,7 +214,7 @@ foreach ($products as $product) {
         </div>
         <?php if (!empty($akun_belum_penuh)): ?>
           <div class="table-responsive"><table class="table table-borderless align-middle" id="dashboardTable">
-            <thead><tr><th>Nama</th><th>Username</th><th>Password</th><th>Kategori</th><th>Status</th><th>Expired</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>Nama Akun</th><th>Username</th><th>Password</th><th>Max User</th><th>Kategori</th><th>Aksi</th></tr></thead>
             <tbody><?php foreach (($akun_belum_penuh ?? []) as $account): ?>
               <?php
                 $account_name = strtoupper(trim((string) ($account->nama_akun ?? '')));
@@ -261,17 +229,17 @@ foreach ($products as $product) {
                 $category = (string) ($account->kategori ?? '');
                 $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true) ? 1 : ($category === 'private' ? 1 : 4);
                 $maxUser = (int) ($account->max_user ?? 0);
-                $account_status = kevstore_effective_akun_status($account->status ?? '', $account->note ?? '');
               ?>
-              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $account_status, $account->expired_password ?? '', $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
+              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
                 <td>
                   <strong><?= htmlspecialchars($is_zoom ? 'ZOOM' : ($account->nama_akun ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
                   <?php if ($is_zoom && $zoom_duration_label !== ''): ?>
                     <small class="d-block text-info mt-1"><?= htmlspecialchars($zoom_duration_label, ENT_QUOTES, 'UTF-8') ?></small>
                   <?php endif; ?>
                 </td>
-                <td class="username-cell" title="<?= htmlspecialchars($account->username ?? '', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($account->username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
-                <td><span class="password-text"><?= htmlspecialchars($account->password ?? '-', ENT_QUOTES, 'UTF-8') ?></span></td>
+                <td><?= htmlspecialchars($account->username ?? '-', ENT_QUOTES, 'UTF-8') ?></td>
+                <td><code class="text-info"><?= htmlspecialchars($account->password ?? '-', ENT_QUOTES, 'UTF-8') ?></code></td>
+                <td><span class="<?= $maxUser >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>"><?= $maxUser ?> / <?= $limit ?></span></td>
                 <td>
                   <?php
                     $category_labels = [
@@ -292,24 +260,6 @@ foreach ($products as $product) {
                   </span>
                 </td>
                 <td>
-                  <?php if ($account_status === 'aktif'): ?>
-                    <span class="bg-border-success">Aktif</span>
-                  <?php elseif ($account_status === 'verif'): ?>
-                    <span class="bg-border-danger">Verif</span>
-                  <?php elseif ($account_status === 'deactived'): ?>
-                    <span class="bg-border-danger">Akun Bermasalah</span>
-                  <?php elseif ($account_status === 'ban'): ?>
-                    <span class="bg-border-danger">Ban</span>
-                  <?php elseif ($account_status === 'tidak_preimum'): ?>
-                    <span class="bg-border-danger">Tidak Premium</span>
-                  <?php elseif ($account_status === 'lainnya'): ?>
-                    <span class="bg-border-danger">Lainnya</span>
-                  <?php else: ?>
-                    <span class="bg-border-danger"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $account_status)), ENT_QUOTES, 'UTF-8') ?></span>
-                  <?php endif; ?>
-                </td>
-                <td><?= !empty($account->expired_password) ? date('d-m-Y', strtotime($account->expired_password)) : '-' ?></td>
-                <td>
                   <button
                     class="btn btn-sm btn-primary dashboard-action-btn dashboard-copy-btn"
                     <?= $maxUser >= $limit ? 'disabled' : '' ?>
@@ -322,7 +272,6 @@ foreach ($products as $product) {
                     data-two-fa="<?= htmlspecialchars((string) ($account->two_fa ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <i class="bi bi-clipboard"></i>
                   </button>
-                  <a class="btn btn-sm btn-info dashboard-action-btn" href="<?= base_url('admin/detail_akun/' . (int) $account->id_akun) ?>" title="Detail"><i class="bi bi-eye-fill"></i></a>
                   <a class="btn btn-sm btn-warning dashboard-action-btn" href="<?= base_url('admin/edit_akun/' . (int) $account->id_akun) . '?return_to=' . rawurlencode('admin' . (!empty($dashboard_product) ? '?produk=' . $dashboard_product : '')) ?>"><i class="bi bi-pencil-square"></i></a>
                 </td>
               </tr>
