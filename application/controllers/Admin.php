@@ -1266,39 +1266,47 @@ $data['akun_belum_penuh'] = $available_accounts_query
             }
         }
 
-        // Format Adobe ketiga: email, password, dan URL akses pada tiga baris berurutan.
+        // Format Adobe polos: email, password, URL akses, dan opsional password akses.
+        // Coba empat baris lebih dulu agar password akses tidak dianggap sebagai email akun berikutnya.
         if ($bulk_product === 'ADOBE') {
             $plain_lines = array_values(array_filter(
                 array_map('trim', preg_split('/\r\n|\r|\n/', $bulk_accounts)),
                 static function ($line) { return $line !== ''; }
             ));
 
-            for ($index = 0; $index + 2 < count($plain_lines); $index += 3) {
-                $username = $plain_lines[$index];
-                $password = $plain_lines[$index + 1];
-                $website = $plain_lines[$index + 2];
-
-                if (
-                    strpos($username, '@') === false
-                    || $password === ''
-                    || !preg_match('/^https?:\/\/\S+$/iu', $website)
-                ) {
-                    $rows = [];
-                    break;
+            foreach ([4, 3] as $fields_per_account) {
+                if (count($plain_lines) === 0 || count($plain_lines) % $fields_per_account !== 0) {
+                    continue;
                 }
 
-                $rows[] = [
-                    'username' => $username,
-                    'password' => $password,
-                    'note' => '',
-                    'two_fa' => '',
-                    'website' => $website,
-                    'password_akses' => '',
-                ];
-            }
+                $plain_rows = [];
+                for ($index = 0; $index < count($plain_lines); $index += $fields_per_account) {
+                    $username = $plain_lines[$index];
+                    $password = $plain_lines[$index + 1];
+                    $website = $plain_lines[$index + 2];
 
-            if (!empty($rows)) {
-                return $rows;
+                    if (
+                        strpos($username, '@') === false
+                        || $password === ''
+                        || !preg_match('/^https?:\/\/\S+$/iu', $website)
+                    ) {
+                        $plain_rows = [];
+                        break;
+                    }
+
+                    $plain_rows[] = [
+                        'username' => $username,
+                        'password' => $password,
+                        'note' => '',
+                        'two_fa' => '',
+                        'website' => $website,
+                        'password_akses' => $fields_per_account === 4 ? $plain_lines[$index + 3] : '',
+                    ];
+                }
+
+                if (!empty($plain_rows)) {
+                    return $plain_rows;
+                }
             }
         }
 
