@@ -78,7 +78,9 @@
         <form action="<?= base_url('admin/bulk_tambah_akun') ?>" method="POST">
           <div class="mb-4">
             <h5 class="card-title mb-1">Tambah Stok <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></h5>
-            <div class="bulk-help">Satu akun per baris. Format: username|password|catatan</div>
+            <div class="bulk-help">
+              Format biasa: username|password|catatan. Khusus Gemini juga bisa tempel format bernomor Email, Password, dan 2fa.
+            </div>
           </div>
 
           <div class="mb-3">
@@ -92,11 +94,11 @@
 
           <div class="mb-3">
             <label>Daftar Akun</label>
-            <textarea name="bulk_accounts" class="form-control" placeholder="user1@gmail.com|password123|akun utama&#10;user2@gmail.com|pass456&#10;user3@gmail.com|mypass789|catatan opsional" required></textarea>
+            <textarea name="bulk_accounts" class="form-control" placeholder="1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret&#10;&#10;2. Email: user2@gmail.com&#10;- Password: password456 2fa :" required></textarea>
           </div>
 
           <div class="bulk-defaults mb-4">
-            Default: <strong>Nama Akun <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User <?= $bulk_max_user ?></strong>, expired dan tanggal dikosongkan.
+            Default: <strong>Nama Akun <?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User <?= $bulk_max_user ?></strong>. Kolom 2FA hanya disimpan untuk Gemini dan boleh kosong.
           </div>
 
           <div class="d-flex justify-content-end gap-2">

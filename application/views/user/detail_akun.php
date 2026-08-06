@@ -92,6 +92,23 @@
 
                         </div>
 
+                        <?php if (strtoupper((string) ($akun->nama_akun ?? '')) === 'GEMINI'): ?>
+                        <!-- 2FA GEMINI -->
+                        <div class="mb-2">
+
+                            <label class="detail-label">
+                                2FA
+                            </label>
+
+                            <div class="detail-box">
+                                <?= !empty($akun->two_fa)
+                                    ? htmlspecialchars($akun->two_fa, ENT_QUOTES, 'UTF-8')
+                                    : '-' ?>
+                            </div>
+
+                        </div>
+                        <?php endif; ?>
+
                         <!-- WEBSITE -->
                         <div class="mb-2">
 

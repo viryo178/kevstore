@@ -820,23 +820,17 @@ $data['akun_belum_penuh'] = $available_accounts_query
             ? $bulk_product
             : 'SPOTIFY';
         $bulk_max_user = 0;
-        $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
+        $rows = $this->parse_bulk_account_rows($bulk_accounts, $bulk_product);
 
         $created = 0;
         $skipped = 0;
         $seen_usernames = [];
 
-        foreach ($lines as $line) {
-            $line = trim((string) $line);
-
-            if ($line === '') {
-                continue;
-            }
-
-            $parts = explode('|', $line, 3);
-            $row_username = trim($parts[0] ?? '');
-            $row_password = trim($parts[1] ?? '');
-            $row_note = trim($parts[2] ?? '');
+        foreach ($rows as $row) {
+            $row_username = $row['username'];
+            $row_password = $row['password'];
+            $row_note = $row['note'];
+            $row_two_fa = $row['two_fa'];
 
             if ($row_username === '' || $row_password === '') {
                 $skipped++;
@@ -858,6 +852,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'status'           => $this->resolve_status_from_note('aktif', $row_note, true),
                 'username'         => $row_username,
                 'password'         => $row_password,
+                'two_fa'           => $bulk_product === 'GEMINI' && $row_two_fa !== '' ? $row_two_fa : null,
                 'website'          => '',
                 'max_user'         => $bulk_max_user,
                 'expired_password' => null,
@@ -891,6 +886,60 @@ $data['akun_belum_penuh'] = $available_accounts_query
         }
 
         redirect('admin/kelola_akun?search_akun=' . rawurlencode($bulk_product) . '&product=' . rawurlencode($bulk_product));
+    }
+
+    private function parse_bulk_account_rows($bulk_accounts, $bulk_product)
+    {
+        $rows = [];
+
+        // Format khusus Gemini:
+        // 1. Email: user@gmail.com
+        // - Password: password 2fa : https://contoh.test/secret
+        if ($bulk_product === 'GEMINI') {
+            preg_match_all(
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\r\n]+)\R\s*(?:-\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                $bulk_accounts,
+                $matches,
+                PREG_SET_ORDER
+            );
+
+            foreach ($matches as $match) {
+                $password_and_two_fa = trim((string) ($match[2] ?? ''));
+                $password_parts = preg_split('/\s+2fa\s*:\s*/iu', $password_and_two_fa, 2);
+
+                $rows[] = [
+                    'username' => trim((string) ($match[1] ?? '')),
+                    'password' => trim((string) ($password_parts[0] ?? '')),
+                    'note' => '',
+                    'two_fa' => trim((string) ($password_parts[1] ?? '')),
+                ];
+            }
+
+            if (!empty($rows)) {
+                return $rows;
+            }
+        }
+
+        // Format lama tetap didukung. Kolom keempat hanya dipakai untuk Gemini.
+        $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
+
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = explode('|', $line, 4);
+            $rows[] = [
+                'username' => trim($parts[0] ?? ''),
+                'password' => trim($parts[1] ?? ''),
+                'note' => trim($parts[2] ?? ''),
+                'two_fa' => $bulk_product === 'GEMINI' ? trim($parts[3] ?? '') : '',
+            ];
+        }
+
+        return $rows;
     }
 
     public function bulk_edit_akun()
