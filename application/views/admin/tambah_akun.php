@@ -67,6 +67,10 @@
               <input type="text" name="website" class="form-control">
             </div>
             <div class="col-md-6 mb-3">
+              <label>Password Akses</label>
+              <input type="text" name="password_akses" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
               <label>Max User</label>
               <input type="number" name="max_user" class="form-control" value="0">
             </div>

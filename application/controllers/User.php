@@ -18,6 +18,14 @@ class User extends CI_Controller
 
         $this->load->helper('text');
         $this->load->database();
+        $this->ensure_password_akses_column();
+    }
+
+    private function ensure_password_akses_column()
+    {
+        if ($this->db->table_exists('akun') && !$this->db->field_exists('password_akses', 'akun')) {
+            $this->db->query("ALTER TABLE `akun` ADD `password_akses` VARCHAR(255) NULL AFTER `website`");
+        }
     }
 
     private function normalize_date($value)
@@ -183,6 +191,7 @@ class User extends CI_Controller
             'username',
             'password',
             'website',
+            'password_akses',
             'note',
             'max_user',
             'expired_password',
@@ -223,6 +232,7 @@ class User extends CI_Controller
             'username' => 'Email / Username',
             'password' => 'Password',
             'website' => 'Website',
+            'password_akses' => 'Password Akses',
             'note' => 'Note',
             'max_user' => 'Max User',
             'expired_password' => 'Expired Password',
@@ -543,6 +553,7 @@ private function get_notification_data()
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
+                'password_akses'   => $this->input->post('password_akses') ?: null,
                 'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),
@@ -830,6 +841,7 @@ private function get_notification_data()
                 'username'         => $row_username,
                 'password'         => $row['password'] ?? '',
                 'website'          => $row['website'] ?? '',
+                'password_akses'   => $row['password_akses'] ?? ($akun->password_akses ?? null),
                 'note'             => $row_note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($row['expired_password'] ?? ''),
@@ -1433,6 +1445,7 @@ private function get_notification_data()
             'username'         => $username,
             'password'         => $this->input->post('password'),
             'website'          => $this->input->post('website'),
+            'password_akses'   => $this->input->post('password_akses') ?: ($akun_old->password_akses ?? null),
             'note'             => $note,
             'max_user'         => $max_user,
             'expired_password' => $this->normalize_date($this->input->post('expired_password')),
@@ -1524,6 +1537,7 @@ private function get_notification_data()
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
+                'password_akses'   => $this->input->post('password_akses') ?: ($data['akun']->password_akses ?? null),
                 'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),

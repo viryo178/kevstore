@@ -65,6 +65,10 @@
                   <input type="text" name="akun[<?= $a->id_akun ?>][website]" class="form-control" value="<?= htmlspecialchars($a->website ?? '', ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="col-md-6 mb-3">
+                  <label>Password Akses</label>
+                  <input type="text" name="akun[<?= $a->id_akun ?>][password_akses]" class="form-control" value="<?= htmlspecialchars($a->password_akses ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+                <div class="col-md-6 mb-3">
                   <label>Max User</label>
                   <input type="number" name="akun[<?= $a->id_akun ?>][max_user]" class="form-control" value="<?= htmlspecialchars($a->max_user ?? '0', ENT_QUOTES, 'UTF-8') ?>">
                 </div>

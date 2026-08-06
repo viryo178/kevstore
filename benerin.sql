@@ -12,6 +12,10 @@ SET NAMES utf8mb4;
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `two_fa` varchar(500) DEFAULT NULL AFTER `password`;
 
+-- Password khusus untuk membuka akses email/OTP akun Adobe.
+ALTER TABLE `akun`
+  ADD COLUMN IF NOT EXISTS `password_akses` varchar(255) DEFAULT NULL AFTER `website`;
+
 -- Variasi khusus akun Zoom.
 ALTER TABLE `akun`
   ADD COLUMN IF NOT EXISTS `durasi_zoom` varchar(20) DEFAULT NULL AFTER `nama_akun`;
@@ -111,6 +115,13 @@ SELECT IF(
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = 'akun'
       AND COLUMN_NAME = 'durasi_zoom'
+  )
+  AND EXISTS(
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'akun'
+      AND COLUMN_NAME = 'password_akses'
   )
   AND EXISTS(
     SELECT 1

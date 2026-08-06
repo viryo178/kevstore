@@ -275,6 +275,10 @@
                 <label id="editAccessLabel">Website</label>
                 <input type="text" name="website" class="form-control">
               </div>
+              <div class="col-md-6 mb-3">
+                <label>Password Akses</label>
+                <input type="text" name="password_akses" class="form-control">
+              </div>
 
               <div class="col-md-6 mb-3">
                 <label>Max User</label>
@@ -340,6 +344,7 @@
           document.querySelector('[name="username"]').value = d.username;
           document.querySelector('[name="password"]').value = d.password;
           document.querySelector('[name="website"]').value = d.website;
+          document.querySelector('[name="password_akses"]').value = d.password_akses || '';
           const editAccessLabel = document.getElementById('editAccessLabel');
           if (editAccessLabel) editAccessLabel.textContent = String(d.nama_akun || '').trim().toUpperCase() === 'ADOBE' ? 'Akses' : 'Website';
           document.querySelector('[name="max_user"]').value = 0;

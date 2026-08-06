@@ -109,11 +109,18 @@
                         </div>
                         <?php endif; ?>
 
+                        <?php if (strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ADOBE'): ?>
+                        <div class="mb-2">
+                            <label class="detail-label">Password Akses</label>
+                            <div class="detail-box"><?= !empty($akun->password_akses) ? htmlspecialchars($akun->password_akses, ENT_QUOTES, 'UTF-8') : '-' ?></div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- WEBSITE -->
                         <div class="mb-2">
 
                             <label class="detail-label">
-                                Website
+                                <?= strtoupper(trim((string) ($akun->nama_akun ?? ''))) === 'ADOBE' ? 'Akses' : 'Website' ?>
                             </label>
 
                             <div class="detail-box">

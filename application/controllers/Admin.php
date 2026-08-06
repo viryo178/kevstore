@@ -19,6 +19,7 @@ class Admin extends CI_Controller
         $this->load->helper('text');
         $this->load->database();
         $this->ensure_zoom_duration_column();
+        $this->ensure_password_akses_column();
         $this->process_account_bin();
     }
 
@@ -31,6 +32,13 @@ class Admin extends CI_Controller
         if ($this->db->table_exists('akun') && $this->db->field_exists('durasi_zoom', 'akun')) {
             // Akun Zoom yang dibuat sebelum fitur variasi dianggap paket 1 bulan.
             $this->db->query("UPDATE `akun` SET `durasi_zoom` = '1_bulan' WHERE UPPER(TRIM(`nama_akun`)) = 'ZOOM' AND (`durasi_zoom` IS NULL OR `durasi_zoom` = '')");
+        }
+    }
+
+    private function ensure_password_akses_column()
+    {
+        if ($this->db->table_exists('akun') && !$this->db->field_exists('password_akses', 'akun')) {
+            $this->db->query("ALTER TABLE `akun` ADD `password_akses` VARCHAR(255) NULL AFTER `website`");
         }
     }
 
@@ -387,6 +395,7 @@ class Admin extends CI_Controller
             'username',
             'password',
             'website',
+            'password_akses',
             'note',
             'max_user',
             'expired_password',
@@ -428,6 +437,7 @@ class Admin extends CI_Controller
             'username' => 'Email / Username',
             'password' => 'Password',
             'website' => 'Website',
+            'password_akses' => 'Password Akses',
             'note' => 'Note',
             'max_user' => 'Max User',
             'expired_password' => 'Expired Password',
@@ -909,6 +919,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
+                'password_akses'   => $this->input->post('password_akses') ?: null,
                 'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),
@@ -1013,6 +1024,16 @@ $data['akun_belum_penuh'] = $available_accounts_query
             return;
         }
 
+        if ($bulk_product === 'ADOBE' && !$this->db->field_exists('password_akses', 'akun')) {
+            $this->db->query("ALTER TABLE `akun` ADD COLUMN `password_akses` varchar(255) DEFAULT NULL AFTER `website`");
+        }
+
+        if ($bulk_product === 'ADOBE' && !$this->db->field_exists('password_akses', 'akun')) {
+            $this->session->set_flashdata('error', 'Kolom Password Akses belum tersedia. Jalankan benerin.sql terlebih dahulu.');
+            redirect('admin/bulk_tambah_akun?product=ADOBE');
+            return;
+        }
+
         $bulk_max_user = 0;
         $rows = $this->parse_bulk_account_rows($bulk_accounts, $bulk_product);
 
@@ -1028,6 +1049,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $row_note = $row['note'];
             $row_two_fa = $row['two_fa'];
             $row_website = $row['website'] ?? '';
+            $row_password_akses = $row['password_akses'] ?? '';
 
             if ($row_username === '' || $row_password === '') {
                 $invalid++;
@@ -1053,6 +1075,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'password'         => $row_password,
                 'two_fa'           => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) && $row_two_fa !== '' ? $row_two_fa : null,
                 'website'          => $row_website,
+                'password_akses'   => $bulk_product === 'ADOBE' && $row_password_akses !== '' ? $row_password_akses : null,
                 'max_user'         => $bulk_max_user,
                 'expired_password' => null,
                 'note'             => $row_note,
@@ -1209,9 +1232,14 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 $password_parts = preg_split('/\s+2fa\s*:\s*/iu', $password_and_two_fa, 2);
                 $two_fa = trim((string) ($password_parts[1] ?? ''));
                 $website = '';
+                $password_akses = '';
 
-                if (preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?(?:Email\s*)?Akses\s*:?[ \t]*(\S+)/iu', $details, $access_match)) {
+                if (preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?(?:(?:Email\s*)?Akses\s*:?[ \t]*|Link\s+Akses[^\r\n]*?)(https?:\/\/\S+)/iu', $details, $access_match)) {
                     $website = trim((string) ($access_match[1] ?? ''));
+                }
+
+                if (preg_match('/Email\s+sama\s*\|\s*Password\s*:\s*([^\r\n]+)/iu', $details, $access_password_match)) {
+                    $password_akses = trim((string) ($access_password_match[1] ?? ''));
                 }
 
                 if ($two_fa === '' && preg_match('/(?:^|\R)\s*(?:[^\p{L}\p{N}\r\n]\s*)?2fa\s*:\s*([^\r\n]*)/iu', $details, $two_fa_match)) {
@@ -1229,6 +1257,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                     'note' => '',
                     'two_fa' => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? $two_fa : '',
                     'website' => $bulk_product === 'ADOBE' ? $website : '',
+                    'password_akses' => $bulk_product === 'ADOBE' ? $password_akses : '',
                 ];
             }
 
@@ -1264,6 +1293,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                     'note' => '',
                     'two_fa' => '',
                     'website' => $website,
+                    'password_akses' => '',
                 ];
             }
 
@@ -1289,6 +1319,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'note' => trim($parts[2] ?? ''),
                 'two_fa' => in_array($bulk_product, ['GEMINI', 'ADOBE'], true) ? trim($parts[3] ?? '') : '',
                 'website' => '',
+                'password_akses' => '',
             ];
         }
 
@@ -1418,6 +1449,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'username'         => $row_username,
                 'password'         => $row['password'] ?? '',
                 'website'          => $row['website'] ?? '',
+                'password_akses'   => $row['password_akses'] ?? ($akun->password_akses ?? null),
                 'note'             => $row_note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($row['expired_password'] ?? ''),
@@ -2035,6 +2067,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
             'username'         => $username,
             'password'         => $this->input->post('password'),
             'website'          => $this->input->post('website'),
+            'password_akses'   => $this->input->post('password_akses') ?: ($akun_old->password_akses ?? null),
             'note'             => $note,
             'max_user'         => $max_user,
             'expired_password' => $this->normalize_date($this->input->post('expired_password')),
@@ -2134,6 +2167,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'username'         => $username,
                 'password'         => $this->input->post('password'),
                 'website'          => $this->input->post('website'),
+                'password_akses'   => $this->input->post('password_akses') ?: ($data['akun']->password_akses ?? null),
                 'note'             => $note,
                 'max_user'         => $max_user,
                 'expired_password' => $this->normalize_date($this->input->post('expired_password')),
