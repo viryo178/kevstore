@@ -60,6 +60,12 @@ $allSalesTotal = array_sum($allSales);
 </style>
 <style>
 .stock-zoom-breakdown{display:flex;flex-direction:column;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}.zoom-stock-state{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;font-size:10px;font-style:normal;font-weight:700}.zoom-stock-state.safe{background:rgba(34,197,94,.14);color:#4ade80}.zoom-stock-state.warning{background:rgba(245,158,11,.14);color:#fbbf24}.zoom-stock-state.danger{background:rgba(239,68,68,.14);color:#f87171}
+.stock-alert.product-spotify{background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.55)}.stock-alert.product-spotify>i{color:#4ade80!important}
+.stock-alert.product-leonardo{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.55)}.stock-alert.product-leonardo>i{color:#fb7185!important}
+.stock-alert.product-gemini{background:rgba(234,179,8,.10);border-color:rgba(234,179,8,.58)}.stock-alert.product-gemini>i{color:#fde047!important}
+.stock-alert.product-zoom{background:rgba(59,130,246,.11);border-color:rgba(59,130,246,.58)}.stock-alert.product-zoom>i{color:#60a5fa!important}
+.stock-alert.product-adobe{background:rgba(168,85,247,.11);border-color:rgba(168,85,247,.58)}.stock-alert.product-adobe>i{color:#d8b4fe!important}
+.stock-alert>i{flex:0 0 36px;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:20px!important;filter:drop-shadow(0 0 6px currentColor)}
 </style>
 <main id="main" class="main">
 <div class="pagetitle"><h1>Akun Penjualan</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Akun Penjualan</li></ol></nav></div>
@@ -113,7 +119,7 @@ $allSalesTotal = array_sum($allSales);
               }
           }
         ?>
-        <div class="stock-alert <?= $stock_class ?>">
+        <div class="stock-alert <?= $stock_class ?> product-<?= strtolower($product) ?>">
           <i class="bi <?= $stock_icon ?>"></i>
           <div>
             <strong><?= ucfirst(strtolower($product)) ?></strong>

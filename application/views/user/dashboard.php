@@ -416,6 +416,10 @@
     margin: 0;
   }
 
+  .dashboard-notif-list .notif-group.notif-danger .notif-account-list {
+    border-top-color: rgba(239, 68, 68, .22);
+  }
+
   .notif-account-item {
     display: flex;
     align-items: center;
@@ -976,7 +980,7 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
                   'title' => $config[0],
                   'description' => count($problem_status_groups[$problem_status]) . ' akun perlu dicek',
                   'icon' => $config[1],
-                  'severity' => 'notif-warning',
+                  'severity' => $problem_status === 'deactived' ? 'notif-danger' : 'notif-warning',
                   'accounts' => $problem_status_groups[$problem_status],
                   'meta' => 'status'
                 ];
