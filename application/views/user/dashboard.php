@@ -287,7 +287,7 @@
     gap: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, .25);
     border: 1px solid rgba(255, 255, 255, .05);
-    border-left: 4px solid transparent;
+    border-left: 0;
     transition: .3s;
     text-decoration: none;
   }
@@ -304,6 +304,19 @@
   .dashboard-notif-list .notif-warning {
     border-left-color: #facc15;
   }
+
+  .dashboard-notif-list .notif-group {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-left: 4px solid transparent;
+    border-radius: 16px;
+    background: #0b1f3a;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .22);
+  }
+
+  .dashboard-notif-list .notif-group.notif-danger { border-left-color: #ef4444; }
+  .dashboard-notif-list .notif-group.notif-warning { border-left-color: #facc15; }
+  .dashboard-notif-list .notif-group .notif-card { border: 0; border-radius: 0; box-shadow: none; }
 
   .dashboard-notif-list .notif-icon {
     width: 38px;
@@ -396,11 +409,11 @@
 
   .notif-account-list {
     background: linear-gradient(180deg, rgba(11, 31, 58, .96), rgba(8, 18, 35, .96));
-    border: 1px solid rgba(250, 204, 21, .18);
-    border-top: 0;
-    border-radius: 0 0 14px 14px;
+    border: 0;
+    border-top: 1px solid rgba(250, 204, 21, .14);
+    border-radius: 0;
     padding: 10px 12px 8px;
-    margin: -7px 5px 0;
+    margin: 0;
   }
 
   .notif-account-item {
@@ -975,7 +988,7 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
                 <?php foreach ($dashboard_notification_groups as $index => $notification): ?>
                   <?php $collapse_id = 'dashboardNotif' . ucfirst($notification['id']); ?>
 
-                  <div class="notif-group">
+                  <div class="notif-group <?= htmlspecialchars((string)$notification['severity']) ?>">
                     <button
                       type="button"
                       class="notif-card <?= htmlspecialchars((string)$notification['severity']) ?>"

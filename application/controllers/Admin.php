@@ -629,8 +629,8 @@ if ($dashboard_product !== '') {
         ->group_end();
 }
 $data['akun_belum_penuh'] = $available_accounts_query
-    // Semua kategori tetap tampil; hanya akun berstatus terjual yang disembunyikan.
-    ->where('status !=', 'terjual')
+    // Tabel dashboard hanya menampilkan akun yang benar-benar masih aktif/tersedia.
+    ->where("LOWER(TRIM(status)) = 'aktif'", null, false)
     ->order_by('id_akun', 'ASC')
     ->get()
     ->result();
