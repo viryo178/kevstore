@@ -60,12 +60,15 @@ $allSalesTotal = array_sum($allSales);
 </style>
 <style>
 .stock-zoom-breakdown{display:flex;flex-direction:column;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}.zoom-stock-state{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;font-size:10px;font-style:normal;font-weight:700}.zoom-stock-state.safe{background:rgba(34,197,94,.14);color:#4ade80}.zoom-stock-state.warning{background:rgba(245,158,11,.14);color:#fbbf24}.zoom-stock-state.danger{background:rgba(239,68,68,.14);color:#f87171}
-.stock-alert.product-spotify{background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.55)}.stock-alert.product-spotify>i{color:#4ade80!important}
-.stock-alert.product-leonardo{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.55)}.stock-alert.product-leonardo>i{color:#fb7185!important}
-.stock-alert.product-gemini{background:rgba(234,179,8,.10);border-color:rgba(234,179,8,.58)}.stock-alert.product-gemini>i{color:#fde047!important}
-.stock-alert.product-zoom{background:rgba(59,130,246,.11);border-color:rgba(59,130,246,.58)}.stock-alert.product-zoom>i{color:#60a5fa!important}
-.stock-alert.product-adobe{background:rgba(168,85,247,.11);border-color:rgba(168,85,247,.58)}.stock-alert.product-adobe>i{color:#d8b4fe!important}
-.stock-alert>i{flex:0 0 36px;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:20px!important;filter:drop-shadow(0 0 6px currentColor)}
+.sales-summary-item{position:relative;overflow:hidden;transition:transform .2s ease,filter .2s ease}
+.sales-summary-item::before{content:"";position:absolute;inset:0;pointer-events:none}
+.sales-summary-item span,.sales-summary-item strong{position:relative;z-index:1}
+.sales-summary-item:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.sales-summary-item.product-spotify{border-color:#16a34a;background:#0b2632}.sales-summary-item.product-spotify::before{background:linear-gradient(135deg,rgba(34,197,94,.15),transparent 65%)}
+.sales-summary-item.product-leonardo{border-color:#ef4444;background:#17223b}.sales-summary-item.product-leonardo::before{background:linear-gradient(135deg,rgba(239,68,68,.15),transparent 65%)}
+.sales-summary-item.product-gemini{border-color:#eab308;background:#19283a}.sales-summary-item.product-gemini::before{background:linear-gradient(135deg,rgba(234,179,8,.15),transparent 65%)}
+.sales-summary-item.product-zoom{border-color:#3b82f6;background:#10294a}.sales-summary-item.product-zoom::before{background:linear-gradient(135deg,rgba(59,130,246,.16),transparent 65%)}
+.sales-summary-item.product-adobe{border-color:#a855f7;background:#182344}.sales-summary-item.product-adobe::before{background:linear-gradient(135deg,rgba(168,85,247,.16),transparent 65%)}
 </style>
 <main id="main" class="main">
 <div class="pagetitle"><h1>Akun Penjualan</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Admin</a></li><li class="breadcrumb-item active">Akun Penjualan</li></ol></nav></div>
@@ -82,7 +85,7 @@ $allSalesTotal = array_sum($allSales);
     <div class="sales-filter-note"><?= htmlspecialchars($periodLabels[$period], ENT_QUOTES, 'UTF-8') ?></div>
   </form>
   <div class="sales-summary">
-    <?php foreach ($products as $product): ?><div class="sales-summary-item"><span><?= ucfirst(strtolower($product)) ?> Terjual</span><strong><?= (int) $sales[$product] ?></strong></div><?php endforeach; ?>
+    <?php foreach ($products as $product): ?><div class="sales-summary-item product-<?= strtolower($product) ?>"><span><?= ucfirst(strtolower($product)) ?> Terjual</span><strong><?= (int) $sales[$product] ?></strong></div><?php endforeach; ?>
     <div class="sales-summary-item total-period"><span>Total <?= htmlspecialchars($periodLabels[$period], ENT_QUOTES, 'UTF-8') ?></span><strong><?= (int) $periodSalesTotal ?></strong></div>
     <div class="sales-summary-item total-all"><span>Total Penjualan Semuanya</span><strong><?= (int) $allSalesTotal ?></strong></div>
   </div>
@@ -119,7 +122,7 @@ $allSalesTotal = array_sum($allSales);
               }
           }
         ?>
-        <div class="stock-alert <?= $stock_class ?> product-<?= strtolower($product) ?>">
+        <div class="stock-alert <?= $stock_class ?>">
           <i class="bi <?= $stock_icon ?>"></i>
           <div>
             <strong><?= ucfirst(strtolower($product)) ?></strong>
