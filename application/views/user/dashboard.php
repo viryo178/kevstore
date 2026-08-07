@@ -280,8 +280,8 @@
 
   .dashboard-notif-list .notif-card {
     background: #0b1f3a !important;
-    border-radius: 14px;
-    padding: 11px 12px;
+    border-radius: 16px;
+    padding: 15px 16px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -395,12 +395,12 @@
   }
 
   .notif-account-list {
-    background: rgba(8, 18, 35, .88);
-    border: 1px solid rgba(255, 255, 255, .06);
+    background: linear-gradient(180deg, rgba(11, 31, 58, .96), rgba(8, 18, 35, .96));
+    border: 1px solid rgba(250, 204, 21, .18);
     border-top: 0;
-    border-radius: 0 0 12px 12px;
-    padding: 8px;
-    margin-top: -10px;
+    border-radius: 0 0 14px 14px;
+    padding: 10px 12px 8px;
+    margin: -7px 5px 0;
   }
 
   .notif-account-item {
@@ -408,7 +408,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 9px 6px;
+    padding: 11px 6px;
     border-bottom: 1px solid rgba(255, 255, 255, .06);
   }
 
@@ -426,6 +426,28 @@
     color: #94a3b8;
     font-size: 11px;
     margin-top: 2px;
+  }
+
+  .notif-account-item .btn-notif-edit {
+    background: #facc15 !important;
+    border: 1px solid #facc15 !important;
+    color: #123a72 !important;
+    border-radius: 8px !important;
+    padding: 6px 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(250, 204, 21, .16);
+  }
+
+  .notif-account-item .btn-notif-edit:hover {
+    background: #fde047 !important;
+    border-color: #fde047 !important;
+    color: #0b2d5c !important;
+  }
+
+  .dashboard-notif-list .notif-warning .notif-count {
+    background: #facc15;
+    border-color: #facc15;
+    color: #123a72 !important;
   }
 </style>
 
@@ -897,17 +919,53 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
               <?php
               $dashboard_notification_groups = [];
 
-              $expired_dashboard_accounts = array_merge($expired_accounts ?? [], $almost_expired ?? []);
-
-              if (!empty($expired_dashboard_accounts)) {
+              if (!empty($expired_accounts)) {
                 $dashboard_notification_groups[] = [
                   'id' => 'expired',
                   'title' => 'Akun Expired',
-                  'description' => count($expired_dashboard_accounts) . ' akun expired',
+                  'description' => count($expired_accounts) . ' akun expired',
                   'icon' => 'bi-exclamation-triangle-fill',
                   'severity' => 'notif-danger',
-                  'accounts' => $expired_dashboard_accounts,
+                  'accounts' => $expired_accounts,
                   'meta' => 'expired_password'
+                ];
+              }
+
+              if (!empty($almost_expired)) {
+                $dashboard_notification_groups[] = [
+                  'id' => 'expired-today',
+                  'title' => 'Expired Hari Ini',
+                  'description' => count($almost_expired) . ' akun jatuh tempo hari ini',
+                  'icon' => 'bi-bell-fill',
+                  'severity' => 'notif-warning',
+                  'accounts' => $almost_expired,
+                  'meta' => 'expired_password'
+                ];
+              }
+
+              $problem_status_config = [
+                'verif' => ['Verif', 'bi-shield-check'],
+                'deactived' => ['Akun Bermasalah', 'bi-exclamation-octagon-fill'],
+                'tidak_preimum' => ['Tidak Premium', 'bi-star-fill'],
+                'ban' => ['Ban', 'bi-slash-circle-fill'],
+                'lainnya' => ['Lainnya', 'bi-info-circle-fill'],
+              ];
+              $problem_status_groups = [];
+              foreach (($status_problem ?? []) as $problem_account) {
+                $problem_status = strtolower(str_replace([' ', '-'], '_', trim((string) ($problem_account->status ?? 'lainnya'))));
+                if (!isset($problem_status_config[$problem_status])) $problem_status = 'lainnya';
+                $problem_status_groups[$problem_status][] = $problem_account;
+              }
+              foreach ($problem_status_config as $problem_status => $config) {
+                if (empty($problem_status_groups[$problem_status])) continue;
+                $dashboard_notification_groups[] = [
+                  'id' => 'status-' . $problem_status,
+                  'title' => $config[0],
+                  'description' => count($problem_status_groups[$problem_status]) . ' akun perlu dicek',
+                  'icon' => $config[1],
+                  'severity' => 'notif-warning',
+                  'accounts' => $problem_status_groups[$problem_status],
+                  'meta' => 'status'
                 ];
               }
               ?>
@@ -970,7 +1028,7 @@ $limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], 
 
                             <button
                               type="button"
-                              class="btn btn-sm btn-warning btn-edit-akun"
+                              class="btn btn-sm btn-warning btn-notif-edit btn-edit-akun"
                               data-notification-check="1"
                               data-id="<?= (int)$account->id_akun ?>">
                               Edit
