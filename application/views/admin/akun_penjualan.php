@@ -60,6 +60,10 @@ $allSalesTotal = array_sum($allSales);
 </style>
 <style>
 .stock-zoom-breakdown{display:flex;flex-direction:column;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.18);color:#c7d7f5;font-size:12px}.stock-zoom-breakdown b{color:#fff}.zoom-stock-state{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;font-size:10px;font-style:normal;font-weight:700}.zoom-stock-state.safe{background:rgba(34,197,94,.14);color:#4ade80}.zoom-stock-state.warning{background:rgba(245,158,11,.14);color:#fbbf24}.zoom-stock-state.danger{background:rgba(239,68,68,.14);color:#f87171}
+.stock-card .stock-alert>i{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:19px!important}
+.stock-card .stock-alert.safe>i{color:#4ade80!important;background:rgba(34,197,94,.16)!important;border:1px solid rgba(74,222,128,.25);filter:drop-shadow(0 0 5px rgba(74,222,128,.45))}
+.stock-card .stock-alert.warning>i{color:#fbbf24!important;background:rgba(245,158,11,.16)!important;border:1px solid rgba(251,191,36,.28);filter:drop-shadow(0 0 5px rgba(251,191,36,.45))}
+.stock-card .stock-alert.danger>i{color:#f87171!important;background:rgba(239,68,68,.16)!important;border:1px solid rgba(248,113,113,.28);filter:drop-shadow(0 0 5px rgba(248,113,113,.45))}
 .sales-summary-item{position:relative;overflow:hidden;transition:transform .2s ease,filter .2s ease}
 .sales-summary-item::before{content:"";position:absolute;inset:0;pointer-events:none}
 .sales-summary-item span,.sales-summary-item strong{position:relative;z-index:1}
