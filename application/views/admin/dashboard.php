@@ -181,6 +181,40 @@ foreach ($products as $product) {
 
 .dashboard .metric-product .card-icon i{color:inherit!important;filter:drop-shadow(0 0 6px currentColor)}
 .dashboard .metric-product .metric-card:hover{transform:translateY(-3px);filter:brightness(1.08)}
+
+/*
+ * Safari iOS dapat salah menghitung tinggi intrinsik saat height:100% dipakai
+ * di dalam card yang tingginya auto dan child-nya CSS Grid. Akibatnya isi kartu
+ * produk terdorong ke bawah sehingga yang terlihat hanya background/border.
+ */
+@media (max-width:575px){
+  .dashboard-main-grid .metric-link{
+    display:block!important;
+    min-width:0!important;
+  }
+  .dashboard-main-grid .metric-card,
+  .dashboard-main-grid .metric-product .metric-card{
+    height:148px!important;
+    min-height:148px!important;
+  }
+  .dashboard-main-grid .metric-card .card-body,
+  .dashboard-main-grid .metric-product .metric-card .card-body{
+    display:flex!important;
+    height:148px!important;
+    min-height:0!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    gap:14px!important;
+    box-sizing:border-box!important;
+  }
+  .dashboard .metric-product .metric-card .d-flex.align-items-center{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    grid-template-columns:56px minmax(0,1fr)!important;
+    justify-content:stretch!important;
+  }
+}
 </style>
 
 <main id="main" class="main">
