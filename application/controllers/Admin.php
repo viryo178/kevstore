@@ -1210,6 +1210,52 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         $rows = [];
 
+        // Format Adobe dua baris:
+        // password akun
+        // email:password akses:token:uuid
+        // Baris kedua disimpan utuh sebagai note. Pasangan dapat diulang.
+        if ($bulk_product === 'ADOBE') {
+            $adobe_lines = array_values(array_filter(
+                array_map('trim', preg_split('/\r\n|\r|\n/', $bulk_accounts)),
+                static function ($line) { return $line !== ''; }
+            ));
+
+            if (count($adobe_lines) >= 2 && count($adobe_lines) % 2 === 0) {
+                $adobe_rows = [];
+
+                for ($index = 0; $index < count($adobe_lines); $index += 2) {
+                    $password = $adobe_lines[$index];
+                    $note = $adobe_lines[$index + 1];
+                    $note_parts = explode(':', $note, 3);
+                    $username = trim((string) ($note_parts[0] ?? ''));
+                    $password_akses = trim((string) ($note_parts[1] ?? ''));
+
+                    if (
+                        $password === ''
+                        || !filter_var($username, FILTER_VALIDATE_EMAIL)
+                        || $password_akses === ''
+                        || count($note_parts) < 3
+                    ) {
+                        $adobe_rows = [];
+                        break;
+                    }
+
+                    $adobe_rows[] = [
+                        'username' => $username,
+                        'password' => $password,
+                        'note' => $note,
+                        'two_fa' => '',
+                        'website' => '',
+                        'password_akses' => $password_akses,
+                    ];
+                }
+
+                if (!empty($adobe_rows)) {
+                    return $adobe_rows;
+                }
+            }
+        }
+
         // Format berlabel untuk Gemini, Adobe, dan Spotify:
         // Email: user@example.com
         // Password: password

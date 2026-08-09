@@ -81,7 +81,7 @@
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
               <?= $bulk_product === 'ADOBE'
-                ? 'Format Adobe: email, password, URL akses, lalu password akses (opsional) untuk setiap akun.'
+                ? 'Format Adobe baru: baris pertama password akun, baris kedua email:password akses:token:uuid. Format Adobe lama tetap didukung.'
                 : ($bulk_product === 'GEMINI'
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
@@ -115,7 +115,7 @@
               name="bulk_accounts"
               class="form-control"
               placeholder="<?= $bulk_product === 'ADOBE'
-                ? 'Email : user@hotmail.com&#10;Password : Premium123@&#10;&#10;➥Link akses dapat otp login, https://outlook.live.com/mail/&#10;➥Email sama|Password : passwordAkses123'
+                ? 'PasswordAkun123&#10;user@hotmail.com:passwordAkses123:token:uuid'
                 : ($bulk_product === 'GEMINI'
                   ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret'
                   : ($bulk_product === 'SPOTIFY'
@@ -165,14 +165,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
-      ? 'Format Adobe: email, password, URL akses, lalu password akses (opsional) untuk setiap akun.'
+      ? 'Format Adobe baru: baris pertama password akun, baris kedua email:password akses:token:uuid. Format Adobe lama tetap didukung.'
       : (isGemini
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify
           ? 'Format Spotify: username|password atau format Email dan Password.'
           : 'Format: username|password. Satu akun ditulis dalam satu baris.'));
     accountsInput.placeholder = isAdobe
-      ? 'Email : user@hotmail.com\nPassword : Premium123@\n\n➥Link akses dapat otp login, https://outlook.live.com/mail/\n➥Email sama|Password : passwordAkses123'
+      ? 'PasswordAkun123\nuser@hotmail.com:passwordAkses123:token:uuid'
       : (isGemini
         ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret'
         : (isSpotify
