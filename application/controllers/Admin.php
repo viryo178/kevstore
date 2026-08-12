@@ -1238,8 +1238,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
                     continue;
                 }
 
-                if (preg_match('/^[\s\-*]*Akses\s+email\b.*$/iu', $access_line)) {
-                    $access_note = trim((string) preg_replace('/^[\s\-*]+/u', '', $access_line));
+                if (preg_match('/^[^\p{L}\p{N}]*Akses\s+email\b.*$/iu', $access_line)) {
+                    $access_note = trim((string) preg_replace('/^[^\p{L}\p{N}]+/u', '', $access_line));
                     continue;
                 }
 
