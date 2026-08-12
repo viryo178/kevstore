@@ -81,7 +81,7 @@
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
               <?= $bulk_product === 'ADOBE'
-                ? 'Format Adobe: baris pertama password akun, baris kedua email:password akses:token:uuid. Format pemisah | yang lama tetap didukung. Pisahkan setiap akun dengan baris kosong (opsional).'
+                ? 'Format Adobe: password akun lalu email:password akses:token:uuid; atau daftar email, baris Syarat & Ketentuan, lalu Akses email untuk disimpan sebagai note. Format pemisah | yang lama tetap didukung.'
                 : ($bulk_product === 'GEMINI'
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
@@ -115,7 +115,7 @@
               name="bulk_accounts"
               class="form-control"
               placeholder="<?= $bulk_product === 'ADOBE'
-                ? 'PasswordAkun123&#10;user@hotmail.com:passwordAkses123:token:uuid&#10;&#10;PasswordAkun456&#10;user2@hotmail.com:passwordAkses456:token:uuid'
+                ? 'PasswordAkun123&#10;user@hotmail.com:passwordAkses123:token:uuid&#10;&#10;atau&#10;&#10;user1@example.com&#10;user2@example.com&#10;&#10;Syarat &amp; Ketentuan&#10;- Akses email mail.example.com'
                 : ($bulk_product === 'GEMINI'
                   ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret'
                   : ($bulk_product === 'SPOTIFY'
@@ -165,14 +165,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
-      ? 'Format Adobe: baris pertama password akun, baris kedua email:password akses:token:uuid. Format pemisah | yang lama tetap didukung. Pisahkan setiap akun dengan baris kosong (opsional).'
+      ? 'Format Adobe: password akun lalu email:password akses:token:uuid; atau daftar email, baris Syarat & Ketentuan, lalu Akses email untuk disimpan sebagai note. Format pemisah | yang lama tetap didukung.'
       : (isGemini
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify
           ? 'Format Spotify: username|password atau format Email dan Password.'
           : 'Format: username|password. Satu akun ditulis dalam satu baris.'));
     accountsInput.placeholder = isAdobe
-      ? 'PasswordAkun123\nuser@hotmail.com:passwordAkses123:token:uuid\n\nPasswordAkun456\nuser2@hotmail.com:passwordAkses456:token:uuid'
+      ? 'PasswordAkun123\nuser@hotmail.com:passwordAkses123:token:uuid\n\natau\n\nuser1@example.com\nuser2@example.com\n\nSyarat & Ketentuan\n- Akses email mail.example.com'
       : (isGemini
         ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret'
         : (isSpotify

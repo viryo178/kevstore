@@ -1051,7 +1051,9 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $row_website = $row['website'] ?? '';
             $row_password_akses = $row['password_akses'] ?? '';
 
-            if ($row_username === '' || $row_password === '') {
+            $allow_empty_password = !empty($row['allow_empty_password']);
+
+            if ($row_username === '' || ($row_password === '' && !$allow_empty_password)) {
                 $invalid++;
                 continue;
             }
@@ -1209,6 +1211,60 @@ $data['akun_belum_penuh'] = $available_accounts_query
     private function parse_bulk_account_rows($bulk_accounts, $bulk_product)
     {
         $rows = [];
+
+        // Format Adobe daftar email dengan satu note akses bersama:
+        // email-pertama@example.com
+        // email-kedua@example.com
+        // Syarat & Ketentuan
+        // - Akses email example.test
+        // Password dan kolom akses lainnya sengaja dibiarkan kosong.
+        if ($bulk_product === 'ADOBE') {
+            $access_lines = array_values(array_filter(
+                array_map('trim', preg_split('/\r\n|\r|\n/', $bulk_accounts)),
+                static function ($line) { return $line !== ''; }
+            ));
+            $access_emails = [];
+            $access_note = '';
+            $has_terms_marker = false;
+
+            foreach ($access_lines as $access_line) {
+                if (filter_var($access_line, FILTER_VALIDATE_EMAIL)) {
+                    $access_emails[] = $access_line;
+                    continue;
+                }
+
+                if (preg_match('/^Syarat\s*(?:&|dan)\s*Ketentuan\s*:?[ \t]*$/iu', $access_line)) {
+                    $has_terms_marker = true;
+                    continue;
+                }
+
+                if (preg_match('/^[\s\-*]*Akses\s+email\b.*$/iu', $access_line)) {
+                    $access_note = trim((string) preg_replace('/^[\s\-*]+/u', '', $access_line));
+                    continue;
+                }
+
+                // Jangan salah mengenali format lama jika ada baris lain.
+                $access_emails = [];
+                $access_note = '';
+                break;
+            }
+
+            if ($has_terms_marker && !empty($access_emails) && $access_note !== '') {
+                foreach ($access_emails as $access_email) {
+                    $rows[] = [
+                        'username' => $access_email,
+                        'password' => '',
+                        'note' => $access_note,
+                        'two_fa' => '',
+                        'website' => '',
+                        'password_akses' => '',
+                        'allow_empty_password' => true,
+                    ];
+                }
+
+                return $rows;
+            }
+        }
 
         // Format Adobe dua baris:
         // password akun
