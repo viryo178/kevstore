@@ -28,6 +28,7 @@ foreach (($akun ?? []) as $account) {
     $product = $rawProduct;
     if (preg_match('/^ZOOM(?:\s|$)/', $product)) $product = 'ZOOM';
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
+    $category = strtolower(trim((string) ($account->kategori ?? '')));
     if (!isset($sales[$product])) continue;
     if ($status === 'terjual') {
         // Satu akun Gemini mewakili empat penjualan.
@@ -41,7 +42,9 @@ foreach (($akun ?? []) as $account) {
             $sales[$product] += $saleAmount;
         }
     }
-    if ($status !== 'terjual') {
+    // Stok hanya akun yang benar-benar siap dijual. Samakan dengan angka
+    // "Belum Terjual" di dashboard agar status bermasalah tidak ikut dihitung.
+    if ($category === 'belum_terjual' && $status === 'aktif') {
         $stock[$product]++;
 
         if ($product === 'ZOOM') {
