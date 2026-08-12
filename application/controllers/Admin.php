@@ -1212,7 +1212,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         // Format Adobe dua baris:
         // password akun
-        // email|password akses|token|uuid
+        // email:password akses:token:uuid
+        // atau format lama email|password akses|token|uuid
         // Baris kedua disimpan utuh sebagai note. Pasangan dapat diulang.
         if ($bulk_product === 'ADOBE') {
             $adobe_lines = array_values(array_filter(
@@ -1226,9 +1227,14 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 for ($index = 0; $index < count($adobe_lines); $index += 2) {
                     $password = $adobe_lines[$index];
                     $note = $adobe_lines[$index + 1];
-                    // Format utama memakai pipe. Format titik dua yang lama tetap
-                    // diterima supaya data bulk yang sudah pernah dipakai tidak rusak.
-                    $note_delimiter = strpos($note, '|') !== false ? '|' : ':';
+                    // Ambil separator pertama setelah email. Dengan begitu format
+                    // titik dua dan pipe dapat dipakai berdampingan, termasuk jika
+                    // isi token setelahnya kebetulan mengandung separator yang lain.
+                    $pipe_position = strpos($note, '|');
+                    $colon_position = strpos($note, ':');
+                    $note_delimiter = $pipe_position === false
+                        ? ':'
+                        : ($colon_position === false || $pipe_position < $colon_position ? '|' : ':');
                     $note_parts = explode($note_delimiter, $note, 3);
                     $username = trim((string) ($note_parts[0] ?? ''));
                     $password_akses = trim((string) ($note_parts[1] ?? ''));
