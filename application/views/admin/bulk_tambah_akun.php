@@ -81,7 +81,7 @@
             <h5 class="card-title mb-1">Tambah Stok <span id="bulkProductTitle"><?= htmlspecialchars($bulk_product, ENT_QUOTES, 'UTF-8') ?></span></h5>
             <div class="bulk-help" id="bulkFormatHelp">
               <?= $bulk_product === 'ADOBE'
-                ? 'Format Adobe: password akun lalu email:password akses:token:uuid; atau daftar email, baris Syarat & Ketentuan, lalu Akses email untuk disimpan sebagai note. Format pemisah | yang lama tetap didukung.'
+                ? 'Format Adobe: password akun lalu email:password akses:token:uuid; baris pemisah - boleh digunakan. Daftar email, baris Syarat & Ketentuan, lalu Akses email juga didukung. Format pemisah | yang lama tetap didukung.'
                 : ($bulk_product === 'GEMINI'
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!isZoom) zoomDuration.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
-      ? 'Format Adobe: password akun lalu email:password akses:token:uuid; atau daftar email, baris Syarat & Ketentuan, lalu Akses email untuk disimpan sebagai note. Format pemisah | yang lama tetap didukung.'
+      ? 'Format Adobe: password akun lalu email:password akses:token:uuid; baris pemisah - boleh digunakan. Daftar email, baris Syarat & Ketentuan, lalu Akses email juga didukung. Format pemisah | yang lama tetap didukung.'
       : (isGemini
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify

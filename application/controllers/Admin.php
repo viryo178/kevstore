@@ -1270,11 +1270,12 @@ $data['akun_belum_penuh'] = $available_accounts_query
         // password akun
         // email:password akses:token:uuid
         // atau format lama email|password akses|token|uuid
-        // Baris kedua disimpan utuh sebagai note. Pasangan dapat diulang.
+        // Baris kedua disimpan utuh sebagai note. Pasangan dapat diulang dan
+        // boleh dipisahkan oleh baris yang hanya berisi tanda "-".
         if ($bulk_product === 'ADOBE') {
             $adobe_lines = array_values(array_filter(
                 array_map('trim', preg_split('/\r\n|\r|\n/', $bulk_accounts)),
-                static function ($line) { return $line !== ''; }
+                static function ($line) { return $line !== '' && $line !== '-'; }
             ));
 
             if (count($adobe_lines) >= 2 && count($adobe_lines) % 2 === 0) {
