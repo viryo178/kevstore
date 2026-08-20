@@ -108,13 +108,13 @@ class Admin extends CI_Controller
             return;
         }
         $now = date('Y-m-d H:i:s');
-        $sold_cutoff = date('Y-m-d H:i:s', strtotime('-7 days'));
-
         // Data yang sudah tujuh hari berada di Bin dihapus permanen.
         $this->db->where('purge_at <=', $now)->delete('akun_bin');
 
         // Waktu status terjual mengikuti last_edited_at, karena setiap perubahan
-        // status akun pada aplikasi memperbarui field tersebut.
+        // status akun pada aplikasi memperbarui field tersebut. Durasi tunggu
+        // Zoom mengikuti variannya: 14 hari atau 1 bulan. Produk lain tetap
+        // memakai masa tunggu lama, yaitu 7 hari.
         $eligible_accounts = $this->db
             ->group_start()
                 ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'ZOOM'])
@@ -122,11 +122,38 @@ class Admin extends CI_Controller
             ->group_end()
             ->where("LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) = 'terjual'", null, false)
             ->where('last_edited_at IS NOT NULL', null, false)
-            ->where('last_edited_at <=', $sold_cutoff)
             ->get('akun')
             ->result();
 
         foreach ($eligible_accounts as $account) {
+            $product = strtoupper(trim((string) $account->nama_akun));
+            $wait_until = strtotime($account->last_edited_at . ' +7 days');
+
+            // Spotify yang memiliki tanggal expired baru boleh masuk Bin
+            // setelah tanggal expired terlewati dan 7 hari masa tunggu selesai.
+            if ($product === 'SPOTIFY' && !empty($account->expired_password)) {
+                $expired_at = strtotime((string) $account->expired_password . ' 23:59:59');
+                if ($expired_at !== false) {
+                    $wait_until = max($wait_until, strtotime('+7 days', $expired_at));
+                }
+            }
+
+            if (strpos($product, 'ZOOM') === 0) {
+                $duration = $this->normalize_zoom_duration($product, $account->durasi_zoom ?? null);
+
+                if ($duration === '14_hari') {
+                    $wait_until = strtotime($account->last_edited_at . ' +14 days');
+                } elseif ($duration === '1_bulan') {
+                    // "1 bulan" adalah satu bulan kalender dari waktu terjual.
+                    $wait_until = strtotime($account->last_edited_at . ' +1 month');
+                }
+            }
+
+            // Jangan masukkan ke Bin sebelum masa paketnya selesai.
+            if ($wait_until === false || $wait_until > strtotime($now)) {
+                continue;
+            }
+
             $snapshot = (array) $account;
             $bin_data = [
                 'original_id' => (int) $account->id_akun,
@@ -1312,6 +1339,53 @@ $data['akun_belum_penuh'] = $available_accounts_query
                         'note' => $note,
                         'two_fa' => '',
                         'website' => '',
+                        'password_akses' => $password_akses,
+                    ];
+                }
+
+                if (!empty($adobe_rows)) {
+                    return $adobe_rows;
+                }
+            }
+
+            // Format berlabel baru:
+            // password akun
+            // Email: email akun
+            // Password: password akses
+            // Emailakses: URL akses
+            if (count($adobe_lines) >= 4 && count($adobe_lines) % 4 === 0) {
+                $adobe_rows = [];
+
+                for ($index = 0; $index < count($adobe_lines); $index += 4) {
+                    $account_password = $adobe_lines[$index];
+                    $email_line = $adobe_lines[$index + 1];
+                    $access_password_line = $adobe_lines[$index + 2];
+                    $access_url_line = $adobe_lines[$index + 3];
+
+                    preg_match('/^Email\s*:\s*(\S+)/iu', $email_line, $email_match);
+                    preg_match('/^Password\s*:\s*(.+)$/iu', $access_password_line, $access_password_match);
+                    preg_match('/^(?:Email\s*)?akses\s*:\s*(https?:\/\/\S+)$/iu', $access_url_line, $access_url_match);
+
+                    $username = trim((string) ($email_match[1] ?? ''));
+                    $password_akses = trim((string) ($access_password_match[1] ?? ''));
+                    $website = trim((string) ($access_url_match[1] ?? ''));
+
+                    if (
+                        $account_password === ''
+                        || !filter_var($username, FILTER_VALIDATE_EMAIL)
+                        || $password_akses === ''
+                        || $website === ''
+                    ) {
+                        $adobe_rows = [];
+                        break;
+                    }
+
+                    $adobe_rows[] = [
+                        'username' => $username,
+                        'password' => $account_password,
+                        'note' => '',
+                        'two_fa' => '',
+                        'website' => $website,
                         'password_akses' => $password_akses,
                     ];
                 }
