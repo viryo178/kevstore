@@ -1872,7 +1872,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         // limit berdasarkan kategori
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = $this->is_single_use_product($product);
-        $max_limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
+        $max_limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
 
         // cek limit
         if ($akun->max_user >= $max_limit) {
@@ -1946,7 +1946,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = $this->is_single_use_product($product);
-        $limit = $is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4);
+        $limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
 
         if ($akun->max_user >= $limit) {
 

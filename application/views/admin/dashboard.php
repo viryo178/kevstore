@@ -297,7 +297,7 @@ foreach ($products as $product) {
                   ? '14 Hari'
                   : ($zoom_duration === '1_bulan' ? '1 Bulan' : '');
                 $category = (string) ($account->kategori ?? '');
-                $limit = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true) ? 1 : ($category === 'private' ? 1 : 4);
+                $limit = $product === 'ADOBE' ? 2 : (in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM'], true) ? 1 : ($category === 'private' ? 1 : 4));
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
               <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">

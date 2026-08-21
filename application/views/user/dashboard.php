@@ -830,9 +830,11 @@
 
 <?php
 $account_product = strtoupper(trim((string) $a->nama_akun));
-$limit = in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true) || preg_match('/^ZOOM(?:\s|$)/', $account_product)
-  ? 1
-  : (($a->kategori == 'private') ? 1 : 4);
+$limit = $account_product === 'ADOBE'
+  ? 2
+  : ((in_array($account_product, ['SPOTIFY', 'LEONARDO', 'GEMINI'], true) || preg_match('/^ZOOM(?:\s|$)/', $account_product))
+    ? 1
+    : (($a->kategori == 'private') ? 1 : 4));
 ?>
 
 <span class="<?= $a->max_user >= $limit ? 'bg-border-danger' : 'bg-border-success' ?>">
@@ -1609,7 +1611,8 @@ Password : ${password}
 
   function getAkunLimit(kategori, namaAkun) {
     const product = String(namaAkun || '').trim().toUpperCase();
-    if (['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'].includes(product) || product.startsWith('ZOOM')) return 1;
+    if (product === 'ADOBE') return 2;
+    if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(product) || product.startsWith('ZOOM')) return 1;
     return kategori === 'private' ? 1 : 4;
   }
 
