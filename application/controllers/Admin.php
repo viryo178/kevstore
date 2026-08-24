@@ -1239,6 +1239,26 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         $rows = [];
 
+        // Format Leonardo hanya membutuhkan username/email. Baris judul seperti
+        // "Akun 1" dan pemisah "====" diabaikan.
+        if ($bulk_product === 'LEONARDO') {
+            preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $bulk_accounts, $email_matches);
+
+            foreach ($email_matches[0] ?? [] as $email) {
+                $rows[] = [
+                    'username' => trim((string) $email),
+                    'password' => '',
+                    'note' => '',
+                    'two_fa' => '',
+                    'website' => '',
+                    'password_akses' => '',
+                    'allow_empty_password' => true,
+                ];
+            }
+
+            return $rows;
+        }
+
         // Format Adobe daftar email dengan satu note akses bersama:
         // email-pertama@example.com
         // email-kedua@example.com

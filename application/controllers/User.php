@@ -633,6 +633,18 @@ private function get_notification_data()
         $bulk_max_user = 0;
         $rows = [];
 
+        if ($bulk_product === 'LEONARDO') {
+            preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $bulk_accounts, $email_matches);
+
+            foreach ($email_matches[0] ?? [] as $email) {
+                $rows[] = [
+                    'username' => trim((string) $email),
+                    'password' => '',
+                    'note' => '',
+                ];
+            }
+        }
+
         if ($bulk_product === 'SPOTIFY') {
             preg_match_all(
                 '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:[^\p{L}\p{N}\r\n]\s*)?Password\s*:\s*([^\r\n]*)/iu',
@@ -650,7 +662,7 @@ private function get_notification_data()
             }
         }
 
-        if (empty($rows)) {
+        if (empty($rows) && $bulk_product !== 'LEONARDO') {
             $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
             foreach ($lines as $line) {
                 $line = trim((string) $line);
@@ -676,7 +688,7 @@ private function get_notification_data()
             $row_password = $row['password'];
             $row_note = $row['note'];
 
-            if ($row_username === '' || $row_password === '') {
+            if ($row_username === '' || ($row_password === '' && $bulk_product !== 'LEONARDO')) {
                 $skipped++;
                 continue;
             }

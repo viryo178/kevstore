@@ -86,7 +86,9 @@
                   ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
                   : ($bulk_product === 'SPOTIFY'
                     ? 'Format Spotify: username|password atau format Email dan Password.'
-                    : 'Format: username|password. Satu akun ditulis dalam satu baris.')) ?>
+                    : ($bulk_product === 'LEONARDO'
+                      ? 'Format Leonardo: Akun 1, username/email, lalu pemisah. Hanya username yang disimpan.'
+                      : 'Format: username|password. Satu akun ditulis dalam satu baris.'))) ?>
             </div>
           </div>
 
@@ -120,7 +122,9 @@
                   ? '1. Email: user1@gmail.com&#10;- Password: password123 2fa : https://totp.example/#/secret'
                   : ($bulk_product === 'SPOTIFY'
                     ? 'username1|password1&#10;&#10;atau&#10;&#10;Email : user@outlook.com&#10;Password : Premium123@'
-                    : 'username1|password1&#10;username2|password2')) ?>"
+                    : ($bulk_product === 'LEONARDO'
+                      ? 'Akun 1&#10;user1@hotmail.com&#10;&#10;==================&#10;&#10;Akun 2&#10;user2@hotmail.com'
+                      : 'username1|password1&#10;username2|password2'))) ?>"
               required></textarea>
           </div>
 
@@ -158,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isGemini = product === 'GEMINI';
     const isAdobe = product === 'ADOBE';
     const isSpotify = product === 'SPOTIFY';
+    const isLeonardo = product === 'LEONARDO';
     const isZoom = product === 'ZOOM';
     const usesEmailFormat = isGemini || isAdobe;
     zoomDurationField.hidden = !isZoom;
@@ -170,14 +175,18 @@ document.addEventListener('DOMContentLoaded', function () {
         ? 'Format Gemini: tempel daftar bernomor Email, Password, dan 2FA.'
         : (isSpotify
           ? 'Format Spotify: username|password atau format Email dan Password.'
-          : 'Format: username|password. Satu akun ditulis dalam satu baris.'));
+          : (isLeonardo
+            ? 'Format Leonardo: Akun 1, username/email, lalu pemisah. Hanya username yang disimpan.'
+            : 'Format: username|password. Satu akun ditulis dalam satu baris.')));
     accountsInput.placeholder = isAdobe
       ? 'PasswordAkun123\nuser@hotmail.com:passwordAkses123:token:uuid\n\natau\n\nuser1@example.com\nuser2@example.com\n\nSyarat & Ketentuan\n- Akses email mail.example.com'
       : (isGemini
         ? '1. Email: user1@gmail.com\n- Password: password123 2fa : https://totp.example/#/secret'
         : (isSpotify
           ? 'username1|password1\n\natau\n\nEmail : user@outlook.com\nPassword : Premium123@'
-          : 'username1|password1\nusername2|password2'));
+          : (isLeonardo
+            ? 'Akun 1\nuser1@hotmail.com\n\n==================\n\nAkun 2\nuser2@hotmail.com'
+            : 'username1|password1\nusername2|password2')));
     defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
       + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '')
       + (isZoom ? ' Pilih variasi Zoom 14 Hari atau 1 Bulan.' : '');
