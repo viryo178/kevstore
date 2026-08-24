@@ -1557,13 +1557,13 @@ WAJIB: Ketik ulang email dan password secara manual. Jangan menggunakan copy-pas
 Jika muncul permintaan verifikasi, silakan klik Skip saja.`;
   }
 
-  function getLeonardoCopyText(username, password) {
+  function getLeonardoCopyText(username) {
     return `Mohon untuk dibaca
 Username : ${username}
-Password : ${password}
+Password : ${''}
 1. Buka *Leonardo*.
-2. Pilih *Sign In with Email*.
-3. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*`;
+2. Pilih Login with canva.
+3. *WAJIB:* Ketik ulang email dan . *Jangan menggunakan copy-paste.*`;
   }
 
   function getAdobeCopyText(username, password) {
