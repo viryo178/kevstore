@@ -1557,13 +1557,8 @@ WAJIB: Ketik ulang email dan password secara manual. Jangan menggunakan copy-pas
 Jika muncul permintaan verifikasi, silakan klik Skip saja.`;
   }
 
-  function getLeonardoCopyText(username, password) {
-    return `Mohon untuk dibaca
-Username : ${username}
-Password : ${password}
-1. Buka *Leonardo*.
-2. Pilih *Sign In with Email*.
-3. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*`;
+  function getLeonardoCopyText(username) {
+    return username;
   }
 
   function getAdobeCopyText(username, password) {
