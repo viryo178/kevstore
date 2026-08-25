@@ -552,10 +552,9 @@ Jika muncul permintaan verifikasi, silakan klik Skip saja.`;
 function getLeonardoCopyText(username) {
   return `Mohon untuk dibaca
 Username : ${username}
-Password : ${''}
-1. Buka *Leonardo*.
-2. Pilih Login with canva.
-3. *WAJIB:* Ketik ulang email dan . *Jangan menggunakan copy-paste.*`;
+1. Buka Leonardo.
+2. Pilih Sign in with canva.
+3. WAJIB: Ketik ulang email dan Jangan menggunakan copy-paste.`;
 }
 
 function getAdobeCopyText(username, password) {
