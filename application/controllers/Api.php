@@ -195,7 +195,7 @@ class Api extends CI_Controller
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
             || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
-        $limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4));
+        $limit = $product === 'ADOBE' ? 3 : ($is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4));
 
         if ((int) $akun->max_user >= $limit) {
             return $this->json_error('Max user sudah penuh', 422);
