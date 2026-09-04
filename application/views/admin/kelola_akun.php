@@ -743,6 +743,7 @@
       foreach ($all_summary_accounts as $summary_account) {
         $account_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
         if (preg_match('/^ZOOM(?:\s|$)/', $account_product)) $account_product = 'ZOOM';
+        if (preg_match('/^LEONARDO(?:\s|$)/', $account_product)) $account_product = 'LEONARDO';
 
         if ($selected_summary_product !== '' && $account_product !== $selected_summary_product) {
           continue;
@@ -754,6 +755,14 @@
           if ($account_zoom_duration === '' && $stored_account_name === 'ZOOM 14 HARI') $account_zoom_duration = '14_hari';
           if ($account_zoom_duration === '' && $stored_account_name === 'ZOOM 1 BULAN') $account_zoom_duration = '1_bulan';
           if ($account_zoom_duration !== $selected_zoom_duration) continue;
+        }
+
+        if ($selected_summary_product === 'LEONARDO' && !empty($selected_zoom_duration)) {
+          $account_leo_variasi = (string) ($summary_account->durasi_zoom ?? '');
+          $stored_account_name = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
+          if ($account_leo_variasi === '' && $stored_account_name === 'LEONARDO SEEDANCE') $account_leo_variasi = 'seedance';
+          if ($account_leo_variasi === '' && $stored_account_name === 'LEONARDO 8500 KREDIT') $account_leo_variasi = '8500_kredit';
+          if ($account_leo_variasi !== $selected_zoom_duration) continue;
         }
 
         $summary_accounts[] = $summary_account;
@@ -771,6 +780,7 @@
         $summary_status = kevstore_effective_akun_status($summary_account->status ?? '', $summary_account->note ?? '');
         $summary_product = strtoupper(trim((string) ($summary_account->nama_akun ?? '')));
         if (preg_match('/^ZOOM(?:\s|$)/', $summary_product)) $summary_product = 'ZOOM';
+        if (preg_match('/^LEONARDO(?:\s|$)/', $summary_product)) $summary_product = 'LEONARDO';
         if (
           isset($summary_products[$summary_product])
           && ($summary_account->kategori ?? '') === 'belum_terjual'
@@ -786,9 +796,12 @@
       if ($selected_summary_product === 'ZOOM' && !empty($selected_zoom_duration)) {
         $summary_scope_name .= $selected_zoom_duration === '14_hari' ? ' 14 Hari' : ' 1 Bulan';
       }
+      if ($selected_summary_product === 'LEONARDO' && !empty($selected_zoom_duration)) {
+        $summary_scope_name .= $selected_zoom_duration === 'seedance' ? ' Seedance' : ' 8500 Kredit';
+      }
       $summary_scope_params = [];
       if ($selected_summary_product !== '') $summary_scope_params['product'] = $selected_summary_product;
-      if ($selected_summary_product === 'ZOOM' && !empty($selected_zoom_duration)) {
+      if (in_array($selected_summary_product, ['ZOOM', 'LEONARDO'], true) && !empty($selected_zoom_duration)) {
         $summary_scope_params['durasi_zoom'] = $selected_zoom_duration;
       }
       $summary_total_url = base_url('admin/kelola_akun' . (!empty($summary_scope_params) ? '?' . http_build_query($summary_scope_params) : ''));
@@ -1207,6 +1220,16 @@
                   </select>
                 </div>
               <?php endif; ?>
+              <?php if (($selected_product ?? '') === 'LEONARDO'): ?>
+                <div>
+                  <label class="form-label" for="kelola_leonardo_variasi">Variasi Leonardo</label>
+                  <select class="form-control" id="kelola_leonardo_variasi" name="durasi_zoom" onchange="this.form.submit()">
+                    <option value="">Semua variasi</option>
+                    <option value="seedance" <?= $selected_zoom_duration === 'seedance' ? 'selected' : '' ?>>Seedance</option>
+                    <option value="8500_kredit" <?= $selected_zoom_duration === '8500_kredit' ? 'selected' : '' ?>>8500 Kredit</option>
+                  </select>
+                </div>
+              <?php endif; ?>
               <div>
                 <label class="form-label" for="kelola_tanggal_mulai">Dari tanggal</label>
                 <input type="date" class="form-control" id="kelola_tanggal_mulai" name="tanggal_mulai" value="<?= htmlspecialchars($tanggal_mulai ?? '', ENT_QUOTES, 'UTF-8') ?>" onchange="this.form.submit()">
@@ -1304,15 +1327,22 @@
                         <?php
                           $row_account_name = strtoupper(trim((string) ($a->nama_akun ?? '')));
                           $row_is_zoom = preg_match('/^ZOOM(?:\s|$)/', $row_account_name) === 1;
+                          $row_is_leonardo = preg_match('/^LEONARDO(?:\s|$)/', $row_account_name) === 1;
                           $row_zoom_duration = (string) ($a->durasi_zoom ?? '');
                           if ($row_zoom_duration === '' && $row_account_name === 'ZOOM 14 HARI') $row_zoom_duration = '14_hari';
                           if ($row_zoom_duration === '' && $row_account_name === 'ZOOM 1 BULAN') $row_zoom_duration = '1_bulan';
+                          if ($row_zoom_duration === '' && $row_account_name === 'LEONARDO SEEDANCE') $row_zoom_duration = 'seedance';
+                          if ($row_zoom_duration === '' && $row_account_name === 'LEONARDO 8500 KREDIT') $row_zoom_duration = '8500_kredit';
+                          $row_display_name = $row_is_zoom ? 'ZOOM' : ($row_is_leonardo ? 'LEONARDO' : ($a->nama_akun ?? ''));
                         ?>
                         <strong>
-                          <?= htmlspecialchars($row_is_zoom ? 'ZOOM' : ($a->nama_akun ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                          <?= htmlspecialchars($row_display_name, ENT_QUOTES, 'UTF-8') ?>
                         </strong>
                         <?php if ($row_is_zoom && in_array($row_zoom_duration, ['14_hari', '1_bulan'], true)): ?>
                           <small class="d-block text-info mt-1"><?= $row_zoom_duration === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
+                        <?php endif; ?>
+                        <?php if ($row_is_leonardo && in_array($row_zoom_duration, ['seedance', '8500_kredit'], true)): ?>
+                          <small class="d-block text-info mt-1"><?= $row_zoom_duration === 'seedance' ? 'Seedance' : '8500 Kredit' ?></small>
                         <?php endif; ?>
                       </td>
 

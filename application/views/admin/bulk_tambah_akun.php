@@ -110,6 +110,15 @@
             </select>
           </div>
 
+          <div class="mb-3" id="bulkLeonardoVariasiField" <?= $bulk_product === 'LEONARDO' ? '' : 'hidden' ?>>
+            <label for="bulk_leonardo_variasi">Variasi Leonardo</label>
+            <select class="form-control" id="bulk_leonardo_variasi" name="durasi_zoom" <?= $bulk_product === 'LEONARDO' ? 'required' : '' ?>>
+              <option value="">Pilih variasi</option>
+              <option value="seedance" <?= $bulk_zoom_duration === 'seedance' ? 'selected' : '' ?>>Seedance</option>
+              <option value="8500_kredit" <?= $bulk_zoom_duration === '8500_kredit' ? 'selected' : '' ?>>8500 Kredit</option>
+            </select>
+          </div>
+
           <div class="mb-3">
             <label>Daftar Akun</label>
             <textarea
@@ -155,6 +164,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const productTitle = document.getElementById('bulkProductTitle');
   const zoomDurationField = document.getElementById('bulkZoomDurationField');
   const zoomDuration = document.getElementById('bulk_zoom_duration');
+  const leonardoVariasiField = document.getElementById('bulkLeonardoVariasiField');
+  const leonardoVariasi = document.getElementById('bulk_leonardo_variasi');
   if (!productSelect || !accountsInput || !formatHelp || !defaults || !productTitle) return;
 
   function updateBulkFormat() {
@@ -167,7 +178,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const usesEmailFormat = isGemini || isAdobe;
     zoomDurationField.hidden = !isZoom;
     zoomDuration.required = isZoom;
+    zoomDuration.disabled = !isZoom;
     if (!isZoom) zoomDuration.value = '';
+    leonardoVariasiField.hidden = !isLeonardo;
+    leonardoVariasi.required = isLeonardo;
+    leonardoVariasi.disabled = !isLeonardo;
+    if (!isLeonardo) leonardoVariasi.value = '';
     productTitle.textContent = product;
     formatHelp.textContent = isAdobe
       ? 'Format Adobe: password akun lalu email:password akses:token:uuid; baris pemisah - boleh digunakan. Daftar email, baris Syarat & Ketentuan, lalu Akses email juga didukung. Format pemisah | yang lama tetap didukung.'
@@ -189,7 +205,8 @@ document.addEventListener('DOMContentLoaded', function () {
             : 'username1|password1\nusername2|password2')));
     defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
       + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '')
-      + (isZoom ? ' Pilih variasi Zoom 14 Hari atau 1 Bulan.' : '');
+      + (isZoom ? ' Pilih variasi Zoom 14 Hari atau 1 Bulan.' : '')
+      + (isLeonardo ? ' Pilih variasi Leonardo Seedance atau 8500 Kredit.' : '');
   }
 
   function escapeBulkHtml(value) {

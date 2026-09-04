@@ -45,37 +45,57 @@ class Admin extends CI_Controller
     private function normalize_zoom_duration($product, $duration)
     {
         $product = strtoupper(trim((string) $product));
-        if (!preg_match('/^ZOOM(?:\s+(?:14\s+HARI|1\s+BULAN))?$/', $product)) {
-            return null;
+
+        // Zoom variations
+        if (preg_match('/^ZOOM(?:\s+(?:14\s+HARI|1\s+BULAN))?$/', $product)) {
+            $duration = strtolower(trim((string) $duration));
+            if ($duration === '') {
+                if ($product === 'ZOOM 14 HARI') {
+                    $duration = '14_hari';
+                } elseif ($product === 'ZOOM 1 BULAN') {
+                    $duration = '1_bulan';
+                }
+            }
+            return in_array($duration, ['14_hari', '1_bulan'], true) ? $duration : null;
         }
 
-        $duration = strtolower(trim((string) $duration));
-        if ($duration === '') {
-            if ($product === 'ZOOM 14 HARI') {
-                $duration = '14_hari';
-            } elseif ($product === 'ZOOM 1 BULAN') {
-                $duration = '1_bulan';
+        // Leonardo variations
+        if (preg_match('/^LEONARDO(?:\s+(?:SEEDANCE|8500\s+KREDIT))?$/', $product)) {
+            $duration = strtolower(trim((string) $duration));
+            if ($duration === '') {
+                if ($product === 'LEONARDO SEEDANCE') {
+                    $duration = 'seedance';
+                } elseif ($product === 'LEONARDO 8500 KREDIT') {
+                    $duration = '8500_kredit';
+                }
             }
+            return in_array($duration, ['seedance', '8500_kredit'], true) ? $duration : null;
         }
-        return in_array($duration, ['14_hari', '1_bulan'], true) ? $duration : null;
+
+        return null;
     }
 
     private function bulk_account_name($product, $zoom_duration = null)
     {
         $product = strtoupper(trim((string) $product));
 
-        if ($product !== 'ZOOM') {
-            return $product;
+        if ($product === 'ZOOM') {
+            return $zoom_duration === '14_hari' ? 'ZOOM 14 HARI' : 'ZOOM 1 BULAN';
         }
 
-        return $zoom_duration === '14_hari' ? 'ZOOM 14 HARI' : 'ZOOM 1 BULAN';
+        if ($product === 'LEONARDO') {
+            return $zoom_duration === 'seedance' ? 'LEONARDO SEEDANCE' : ($zoom_duration === '8500_kredit' ? 'LEONARDO 8500 KREDIT' : 'LEONARDO');
+        }
+
+        return $product;
     }
 
     private function is_single_use_product($product)
     {
         $product = strtoupper(trim((string) $product));
         return in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
-            || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
+            || preg_match('/^ZOOM(?:\s|$)/', $product) === 1
+            || preg_match('/^LEONARDO(?:\s|$)/', $product) === 1;
     }
 
     private function ensure_account_bin_table()
@@ -119,6 +139,7 @@ class Admin extends CI_Controller
             ->group_start()
                 ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'ZOOM'])
                 ->or_like('nama_akun', 'ZOOM ', 'after')
+                ->or_like('nama_akun', 'LEONARDO ', 'after')
             ->group_end()
             ->where("LOWER(REPLACE(REPLACE(status, ' ', '_'), '-', '_')) = 'terjual'", null, false)
             ->where('last_edited_at IS NOT NULL', null, false)
@@ -458,7 +479,7 @@ class Admin extends CI_Controller
 
         $labels = [
             'nama_akun' => 'Akun',
-            'durasi_zoom' => 'Variasi Zoom',
+            'durasi_zoom' => 'Variasi',
             'kategori' => 'Kategori',
             'status' => 'Status',
             'username' => 'Email / Username',
@@ -646,6 +667,11 @@ if ($dashboard_product !== '') {
             ->where('UPPER(nama_akun)', 'ZOOM')
             ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
             ->group_end();
+    } elseif ($dashboard_product === 'LEONARDO') {
+        $available_accounts_query->group_start()
+            ->where('UPPER(nama_akun)', 'LEONARDO')
+            ->or_like('UPPER(nama_akun)', 'LEONARDO ', 'after')
+            ->group_end();
     } else {
         $available_accounts_query->where('nama_akun', $dashboard_product);
     }
@@ -653,8 +679,10 @@ if ($dashboard_product !== '') {
     $available_accounts_query->group_start()
         ->where_in('nama_akun', ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'])
         ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
+        ->or_like('UPPER(nama_akun)', 'LEONARDO ', 'after')
         ->group_end();
 }
+
 $data['akun_belum_penuh'] = $available_accounts_query
     // Tabel dashboard hanya menampilkan akun yang benar-benar masih aktif/tersedia.
     ->where("LOWER(TRIM(status)) = 'aktif'", null, false)
@@ -679,7 +707,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         $product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM', 'ADOBE'], true)
             ? $product
             : '';
-        $zoom_duration = $this->normalize_zoom_duration('ZOOM', $this->input->get('durasi_zoom'));
+        $zoom_duration = $this->normalize_zoom_duration($product !== '' ? $product : 'ZOOM', $this->input->get('durasi_zoom'));
         $tanggal_mulai = $this->normalize_date($this->input->get('tanggal_mulai'));
         $tanggal_selesai = $this->normalize_date($this->input->get('tanggal_selesai'));
 
@@ -697,12 +725,17 @@ $data['akun_belum_penuh'] = $available_accounts_query
                     ->where('UPPER(nama_akun)', 'ZOOM')
                     ->or_like('UPPER(nama_akun)', 'ZOOM ', 'after')
                     ->group_end();
+            } elseif ($product === 'LEONARDO') {
+                $this->db->group_start()
+                    ->where('UPPER(nama_akun)', 'LEONARDO')
+                    ->or_like('UPPER(nama_akun)', 'LEONARDO ', 'after')
+                    ->group_end();
             } else {
                 $this->db->where('UPPER(nama_akun)', $product);
             }
         }
 
-        if ($product === 'ZOOM' && $zoom_duration !== null) {
+        if (in_array($product, ['ZOOM', 'LEONARDO'], true) && $zoom_duration !== null) {
             $this->db->where('durasi_zoom', $zoom_duration);
         }
 
@@ -938,6 +971,11 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 return;
             }
 
+            if (strtoupper(trim((string) $nama_akun)) === 'LEONARDO' && $durasi_zoom === null) {
+                $this->respond_akun_error('Pilih variasi Leonardo: Seedance atau 8500 Kredit.', 'admin/tambah_akun');
+                return;
+            }
+
             $data = [
                 'nama_akun'        => $nama_akun,
                 'durasi_zoom'      => $durasi_zoom,
@@ -1035,6 +1073,12 @@ $data['akun_belum_penuh'] = $available_accounts_query
         if ($bulk_product === 'ZOOM' && $bulk_zoom_duration === null) {
             $this->session->set_flashdata('error', 'Pilih variasi Zoom: 14 Hari atau 1 Bulan.');
             redirect('admin/bulk_tambah_akun?product=ZOOM');
+            return;
+        }
+
+        if ($bulk_product === 'LEONARDO' && $bulk_zoom_duration === null) {
+            $this->session->set_flashdata('error', 'Pilih variasi Leonardo: Seedance atau 8500 Kredit.');
+            redirect('admin/bulk_tambah_akun?product=LEONARDO');
             return;
         }
 
@@ -1631,14 +1675,24 @@ $data['akun_belum_penuh'] = $available_accounts_query
             $row_product = $row['nama_akun'] ?? '';
             $row_zoom_duration = $this->normalize_zoom_duration($row_product, $row['durasi_zoom'] ?? '');
             $is_zoom_product = preg_match('/^ZOOM(?:\s|$)/', strtoupper(trim((string) $row_product))) === 1;
+            $is_leonardo_product = preg_match('/^LEONARDO(?:\s|$)/', strtoupper(trim((string) $row_product))) === 1;
 
             if ($is_zoom_product && $row_zoom_duration === null) {
                 $skipped++;
                 continue;
             }
 
+            if ($is_leonardo_product && $row_zoom_duration === null) {
+                $skipped++;
+                continue;
+            }
+
             if ($is_zoom_product) {
                 $row_product = $this->bulk_account_name('ZOOM', $row_zoom_duration);
+            }
+
+            if ($is_leonardo_product) {
+                $row_product = $this->bulk_account_name('LEONARDO', $row_zoom_duration);
             }
 
             $username_key = strtolower($row_username);
@@ -2259,9 +2313,10 @@ $data['akun_belum_penuh'] = $available_accounts_query
         );
         $nama_akun = $this->input->post('nama_akun');
         $posted_zoom_duration = $this->input->post('durasi_zoom');
-        $durasi_zoom = $posted_zoom_duration === null
-            && strtoupper(trim((string) ($akun_old->nama_akun ?? ''))) === 'ZOOM'
-            && strtoupper(trim((string) $nama_akun)) === 'ZOOM'
+        $old_product = strtoupper(trim((string) ($akun_old->nama_akun ?? '')));
+        $new_product = strtoupper(trim((string) $nama_akun));
+        $is_same_variasi_product = ($old_product === $new_product) && in_array($new_product, ['ZOOM', 'LEONARDO'], true);
+        $durasi_zoom = $posted_zoom_duration === null && $is_same_variasi_product
                 ? ($akun_old->durasi_zoom ?? null)
                 : $this->normalize_zoom_duration($nama_akun, $posted_zoom_duration);
 
@@ -2269,6 +2324,14 @@ $data['akun_belum_penuh'] = $available_accounts_query
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Pilih variasi Zoom: 14 Hari atau 1 Bulan.'
+            ]);
+            return;
+        }
+
+        if (strtoupper(trim((string) $nama_akun)) === 'LEONARDO' && $durasi_zoom === null) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Pilih variasi Leonardo: Seedance atau 8500 Kredit.'
             ]);
             return;
         }
@@ -2368,6 +2431,11 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
             if (strtoupper(trim((string) $nama_akun)) === 'ZOOM' && $durasi_zoom === null) {
                 $this->respond_akun_error('Pilih variasi Zoom: 14 Hari atau 1 Bulan.', 'admin/edit_akun/' . $id . '?return_to=' . rawurlencode($return_to));
+                return;
+            }
+
+            if (strtoupper(trim((string) $nama_akun)) === 'LEONARDO' && $durasi_zoom === null) {
+                $this->respond_akun_error('Pilih variasi Leonardo: Seedance atau 8500 Kredit.', 'admin/edit_akun/' . $id . '?return_to=' . rawurlencode($return_to));
                 return;
             }
 
