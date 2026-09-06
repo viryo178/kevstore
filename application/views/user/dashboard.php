@@ -553,6 +553,7 @@
           if (($a->kategori ?? '') == 'belum_terjual' && $status_akun == 'aktif') {
             $belum_terjual++;
             $nama_produk = strtoupper(trim((string) ($a->nama_akun ?? '')));
+            if (preg_match('/^LEONARDO(?:\s|$)/', $nama_produk)) $nama_produk = 'LEONARDO';
             if (isset($produk_belum_terjual[$nama_produk])) {
               $produk_belum_terjual[$nama_produk]++;
             }
@@ -799,19 +800,29 @@
                           <?php
                             $dashboard_account_name = strtoupper(trim((string) ($a->nama_akun ?? '')));
                             $dashboard_is_zoom = preg_match('/^ZOOM(?:\s|$)/', $dashboard_account_name) === 1;
+                            $dashboard_is_leonardo = preg_match('/^LEONARDO(?:\s|$)/', $dashboard_account_name) === 1;
                             $dashboard_zoom_duration = (string) ($a->durasi_zoom ?? '');
                             if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'ZOOM 14 HARI') $dashboard_zoom_duration = '14_hari';
                             if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'ZOOM 1 BULAN') $dashboard_zoom_duration = '1_bulan';
+                            if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'LEONARDO SEEDANCE') $dashboard_zoom_duration = 'seedance';
+                            if ($dashboard_zoom_duration === '' && $dashboard_account_name === 'LEONARDO 8500 KREDIT') $dashboard_zoom_duration = '8500_kredit';
+                            $dashboard_duration_label = '';
+                            if ($dashboard_is_zoom) {
+                              $dashboard_duration_label = $dashboard_zoom_duration === '14_hari' ? '14 Hari' : ($dashboard_zoom_duration === '1_bulan' ? '1 Bulan' : '');
+                            } elseif ($dashboard_is_leonardo) {
+                              $dashboard_duration_label = $dashboard_zoom_duration === 'seedance' ? 'Seedance' : ($dashboard_zoom_duration === '8500_kredit' ? '8500 Kredit' : '');
+                            }
+                            $dashboard_display_name = $dashboard_is_zoom ? 'ZOOM' : ($dashboard_is_leonardo ? 'LEONARDO' : (string) $a->nama_akun);
                           ?>
 
                           <tr id="akun-item-<?= $a->id_akun ?>">
 
                             <td>
                               <strong>
-                                <?= htmlspecialchars($dashboard_is_zoom ? 'ZOOM' : (string) $a->nama_akun) ?>
+                                <?= htmlspecialchars($dashboard_display_name) ?>
                               </strong>
-                              <?php if ($dashboard_is_zoom && in_array($dashboard_zoom_duration, ['14_hari', '1_bulan'], true)): ?>
-                                <small class="d-block text-info mt-1"><?= $dashboard_zoom_duration === '14_hari' ? '14 Hari' : '1 Bulan' ?></small>
+                              <?php if (($dashboard_is_zoom || $dashboard_is_leonardo) && $dashboard_duration_label !== ''): ?>
+                                <small class="d-block text-info mt-1"><?= htmlspecialchars($dashboard_duration_label) ?></small>
                               <?php endif; ?>
                             </td>
 

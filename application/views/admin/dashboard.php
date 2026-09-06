@@ -8,6 +8,7 @@ foreach (($akun ?? []) as $account) {
     $status = strtolower(str_replace([' ', '-'], '_', trim((string) ($account->status ?? ''))));
     $product = strtoupper(trim((string) ($account->nama_akun ?? '')));
     if (preg_match('/^ZOOM(?:\s|$)/', $product)) $product = 'ZOOM';
+    if (preg_match('/^LEONARDO(?:\s|$)/', $product)) $product = 'LEONARDO';
     if ($status === 'aktif') $stats['aktif']++;
     if (in_array($status, $problemStatuses, true)) $stats['bermasalah']++;
     if (isset($unsold[$product]) && ($account->kategori ?? '') === 'belum_terjual' && $status === 'aktif') {
@@ -289,21 +290,32 @@ foreach ($products as $product) {
               <?php
                 $account_name = strtoupper(trim((string) ($account->nama_akun ?? '')));
                 $is_zoom = preg_match('/^ZOOM(?:\s|$)/', $account_name) === 1;
-                $product = $is_zoom ? 'ZOOM' : $account_name;
+                $is_leonardo = preg_match('/^LEONARDO(?:\s|$)/', $account_name) === 1;
+                $product = $is_zoom ? 'ZOOM' : ($is_leonardo ? 'LEONARDO' : $account_name);
                 $zoom_duration = (string) ($account->durasi_zoom ?? '');
                 if ($zoom_duration === '' && $account_name === 'ZOOM 14 HARI') $zoom_duration = '14_hari';
                 if ($zoom_duration === '' && $account_name === 'ZOOM 1 BULAN') $zoom_duration = '1_bulan';
-                $zoom_duration_label = $zoom_duration === '14_hari'
-                  ? '14 Hari'
-                  : ($zoom_duration === '1_bulan' ? '1 Bulan' : '');
+                if ($zoom_duration === '' && $account_name === 'LEONARDO SEEDANCE') $zoom_duration = 'seedance';
+                if ($zoom_duration === '' && $account_name === 'LEONARDO 8500 KREDIT') $zoom_duration = '8500_kredit';
+                $zoom_duration_label = '';
+                if ($is_zoom) {
+                  $zoom_duration_label = $zoom_duration === '14_hari'
+                    ? '14 Hari'
+                    : ($zoom_duration === '1_bulan' ? '1 Bulan' : '');
+                } elseif ($is_leonardo) {
+                  $zoom_duration_label = $zoom_duration === 'seedance'
+                    ? 'Seedance'
+                    : ($zoom_duration === '8500_kredit' ? '8500 Kredit' : '');
+                }
+                $display_name = $is_zoom ? 'ZOOM' : ($is_leonardo ? 'LEONARDO' : ($account->nama_akun ?? '-'));
                 $category = (string) ($account->kategori ?? '');
                 $limit = $product === 'ADOBE' ? 3 : (in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM'], true) ? 1 : ($category === 'private' ? 1 : 4));
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
-              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
+              <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $zoom_duration_label, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">
                 <td>
-                  <strong><?= htmlspecialchars($is_zoom ? 'ZOOM' : ($account->nama_akun ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
-                  <?php if ($is_zoom && $zoom_duration_label !== ''): ?>
+                  <strong><?= htmlspecialchars($display_name, ENT_QUOTES, 'UTF-8') ?></strong>
+                  <?php if (($is_zoom || $is_leonardo) && $zoom_duration_label !== ''): ?>
                     <small class="d-block text-info mt-1"><?= htmlspecialchars($zoom_duration_label, ENT_QUOTES, 'UTF-8') ?></small>
                   <?php endif; ?>
                 </td>

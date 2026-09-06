@@ -409,7 +409,14 @@ private function get_notification_data()
         // akun yang masih bisa dipakai di dashboard
         $available_accounts_query = $this->db->from('akun');
         if ($dashboard_product !== '') {
-            $available_accounts_query->where('nama_akun', $dashboard_product);
+            if ($dashboard_product === 'LEONARDO') {
+                $available_accounts_query->group_start()
+                    ->where('UPPER(nama_akun)', 'LEONARDO')
+                    ->or_like('UPPER(nama_akun)', 'LEONARDO ', 'after')
+                    ->group_end();
+            } else {
+                $available_accounts_query->where('nama_akun', $dashboard_product);
+            }
         }
         $data['akun_belum_penuh'] = $available_accounts_query
             // Tabel dashboard hanya menampilkan akun yang benar-benar masih aktif/tersedia.
