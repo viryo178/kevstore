@@ -309,7 +309,7 @@ foreach ($products as $product) {
                 }
                 $display_name = $is_zoom ? 'ZOOM' : ($is_leonardo ? 'LEONARDO' : ($account->nama_akun ?? '-'));
                 $category = (string) ($account->kategori ?? '');
-                $limit = $product === 'ADOBE' ? 3 : (in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM'], true) ? 1 : ($category === 'private' ? 1 : 4));
+                $limit = $product === 'ADOBE' ? 2 : (in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ZOOM'], true) ? 1 : ($category === 'private' ? 1 : 4));
                 $maxUser = (int) ($account->max_user ?? 0);
               ?>
               <tr id="akun-item-<?= (int) $account->id_akun ?>" data-product="<?= htmlspecialchars($product, ENT_QUOTES, 'UTF-8') ?>" data-search="<?= htmlspecialchars(strtolower(implode(' ', [$account_name, $product, $zoom_duration_label, $account->username ?? '', $account->password ?? '', $category, $maxUser])), ENT_QUOTES, 'UTF-8') ?>">

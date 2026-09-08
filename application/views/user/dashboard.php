@@ -1622,7 +1622,7 @@ Password : ${password}
 
   function getAkunLimit(kategori, namaAkun) {
     const product = String(namaAkun || '').trim().toUpperCase();
-    if (product === 'ADOBE') return 3;
+    if (product === 'ADOBE') return 2;
     if (['SPOTIFY', 'LEONARDO', 'GEMINI'].includes(product) || product.startsWith('ZOOM')) return 1;
     return kategori === 'private' ? 1 : 4;
   }
