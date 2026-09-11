@@ -4396,6 +4396,7 @@ class Api extends CI_Controller
             'status',
             'username',
             'password',
+            'two_fa',
             'website',
             'password_akses',
             'note',

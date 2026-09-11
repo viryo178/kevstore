@@ -345,19 +345,31 @@ $before_data = !empty($before_data) ? $before_data : [];
                 </div>
               </div>
 
-              <!-- PASSWORD AKSES -->
-              <?php if (!empty($before_data['password_akses'])): ?>
+              <!-- 2FA (GEMINI) -->
+              <?php if (strtoupper(trim((string) ($before_data['nama_akun'] ?? ''))) === 'GEMINI' && !empty($before_data['two_fa'])): ?>
               <div class="mb-2">
-                <label class="detail-label">Password Akses</label>
+                <label class="detail-label">2FA</label>
                 <div class="detail-box">
-                  <?= htmlspecialchars($before_data['password_akses'], ENT_QUOTES, 'UTF-8') ?>
+                  <?= htmlspecialchars($before_data['two_fa'], ENT_QUOTES, 'UTF-8') ?>
                 </div>
               </div>
               <?php endif; ?>
 
-              <!-- WEBSITE -->
+              <!-- PASSWORD AKSES (ADOBE) -->
+              <?php if (strtoupper(trim((string) ($before_data['nama_akun'] ?? ''))) === 'ADOBE'): ?>
               <div class="mb-2">
-                <label class="detail-label">Website</label>
+                <label class="detail-label">Password Akses</label>
+                <div class="detail-box">
+                  <?= htmlspecialchars($before_data['password_akses'] ?? '-', ENT_QUOTES, 'UTF-8') ?>
+                </div>
+              </div>
+              <?php endif; ?>
+
+              <!-- WEBSITE / AKSES -->
+              <div class="mb-2">
+                <label class="detail-label">
+                  <?= strtoupper(trim((string) ($before_data['nama_akun'] ?? ''))) === 'ADOBE' ? 'Akses' : 'Website' ?>
+                </label>
                 <div class="detail-box">
                   <?= htmlspecialchars($before_data['website'] ?? '-', ENT_QUOTES, 'UTF-8') ?>
                 </div>
