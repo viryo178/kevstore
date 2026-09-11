@@ -83,8 +83,8 @@ $before_data = !empty($before_data) ? $before_data : [];
 
   .detail-label {
     color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 10px;
+    font-size: 12px;
+    margin-bottom: 4px;
     display: block;
     font-weight: 500;
   }
@@ -92,20 +92,21 @@ $before_data = !empty($before_data) ? $before_data : [];
   .detail-box {
     background: #081223;
     border: 1px solid rgba(255, 255, 255, .05);
-    border-radius: 14px;
-    padding: 14px 16px;
+    border-radius: 10px;
+    padding: 8px 12px;
     color: #ffffff;
     font-weight: 500;
-    min-height: 52px;
+    min-height: 38px;
     display: flex;
     align-items: center;
     word-break: break-word;
+    font-size: 13px;
   }
 
   .note-box {
     align-items: flex-start;
-    line-height: 1.8;
-    min-height: 100px;
+    line-height: 1.6;
+    min-height: 60px;
   }
 
   .btn-glow {
