@@ -189,6 +189,37 @@ $before_data = !empty($before_data) ? $before_data : [];
     font-weight: 700;
   }
 
+  /* Changed vs unchanged row styles */
+  .edit-changed {
+    border-color: rgba(251, 191, 36, 0.3) !important;
+  }
+
+  .edit-unchanged {
+    opacity: 0.65;
+  }
+
+  .edit-header-changed {
+    background: rgba(251, 191, 36, .1) !important;
+  }
+
+  .edit-header-changed span:first-child {
+    color: #fbbf24 !important;
+  }
+
+  .changed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(251, 191, 36, .15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, .3);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
   @media(max-width:768px) {
     .dashboard-icon {
       width: 50px;
@@ -450,9 +481,13 @@ $before_data = !empty($before_data) ? $before_data : [];
           </h5>
 
           <?php foreach ($changes as $change): ?>
-            <div class="edit-change-row">
-              <div class="edit-change-header">
+            <?php $is_changed = !empty($change['changed']); ?>
+            <div class="edit-change-row <?= $is_changed ? 'edit-changed' : 'edit-unchanged' ?>">
+              <div class="edit-change-header <?= $is_changed ? 'edit-header-changed' : '' ?>">
                 <span><?= htmlspecialchars($change['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($is_changed): ?>
+                  <span class="changed-badge"><i class="bi bi-pencil-fill"></i> Diubah</span>
+                <?php endif; ?>
               </div>
               <div class="edit-change-body">
                 <div class="edit-change-col">

@@ -509,21 +509,24 @@ class Admin extends CI_Controller
                         'label' => $label,
                         'before' => $old,
                         'after' => null,
+                        'changed' => true,
                     ];
                 }
             }
         } else {
-            // For edit: show changed fields
+            // For edit: show ALL fields, mark which ones changed
             foreach ($labels as $field => $label) {
                 $old = $before[$field] ?? null;
                 $new = $after[$field] ?? null;
+                $has_value = ($old !== null && (string) $old !== '') || ($new !== null && (string) $new !== '');
 
-                if ((string) $old !== (string) $new) {
+                if ($has_value) {
                     $changes[] = [
                         'field' => $field,
                         'label' => $label,
                         'before' => $old,
                         'after' => $new,
+                        'changed' => (string) $old !== (string) $new,
                     ];
                 }
             }
