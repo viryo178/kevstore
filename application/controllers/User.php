@@ -217,16 +217,20 @@ class User extends CI_Controller
         $before = is_array($before) ? $before : [];
         $after = is_array($after) ? $after : [];
 
-        if (empty($before) && stripos((string) $activity->action, 'edit') !== false) {
+        $is_hapus = stripos((string) $activity->action, 'hapus') !== false;
+        $is_edit = stripos((string) $activity->action, 'edit') !== false;
+
+        if (empty($before) && $is_edit) {
             $before['username'] = $activity->akun_username_before ?? $activity->akun_username_snapshot ?? null;
         }
 
-        if (empty($after) && stripos((string) $activity->action, 'edit') !== false) {
+        if (empty($after) && $is_edit) {
             $after['username'] = $activity->akun_username_after ?? $activity->akun_username ?? null;
         }
 
         $labels = [
             'nama_akun' => 'Akun',
+            'durasi_zoom' => 'Variasi',
             'kategori' => 'Kategori',
             'status' => 'Status',
             'username' => 'Email / Username',
@@ -243,17 +247,33 @@ class User extends CI_Controller
 
         $changes = [];
 
-        foreach ($labels as $field => $label) {
-            $old = $before[$field] ?? null;
-            $new = $after[$field] ?? null;
+        if ($is_hapus) {
+            // For hapus: show all before data fields that have values
+            foreach ($labels as $field => $label) {
+                $old = $before[$field] ?? null;
+                if ($old !== null && (string) $old !== '') {
+                    $changes[] = [
+                        'field' => $field,
+                        'label' => $label,
+                        'before' => $old,
+                        'after' => null,
+                    ];
+                }
+            }
+        } else {
+            // For edit: show changed fields
+            foreach ($labels as $field => $label) {
+                $old = $before[$field] ?? null;
+                $new = $after[$field] ?? null;
 
-            if ((string) $old !== (string) $new) {
-                $changes[] = [
-                    'field' => $field,
-                    'label' => $label,
-                    'before' => $old,
-                    'after' => $new,
-                ];
+                if ((string) $old !== (string) $new) {
+                    $changes[] = [
+                        'field' => $field,
+                        'label' => $label,
+                        'before' => $old,
+                        'after' => $new,
+                    ];
+                }
             }
         }
 
@@ -1737,6 +1757,9 @@ private function get_notification_data()
 
         $data['activity'] = $activity;
         $data['changes'] = $this->build_activity_changes($activity);
+        $data['is_hapus'] = stripos((string) $activity->action, 'hapus') !== false;
+        $data['is_edit'] = stripos((string) $activity->action, 'edit') !== false;
+        $data['before_data'] = json_decode((string) ($activity->akun_before_snapshot ?? ''), true) ?: [];
         $data = array_merge($data, $this->get_notification_data());
 
         $this->load->view('templates/header');
