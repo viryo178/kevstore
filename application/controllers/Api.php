@@ -4374,9 +4374,45 @@ class Api extends CI_Controller
         if ($akun) {
             $data['akun_nama_snapshot'] = $akun->nama_akun ?? null;
             $data['akun_username_snapshot'] = $akun->username ?? null;
+            $data['akun_username_before'] = $akun->username ?? null;
+            $data['akun_before_snapshot'] = json_encode($this->account_activity_snapshot($akun));
         }
 
         $this->db->insert('activity_log', $data);
+    }
+
+    private function account_activity_snapshot($account)
+    {
+        if (!$account) {
+            return [];
+        }
+
+        $account = (array) $account;
+        $fields = [
+            'id_akun',
+            'nama_akun',
+            'durasi_zoom',
+            'kategori',
+            'status',
+            'username',
+            'password',
+            'website',
+            'password_akses',
+            'note',
+            'max_user',
+            'expired_password',
+            'created_by',
+            'last_edited_by',
+            'last_edited_at',
+        ];
+
+        $snapshot = [];
+
+        foreach ($fields as $field) {
+            $snapshot[$field] = $account[$field] ?? null;
+        }
+
+        return $snapshot;
     }
 
     private function public_user($user)

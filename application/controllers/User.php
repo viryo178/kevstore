@@ -946,6 +946,8 @@ private function get_notification_data()
                 'akun_id' => $account->id_akun,
                 'akun_nama_snapshot' => $account->nama_akun,
                 'akun_username_snapshot' => $account->username,
+                'akun_username_before' => $account->username,
+                'akun_before_snapshot' => json_encode($this->account_activity_snapshot($account)),
                 'action' => 'bulk hapus akun',
                 'changed_by' => $changed_by,
                 'created_at' => $now,
@@ -1004,6 +1006,10 @@ private function get_notification_data()
             'akun_nama_snapshot' => $akun->nama_akun,
 
             'akun_username_snapshot' => $akun->username,
+
+            'akun_username_before' => $akun->username,
+
+            'akun_before_snapshot' => json_encode($this->account_activity_snapshot($akun)),
 
             'action'     => 'hapus akun',
 
