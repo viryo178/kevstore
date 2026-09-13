@@ -1581,12 +1581,11 @@ Password : ${''}
     return `Mohon untuk dibaca
 Username : ${username}
 Password : ${password}
-1. Buka *Adobe*.
-2. Pilih *Sign In*.
-3. Masukkan email yang telah diberikan, lalu klik *Continue*.
+1. Buka Adobe.com 
+2. Pilih Sign In.
+3. Masukkan email yang telah diberikan, lalu klik Continue.
 4. Masukkan password akun.
-5. *WAJIB:* Ketik ulang email dan password secara manual. *Jangan menggunakan copy-paste.*
-6. Jika muncul permintaan *kode verifikasi*, segera hubungi kami untuk meminta kodenya.`;
+5. *WAJIB:* Ketik ulang email dan password secara manual. Jangan menggunakan copy-paste.`;
   }
 
   function copyToClipboard(text) {
