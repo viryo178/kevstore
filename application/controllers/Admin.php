@@ -46,7 +46,7 @@ class Admin extends CI_Controller
     {
         $product = strtoupper(trim((string) $product));
 
-        // Zoom variations
+        // Variasi zoom
         if (preg_match('/^ZOOM(?:\s+(?:14\s+HARI|1\s+BULAN))?$/', $product)) {
             $duration = strtolower(trim((string) $duration));
             if ($duration === '') {
@@ -59,7 +59,7 @@ class Admin extends CI_Controller
             return in_array($duration, ['14_hari', '1_bulan'], true) ? $duration : null;
         }
 
-        // Leonardo variations
+        // Variasi Leonardo
         if (preg_match('/^LEONARDO(?:\s+(?:SEEDANCE|8500\s+KREDIT))?$/', $product)) {
             $duration = strtolower(trim((string) $duration));
             if ($duration === '') {
@@ -1283,9 +1283,33 @@ $data['akun_belum_penuh'] = $available_accounts_query
     {
         $rows = [];
 
-        // Format Leonardo hanya membutuhkan username/email. Baris judul seperti
-        // "Akun 1" dan pemisah "====" diabaikan.
+        // Format Leonardo mendukung email:password | note (misal: Kredit: 8500)
+        // atau hanya ekstrak username/email dari teks yang ditempel.
         if ($bulk_product === 'LEONARDO') {
+            $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
+            $has_new_format = false;
+
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '') continue;
+
+                if (preg_match('/^([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}):([^|]+)(?:\|\s*(.*))?$/iu', $line, $matches)) {
+                    $has_new_format = true;
+                    $rows[] = [
+                        'username' => trim($matches[1]),
+                        'password' => trim($matches[2]),
+                        'note' => isset($matches[3]) ? trim($matches[3]) : '',
+                        'two_fa' => '',
+                        'website' => '',
+                        'password_akses' => '',
+                    ];
+                }
+            }
+
+            if ($has_new_format) {
+                return $rows;
+            }
+
             preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $bulk_accounts, $email_matches);
 
             foreach ($email_matches[0] ?? [] as $email) {

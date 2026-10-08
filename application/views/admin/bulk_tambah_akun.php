@@ -87,7 +87,7 @@
                   : ($bulk_product === 'SPOTIFY'
                     ? 'Format Spotify: username|password atau format Email dan Password.'
                     : ($bulk_product === 'LEONARDO'
-                      ? 'Format Leonardo: Akun 1, username/email, lalu pemisah. Hanya username yang disimpan.'
+                      ? 'Format Leonardo: email:password | Kredit: 8500 atau tempel username/email saja.'
                       : 'Format: username|password. Satu akun ditulis dalam satu baris.'))) ?>
             </div>
           </div>
@@ -132,7 +132,7 @@
                   : ($bulk_product === 'SPOTIFY'
                     ? 'username1|password1&#10;&#10;atau&#10;&#10;Email : user@outlook.com&#10;Password : Premium123@'
                     : ($bulk_product === 'LEONARDO'
-                      ? 'Akun 1&#10;user1@hotmail.com&#10;&#10;==================&#10;&#10;Akun 2&#10;user2@hotmail.com'
+                      ? 'user1@hotmail.com:password123 | Kredit: 8500&#10;user2@hotmail.com:password123 | Kredit: 8500'
                       : 'username1|password1&#10;username2|password2'))) ?>"
               required></textarea>
           </div>
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         : (isSpotify
           ? 'Format Spotify: username|password atau format Email dan Password.'
           : (isLeonardo
-            ? 'Format Leonardo: Akun 1, username/email, lalu pemisah. Hanya username yang disimpan.'
+            ? 'Format Leonardo: email:password | Kredit: 8500 atau tempel username/email saja.'
             : 'Format: username|password. Satu akun ditulis dalam satu baris.')));
     accountsInput.placeholder = isAdobe
       ? 'PasswordAkun123\nuser@hotmail.com:passwordAkses123:token:uuid\n\natau\n\nuser1@example.com\nuser2@example.com\n\nSyarat & Ketentuan\n- Akses email mail.example.com'
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         : (isSpotify
           ? 'username1|password1\n\natau\n\nEmail : user@outlook.com\nPassword : Premium123@'
           : (isLeonardo
-            ? 'Akun 1\nuser1@hotmail.com\n\n==================\n\nAkun 2\nuser2@hotmail.com'
+            ? 'user1@hotmail.com:password123 | Kredit: 8500\nuser2@hotmail.com:password123 | Kredit: 8500'
             : 'username1|password1\nusername2|password2')));
     defaults.innerHTML = 'Default: <strong>Nama Akun ' + escapeBulkHtml(product) + '</strong>, <strong>Kategori Belum Terjual</strong>, <strong>Status Aktif</strong>, <strong>Max User 0</strong>.'
       + (usesEmailFormat ? ' Kolom 2FA disimpan untuk ' + (isGemini ? 'Gemini' : 'Adobe') + ' dan boleh kosong.' : '')
