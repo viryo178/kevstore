@@ -195,7 +195,7 @@ class Api extends CI_Controller
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = in_array($product, ['SPOTIFY', 'LEONARDO', 'GEMINI', 'ADOBE'], true)
             || preg_match('/^ZOOM(?:\s|$)/', $product) === 1;
-        $limit = $product === 'ADOBE' ? 3 : ($is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4));
+        $limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : ($akun->kategori === 'private' ? 1 : 4));
 
         if ((int) $akun->max_user >= $limit) {
             return $this->json_error('Max user sudah penuh', 422);
@@ -4374,9 +4374,46 @@ class Api extends CI_Controller
         if ($akun) {
             $data['akun_nama_snapshot'] = $akun->nama_akun ?? null;
             $data['akun_username_snapshot'] = $akun->username ?? null;
+            $data['akun_username_before'] = $akun->username ?? null;
+            $data['akun_before_snapshot'] = json_encode($this->account_activity_snapshot($akun));
         }
 
         $this->db->insert('activity_log', $data);
+    }
+
+    private function account_activity_snapshot($account)
+    {
+        if (!$account) {
+            return [];
+        }
+
+        $account = (array) $account;
+        $fields = [
+            'id_akun',
+            'nama_akun',
+            'durasi_zoom',
+            'kategori',
+            'status',
+            'username',
+            'password',
+            'two_fa',
+            'website',
+            'password_akses',
+            'note',
+            'max_user',
+            'expired_password',
+            'created_by',
+            'last_edited_by',
+            'last_edited_at',
+        ];
+
+        $snapshot = [];
+
+        foreach ($fields as $field) {
+            $snapshot[$field] = $account[$field] ?? null;
+        }
+
+        return $snapshot;
     }
 
     private function public_user($user)

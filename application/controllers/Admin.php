@@ -442,6 +442,7 @@ class Admin extends CI_Controller
             'status',
             'username',
             'password',
+            'two_fa',
             'website',
             'password_akses',
             'note',
@@ -469,11 +470,14 @@ class Admin extends CI_Controller
         $before = is_array($before) ? $before : [];
         $after = is_array($after) ? $after : [];
 
-        if (empty($before) && stripos((string) $activity->action, 'edit') !== false) {
+        $is_hapus = stripos((string) $activity->action, 'hapus') !== false;
+        $is_edit = stripos((string) $activity->action, 'edit') !== false;
+
+        if (empty($before) && $is_edit) {
             $before['username'] = $activity->akun_username_before ?? $activity->akun_username_snapshot ?? null;
         }
 
-        if (empty($after) && stripos((string) $activity->action, 'edit') !== false) {
+        if (empty($after) && $is_edit) {
             $after['username'] = $activity->akun_username_after ?? $activity->akun_username ?? null;
         }
 
@@ -484,6 +488,7 @@ class Admin extends CI_Controller
             'status' => 'Status',
             'username' => 'Email / Username',
             'password' => 'Password',
+            'two_fa' => '2FA',
             'website' => 'Website',
             'password_akses' => 'Password Akses',
             'note' => 'Note',
@@ -496,17 +501,36 @@ class Admin extends CI_Controller
 
         $changes = [];
 
-        foreach ($labels as $field => $label) {
-            $old = $before[$field] ?? null;
-            $new = $after[$field] ?? null;
+        if ($is_hapus) {
+            // For hapus: show all before data fields that have values
+            foreach ($labels as $field => $label) {
+                $old = $before[$field] ?? null;
+                if ($old !== null && (string) $old !== '') {
+                    $changes[] = [
+                        'field' => $field,
+                        'label' => $label,
+                        'before' => $old,
+                        'after' => null,
+                        'changed' => true,
+                    ];
+                }
+            }
+        } else {
+            // For edit: show ALL fields, mark which ones changed
+            foreach ($labels as $field => $label) {
+                $old = $before[$field] ?? null;
+                $new = $after[$field] ?? null;
+                $has_value = ($old !== null && (string) $old !== '') || ($new !== null && (string) $new !== '');
 
-            if ((string) $old !== (string) $new) {
-                $changes[] = [
-                    'field' => $field,
-                    'label' => $label,
-                    'before' => $old,
-                    'after' => $new,
-                ];
+                if ($has_value) {
+                    $changes[] = [
+                        'field' => $field,
+                        'label' => $label,
+                        'before' => $old,
+                        'after' => $new,
+                        'changed' => (string) $old !== (string) $new,
+                    ];
+                }
             }
         }
 
@@ -1827,6 +1851,8 @@ $data['akun_belum_penuh'] = $available_accounts_query
                 'akun_id' => $account->id_akun,
                 'akun_nama_snapshot' => $account->nama_akun,
                 'akun_username_snapshot' => $account->username,
+                'akun_username_before' => $account->username,
+                'akun_before_snapshot' => json_encode($this->account_activity_snapshot($account)),
                 'action' => 'bulk hapus akun',
                 'changed_by' => $changed_by,
                 'created_at' => $now,
@@ -1885,6 +1911,10 @@ $data['akun_belum_penuh'] = $available_accounts_query
             'akun_nama_snapshot' => $akun->nama_akun,
 
             'akun_username_snapshot' => $akun->username,
+
+            'akun_username_before' => $akun->username,
+
+            'akun_before_snapshot' => json_encode($this->account_activity_snapshot($akun)),
 
             'action'     => 'hapus akun',
 
@@ -1970,7 +2000,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
         // limit berdasarkan kategori
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = $this->is_single_use_product($product);
-        $max_limit = $product === 'ADOBE' ? 3 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
+        $max_limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
 
         // cek limit
         if ($akun->max_user >= $max_limit) {
@@ -2044,7 +2074,7 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         $product = strtoupper(trim((string) $akun->nama_akun));
         $is_single_use_product = $this->is_single_use_product($product);
-        $limit = $product === 'ADOBE' ? 3 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
+        $limit = $product === 'ADOBE' ? 2 : ($is_single_use_product ? 1 : (($akun->kategori == 'private') ? 1 : 4));
 
         if ($akun->max_user >= $limit) {
 
@@ -2648,6 +2678,9 @@ $data['akun_belum_penuh'] = $available_accounts_query
 
         $data['activity'] = $activity;
         $data['changes'] = $this->build_activity_changes($activity);
+        $data['is_hapus'] = stripos((string) $activity->action, 'hapus') !== false;
+        $data['is_edit'] = stripos((string) $activity->action, 'edit') !== false;
+        $data['before_data'] = json_decode((string) ($activity->akun_before_snapshot ?? ''), true) ?: [];
         $data = array_merge($data, $this->get_notification_data());
 
         $this->load->view('templates/header');
