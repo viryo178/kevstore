@@ -1310,6 +1310,27 @@ $data['akun_belum_penuh'] = $available_accounts_query
         // Format Leonardo mendukung email:password | note (misal: Kredit: 8500)
         // atau hanya ekstrak username/email dari teks yang ditempel.
         if ($bulk_product === 'LEONARDO') {
+            preg_match_all(
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:[^\p{L}\p{N}\r\n]\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                $bulk_accounts,
+                $matches,
+                PREG_SET_ORDER
+            );
+
+            if (!empty($matches)) {
+                foreach ($matches as $match) {
+                    $rows[] = [
+                        'username' => trim((string) ($match[1] ?? '')),
+                        'password' => trim((string) ($match[2] ?? '')),
+                        'note' => '',
+                        'two_fa' => '',
+                        'website' => '',
+                        'password_akses' => '',
+                    ];
+                }
+                return $rows;
+            }
+
             $lines = preg_split('/\r\n|\r|\n/', $bulk_accounts);
             $has_new_format = false;
 

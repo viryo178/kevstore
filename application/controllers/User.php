@@ -667,14 +667,31 @@ private function get_notification_data()
         $rows = [];
 
         if ($bulk_product === 'LEONARDO') {
-            preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $bulk_accounts, $email_matches);
+            preg_match_all(
+                '/(?:^|\R)\s*(?:\d+\.\s*)?Email\s*:\s*([^\s\r\n]+)[^\r\n]*\R\s*(?:[^\p{L}\p{N}\r\n]\s*)?Password\s*:\s*([^\r\n]*)/iu',
+                $bulk_accounts,
+                $matches,
+                PREG_SET_ORDER
+            );
 
-            foreach ($email_matches[0] ?? [] as $email) {
-                $rows[] = [
-                    'username' => trim((string) $email),
-                    'password' => '',
-                    'note' => '',
-                ];
+            if (!empty($matches)) {
+                foreach ($matches as $match) {
+                    $rows[] = [
+                        'username' => trim((string) ($match[1] ?? '')),
+                        'password' => trim((string) ($match[2] ?? '')),
+                        'note' => '',
+                    ];
+                }
+            } else {
+                preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/iu', $bulk_accounts, $email_matches);
+
+                foreach ($email_matches[0] ?? [] as $email) {
+                    $rows[] = [
+                        'username' => trim((string) $email),
+                        'password' => '',
+                        'note' => '',
+                    ];
+                }
             }
         }
 
